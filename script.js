@@ -949,7 +949,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		advFilterStart: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10), // วันแรกของเดือน
 		advFilterEnd: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10), // วันสุดท้ายของเดือน
 		advFilterType: 'all',
-		advFilterSearch: ''
+		advFilterSearch: '',
+		mobileMenuStyle: 'bottom', // หรือ 'hamburger' ก็ได้ แต่ตั้งค่าตามที่ต้องการ
     };
 		// วางต่อจาก }; ของ state เหมือนเดิม
 		let chartInstanceCategory = null;
@@ -1212,6 +1213,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const autoConfirmConfig = await dbGet(STORE_CONFIG, AUTO_CONFIRM_CONFIG_KEY);
             state.autoConfirmPassword = autoConfirmConfig ? autoConfirmConfig.value : false;
+			
+			const menuStyleConfig = await dbGet(STORE_CONFIG, 'mobileMenuStyle');
+            state.mobileMenuStyle = menuStyleConfig ? menuStyleConfig.value : 'bottom';
+			
+			// +++ สำคัญ: ต้องเรียกใช้ฟังก์ชันปรับ UI ทันทีหลังจากได้ค่า +++
+			applyMobileMenuStyle();
 
             // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // [ใหม่ V5] 10. โหลดรายการประจำ (Recurring Rules)
@@ -2135,6 +2142,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		getEl('nav-accounts').addEventListener('click', () => showPage('page-accounts'));
         getEl('nav-settings').addEventListener('click', () => showPage('page-settings'));
         getEl('nav-guide').addEventListener('click', () => showPage('page-guide'));
+		
+		// Bottom Navigation
+		document.querySelectorAll('#bottom-nav button').forEach(btn => {
+			btn.addEventListener('click', () => {
+				const pageId = 'page-' + btn.dataset.page;
+				showPage(pageId);
+			});
+		});
 
         getEl('view-mode-select').addEventListener('change', (e) => handleChangeViewMode(e, currentPage));
         getEl('month-picker').addEventListener('input', (e) => handleDateChange(e, currentPage));
@@ -3670,6 +3685,46 @@ document.addEventListener('DOMContentLoaded', () => {
 	
     }
 	
+	function applyMobileMenuStyle() {
+				const bottomNav = document.getElementById('bottom-nav');
+				const mobileMenuButton = document.getElementById('mobile-menu-button');
+				const mobileHomeButton = document.getElementById('mobile-home-button');
+				const mobileMenu = document.getElementById('mobile-menu');
+				const body = document.body;
+
+				if (state.mobileMenuStyle === 'bottom') {
+					// แสดง Bottom Nav, ซ่อนปุ่มเมนูเดิม
+					if (bottomNav) bottomNav.classList.remove('hidden');
+					if (mobileMenuButton) mobileMenuButton.classList.add('hidden');
+					if (mobileHomeButton) mobileHomeButton.classList.add('hidden');
+					if (mobileMenu) mobileMenu.classList.add('hidden');
+					body.classList.add('has-bottom-nav');
+				} else {
+					// ซ่อน Bottom Nav, แสดงปุ่มเมนูเดิม
+					if (bottomNav) bottomNav.classList.add('hidden');
+					if (mobileMenuButton) mobileMenuButton.classList.remove('hidden');
+					if (mobileHomeButton) mobileHomeButton.classList.remove('hidden');
+					body.classList.remove('has-bottom-nav');
+			}
+	}
+	
+	// ฟังก์ชันอัปเดตสี active ของ Bottom Navigation
+	function updateBottomNavActive(pageId) {
+		const bottomNav = document.getElementById('bottom-nav');
+		if (!bottomNav) return;
+		const pageName = pageId.replace('page-', '');
+		bottomNav.querySelectorAll('button').forEach(btn => {
+			const btnPage = btn.dataset.page;
+			if (btnPage === pageName) {
+				btn.classList.remove('text-gray-600');
+				btn.classList.add('text-purple-600');
+			} else {
+				btn.classList.remove('text-purple-600');
+				btn.classList.add('text-gray-600');
+			}
+		});
+	}
+	
 	// ============================================
     // PWA INSTALL LOGIC (Android & iOS)
     // ============================================
@@ -3985,6 +4040,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentMobileNavEl.classList.add('text-purple-600');
                 currentMobileNavEl.classList.remove('text-gray-600');
             }
+			
+			    // อัปเดต Bottom Navigation ถ้าอยู่ในโหมด bottom
+			if (state.mobileMenuStyle === 'bottom') {
+				updateBottomNavActive(pageId);
+			}
 
             // Render หน้าต่างๆ (โค้ดเดิม)
             if (pageId === 'page-home') {
@@ -6026,6 +6086,27 @@ document.addEventListener('DOMContentLoaded', () => {
 				bioStatus.textContent = 'ใช้ลายนิ้วมือหรือใบหน้าแทนรหัสผ่าน (เฉพาะเครื่องนี้)';
 				bioStatus.classList.remove('text-green-600');
 			}
+		}
+		
+		// ตั้งค่ารูปแบบเมนูมือถือ
+		const mobileMenuRadios = document.querySelectorAll('input[name="mobile-menu-style"]');
+		if (mobileMenuRadios.length > 0) {
+			// ตั้งค่า checked ตาม state
+			mobileMenuRadios.forEach(radio => {
+				if (radio.value === state.mobileMenuStyle) {
+					radio.checked = true;
+				}
+				// เพิ่ม event listener
+				radio.addEventListener('change', async (e) => {
+					if (e.target.checked) {
+						state.mobileMenuStyle = e.target.value;
+						await dbPut(STORE_CONFIG, { key: 'mobileMenuStyle', value: state.mobileMenuStyle });
+						if (typeof applyMobileMenuStyle === 'function') {
+							applyMobileMenuStyle(); // ฟังก์ชันที่ต้องเขียนเพิ่ม
+						}
+					}
+				});
+			});
 		}
 			
 		// 7. Line โหลดรายชื่อ ID จาก DB (เวอร์ชันใหม่: มีชื่อเล่น + รหัสผ่าน)

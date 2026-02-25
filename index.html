@@ -836,6 +836,29 @@
                                 </div>
                                 <p class="text-sm text-gray-500 mt-2 ml-14">เปลี่ยนธีมเป็นสีดำสนิทเพื่อถนอมสายตา</p>
                             </div>
+							
+							<!-- รูปแบบเมนูมือถือ -->
+							<div class="mb-5 pb-4 border-b border-gray-100 dark:border-gray-700">
+								<div class="flex items-center justify-between mb-2">
+									<div class="flex items-center gap-3">
+										<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+											<i class="fa-solid fa-bars"></i>
+										</div>
+										<span class="text-lg text-gray-700 font-medium">รูปแบบเมนูมือถือ</span>
+									</div>
+								</div>
+								<div class="ml-14 space-y-2">
+									<label class="flex items-center gap-2">
+										<input type="radio" name="mobile-menu-style" value="hamburger" class="form-radio text-purple-600">
+										<span class="text-gray-700 dark:text-gray-300">เมนูแฮมเบอร์เกอร์ (กดปุ่มสามขีดเพื่อเปิดเมนู)</span>
+									</label>
+									<label class="flex items-center gap-2">
+										<input type="radio" name="mobile-menu-style" value="bottom" class="form-radio text-purple-600">
+										<span class="text-gray-700 dark:text-gray-300">เมนูด้านล่าง (กดไอคอนเปลี่ยนหน้าทันที)</span>
+									</label>
+								</div>
+								<p class="text-sm text-gray-500 mt-2 ml-14">เลือกแบบที่คุณถนัด (เปลี่ยนทันที)</p>
+							</div>
 
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
@@ -1520,6 +1543,34 @@
 		<button id="smart-voice-btn" onclick="activateGlobalVoice()" 
 				class="w-14 h-14 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-110 active:scale-90 border-2 border-white voice-ring group">
 			<i class="fa-solid fa-microphone text-xl group-hover:animate-pulse"></i>
+		</button>
+	</div>
+	
+	<!-- Bottom Navigation (มือถือ) -->
+	<div id="bottom-nav" class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 grid grid-cols-6 items-center py-1 z-40 hidden md:hidden shadow-lg">
+		<button data-page="home" class="flex flex-col items-center text-purple-600">
+			<i class="fa-solid fa-house text-lg"></i>
+			<span class="text-[10px] mt-0.5">หน้าแรก</span>
+		</button>
+		<button data-page="list" class="flex flex-col items-center text-gray-600">
+			<i class="fa-solid fa-list-ul text-lg"></i>
+			<span class="text-[10px] mt-0.5">รายการ</span>
+		</button>
+		<button data-page="calendar" class="flex flex-col items-center text-gray-600">
+			<i class="fa-solid fa-calendar-days text-lg"></i>
+			<span class="text-[10px] mt-0.5">ปฏิทิน</span>
+		</button>
+		<button data-page="accounts" class="flex flex-col items-center text-gray-600">
+			<i class="fa-solid fa-wallet text-lg"></i>
+			<span class="text-[10px] mt-0.5">บัญชี</span>
+		</button>
+		<button data-page="settings" class="flex flex-col items-center text-gray-600">
+			<i class="fa-solid fa-gear text-lg"></i>
+			<span class="text-[10px] mt-0.5">ตั้งค่า</span>
+		</button>
+		<button data-page="guide" class="flex flex-col items-center text-gray-600">
+			<i class="fa-solid fa-book text-lg"></i>
+			<span class="text-[10px] mt-0.5">คู่มือ</span>
 		</button>
 	</div>
 	

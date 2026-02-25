@@ -326,3 +326,68 @@ body.dark .fc-day-today .fc-daygrid-day-number {
     color: #fbbf24 !important;
     text-shadow: 0 0 5px rgba(255,215,0,0.5) !important;
 }
+
+/* ป้องกันเนื้อหาถูก Bottom Nav บัง */
+body.has-bottom-nav #main-content {
+    padding-bottom: 70px; /* ความสูงของ Bottom Nav ประมาณ 60-70px */
+}
+
+/* ปุ่มลอย (ผู้ช่วยเสียง, ปุ่มกลับด้านบน) ควรอยู่เหนือ Bottom Nav */
+#smart-voice-btn,
+#guide-back-to-top {
+    z-index: 50 !important;
+}
+
+/* =========================================
+   6. BOTTOM NAVIGATION STYLES
+   ========================================= */
+#bottom-nav {
+    transition: background-color 0.3s, border-color 0.3s;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+#bottom-nav button {
+    transition: color 0.2s;
+}
+
+/* ป้องกันเนื้อหาถูก Bottom Nav บัง */
+body.has-bottom-nav #main-content {
+    padding-bottom: 70px; /* ความสูงของ Bottom Nav */
+}
+
+/* ปุ่มลอย (ผู้ช่วยเสียง, ปุ่มกลับด้านบน) ควรอยู่เหนือ Bottom Nav */
+#smart-voice-btn,
+#guide-back-to-top {
+    z-index: 50 !important;
+}
+
+/* --- Dark Mode สำหรับ Bottom Nav --- */
+body.dark #bottom-nav {
+    background-color: #1a1a1a;
+    border-top-color: #374151;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+}
+body.dark #bottom-nav button.text-gray-600 {
+    color: #9ca3af;
+}
+body.dark #bottom-nav button.text-purple-600 {
+    color: #c4b5fd;
+}
+
+#bottom-nav {
+    padding: 4px 0; /* ลด padding */
+}
+#bottom-nav button {
+    transition: color 0.2s;
+    padding: 4px 0;
+}
+#bottom-nav button i {
+    font-size: 1.25rem; /* 20px */
+}
+#bottom-nav button span {
+    font-size: 0.7rem; /* ประมาณ 11px */
+    line-height: 1.2;
+}
+/* ป้องกัน footer ถูก Bottom Nav บัง */
+body.has-bottom-nav footer {
+    margin-bottom: 10px; /* เพิ่มจาก 70px เป็น 80px เพื่อให้ footer ขยับขึ้นอีกนิด */
+}

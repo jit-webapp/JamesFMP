@@ -985,10 +985,10 @@ window.guideHTML = `
 				</button>
 			</div>
 
-			<!-- ปุ่มกลับด้านบนแบบลอย -->
-			<div class="fixed bottom-6 right-5 z-50">
-				<a href="javascript:void(0)" id="guide-back-to-top" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-full text-lg font-bold shadow-2xl transition flex items-center gap-2">
-					<i class="fa-solid fa-arrow-up"></i> กลับด้านบน
+			<!-- ปุ่มกลับด้านบนแบบลอย (เฉพาะไอคอน) -->
+			<div class="fixed bottom-56 right-5 z-50">
+				<a href="javascript:void(0)" id="guide-back-to-top" class="bg-purple-600 hover:bg-purple-700 text-white w-12 h-12 rounded-full shadow-2xl transition flex items-center justify-center" title="กลับด้านบน">
+					<i class="fa-solid fa-arrow-up text-xl"></i>
 				</a>
 			</div>
 		</div>
