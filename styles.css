@@ -387,7 +387,12 @@ body.dark #bottom-nav button.text-purple-600 {
     font-size: 0.7rem; /* ประมาณ 11px */
     line-height: 1.2;
 }
-/* ป้องกัน footer ถูก Bottom Nav บัง */
+/* ป้องกัน footer ถูก bottom nav บัง (ดันให้สูงขึ้น) */
 body.has-bottom-nav footer {
-    margin-bottom: 10px; /* เพิ่มจาก 70px เป็น 80px เพื่อให้ footer ขยับขึ้นอีกนิด */
+    margin-bottom: 90px !important;  /* เพิ่มค่าให้สูงขึ้นอีกนิด */
+}
+
+/* ปรับปุ่มกลับด้านบนในหน้า guide ให้อยู่เหนือ bottom nav */
+body.has-bottom-nav #page-guide #guide-back-to-top {
+    bottom: 100px !important;  /* ปรับให้สูงขึ้นตาม margin-bottom ของ footer */
 }
