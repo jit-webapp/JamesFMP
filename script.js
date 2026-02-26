@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // +++ แก้ไข: กรองการแจ้งเตือน ไม่ให้แสดงตอนบันทึกค่า Config หรือ AutoComplete +++
                 // STORE_CONFIG = การตั้งค่าต่างๆ, STORE_AUTO_COMPLETE = ระบบจำคำ
-                const silentStores = ['config', 'autoComplete', 'transactions', 'notifications'];
+                const silentStores = ['config', 'autoComplete', 'transactions', 'notifications', STORE_VOICE_COMMANDS];
                 
                 // เช็คว่า storeName ปัจจุบัน อยู่ในรายการที่ต้องเงียบหรือไม่
                 // หมายเหตุ: ใช้ตัวแปร storeName เทียบกับชื่อ Store ที่เรากำหนดไว้ด้านบน
@@ -477,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`Cloud Deleted: ${storeName}/${key}`);
 
                 // +++ แก้ไข: กรองการแจ้งเตือนเช่นกัน +++
-                const silentStores = ['config', 'autoComplete', 'transactions']; 
+                const silentStores = ['config', 'autoComplete', 'transactions', 'notifications', STORE_VOICE_COMMANDS];
                 if (!silentStores.includes(storeName) && storeName !== STORE_CONFIG && storeName !== STORE_AUTO_COMPLETE) {
                     showToast(`☁️ ลบข้อมูลจาก Cloud แล้ว`, 'success');
                 }
@@ -557,17 +557,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// *** เรียกใช้ฟังก์ชันนี้ตอน Login สำเร็จ ***
-	// ใส่ต่อท้ายใน loadDataFromCloud หรือ auth.onAuthStateChanged
-	// ตัวอย่าง:
-	/*
-		auth.onAuthStateChanged(user => {
-			if(user) {
-				initNotificationListener(); 
-			}
-		});
-	*/
-
     // ฟังก์ชันโหลดข้อมูลจาก Cloud ลงเครื่อง (เรียกตอน Login)
     // แก้ไขล่าสุด: บังคับ Overwrite (ล้างเครื่องแล้วโหลดใหม่) เสมอ โดยไม่ถาม
     window.loadDataFromCloud = async (uid) => {
@@ -582,7 +571,8 @@ document.addEventListener('DOMContentLoaded', () => {
             STORE_AUTO_COMPLETE,
             STORE_RECURRING,
             STORE_BUDGETS,
-			STORE_NOTIFICATIONS
+			STORE_NOTIFICATIONS,
+			STORE_VOICE_COMMANDS
         ];
 
         try {
@@ -637,6 +627,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (!data.key) data.key = doc.id;
                             if (!data.key) isValid = false;
                         }
+						else if (storeName === STORE_VOICE_COMMANDS) {
+							if (!data.id) data.id = doc.id;
+							if (!data.id) isValid = false;
+						}
 
                         if (isValid) {
                             try {
@@ -696,6 +690,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await dbClear(STORE_CONFIG);
 			await dbClear(STORE_RECURRING);
 			await dbClear(STORE_BUDGETS);
+			await dbClear(STORE_VOICE_COMMANDS);
 
             // 2. สร้างข้อมูลเริ่มต้นใหม่ (Factory Reset)
             return new Promise((resolve, reject) => {
@@ -885,15 +880,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function dbClear(storeName) {
-        return new Promise((resolve, reject) => {
-            if (!db) return reject("DB not initialized");
-            const transaction = db.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.clear();
-            request.onsuccess = () => resolve();
-            request.onerror = (event) => reject(event.target.error);
-        });
-    }
+		return new Promise((resolve, reject) => {
+			if (!db) return reject("DB not initialized");
+			// ตรวจสอบว่ามี object store นี้จริงๆ หรือไม่
+			if (!db.objectStoreNames.contains(storeName)) {
+				// ไม่มี store นี้ → ไม่ต้อง clear, ถือว่าสำเร็จ
+				return resolve();
+			}
+			const transaction = db.transaction([storeName], 'readwrite');
+			const store = transaction.objectStore(storeName);
+			const request = store.clear();
+			request.onsuccess = () => resolve();
+			request.onerror = (event) => reject(event.target.error);
+		});
+	}
 
     function getSortedAccounts() {
         return [...state.accounts].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
@@ -1614,6 +1614,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
 					lockScreen.classList.remove('hidden');
+					document.getElementById('smart-voice-btn')?.classList.add('hidden');
 					setTimeout(() => {
                         const passInput = document.getElementById('unlock-password');
                         if (passInput) passInput.focus();
@@ -1679,7 +1680,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			setTimeout(() => {
 				// 1. ซ่อนหน้าจอ Lock Screen
 				document.getElementById('app-lock-screen').classList.add('hidden'); 
-				
+				document.getElementById('smart-voice-btn')?.classList.remove('hidden');
 				// 2. ถ้าเป็นการเปิดครั้งแรก (ยังไม่มีหน้าไหนแสดง) ให้ไปหน้า Home และเรียก onAppStart
 				if (document.getElementById('page-home').style.display === 'none' && 
 					document.getElementById('page-list').style.display === 'none') {
@@ -1757,7 +1758,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// แสดงหน้าจอล็อค
 			document.getElementById('app-lock-screen').classList.remove('hidden');
-			
+			document.getElementById('smart-voice-btn')?.classList.add('hidden');
 			// [เพิ่มใหม่] เช็คว่าเครื่องนี้เปิดใช้สแกนนิ้วไว้ไหม?
 			// ถ้าเปิด (มี state.biometricId) -> ให้แสดงปุ่มสแกน
 			// ถ้าปิด -> ให้ซ่อนปุ่มสแกน
@@ -6295,16 +6296,22 @@ document.addEventListener('DOMContentLoaded', () => {
 			commands.forEach(cmd => {
 				let actionText = '';
 				let details = '';
+				let parts;   // ✅ ประกาศไว้ที่นี้
 
-				// สร้างข้อความแสดงรายละเอียดตาม action (เหมือนเดิม)
+				// ป้องกันกรณี cmd ไม่มี property ที่จำเป็น
+				if (!cmd.action) {
+					console.warn('คำสั่งเสียหาย:', cmd);
+					return; // ข้ามรายการนี้
+				}
+
 				switch (cmd.action) {
 					case 'openPage':
 						actionText = 'เปิดหน้า';
-						details = `หน้า: ${cmd.page || 'ไม่ได้ระบุ'}`;
+						if (cmd.page) details = `หน้า: ${cmd.page}`;
 						break;
 					case 'openSettingsSection':
 						actionText = 'เปิดส่วนตั้งค่า';
-						details = `ส่วน: ${cmd.section || 'ไม่ได้ระบุ'}`;
+						if (cmd.section) details = `ส่วน: ${cmd.section}`;
 						break;
 					case 'toggleDarkMode':
 						actionText = 'สลับโหมดมืด';
@@ -6320,7 +6327,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						break;
 					case 'addTransaction':
 						actionText = 'เพิ่มรายการ';
-						let parts = [];
+						parts = [];
 						if (cmd.defaultName) parts.push(`ชื่อ: ${escapeHTML(cmd.defaultName)}`);
 						if (cmd.defaultCategory) parts.push(`หมวด: ${escapeHTML(cmd.defaultCategory)}`);
 						if (cmd.defaultAmount) parts.push(`จำนวน: ${cmd.defaultAmount} บาท`);
@@ -6340,12 +6347,12 @@ document.addEventListener('DOMContentLoaded', () => {
 						break;
 					case 'filterByType':
 						actionText = 'กรองประเภท';
-						details = `ประเภท: ${cmd.filterType === 'income' ? 'รายรับ' : 'รายจ่าย'}`;
+						if (cmd.filterType) details = `ประเภท: ${cmd.filterType === 'income' ? 'รายรับ' : 'รายจ่าย'}`;
 						break;
 					case 'applyTimeFilter':
 						actionText = 'กรองเวลา';
 						const periodMap = { 'today': 'วันนี้', 'this_week': 'สัปดาห์นี้', 'this_month': 'เดือนนี้', 'this_year': 'ปีนี้' };
-						details = `ช่วง: ${periodMap[cmd.period] || cmd.period}`;
+						if (cmd.period) details = `ช่วง: ${periodMap[cmd.period] || cmd.period}`;
 						break;
 					default:
 						actionText = cmd.action || 'ไม่ทราบ';
@@ -6354,7 +6361,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				html += `
 					<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-sm transition">
 						<div class="flex-1">
-							<div class="font-medium text-gray-800 dark:text-gray-200">"${escapeHTML(cmd.command)}"</div>
+							<div class="font-medium text-gray-800 dark:text-gray-200">"${escapeHTML(cmd.command || '')}"</div>
 							<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
 								<span class="bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded text-purple-700 dark:text-purple-300">${actionText}</span>
 								${details ? `<span class="ml-2">${details}</span>` : ''}
@@ -6372,9 +6379,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					</div>
 				`;
 			});
+
 			listContainer.innerHTML = html;
 
-			// ผูก event สำหรับปุ่มลบ (ที่มีอยู่แล้ว)
+			// ผูก event สำหรับปุ่มลบ (เหมือนเดิม)
 			document.querySelectorAll('.delete-voice-command').forEach(btn => {
 				btn.addEventListener('click', async (e) => {
 					const id = e.currentTarget.dataset.id;
@@ -8681,10 +8689,23 @@ document.addEventListener('DOMContentLoaded', () => {
 						autoCompleteList: await dbGetAll(STORE_AUTO_COMPLETE),
 						recurringRules: recurringData, 
 						budgets: await dbGetAll(STORE_BUDGETS),
+						voiceCommands: await dbGetAll(STORE_VOICE_COMMANDS),
+						
+						// +++ ค่าตั้งค่าเพิ่มเติม +++
+						showBalanceCard: (await dbGet(STORE_CONFIG, 'showBalanceCard'))?.value || false,
+						collapsePreferences: (await dbGet(STORE_CONFIG, 'collapse_preferences'))?.value || {},
+						notifySettings: (await dbGet(STORE_CONFIG, 'notification_settings'))?.value || { scheduled: true, recurring: true, budget: true },
+						ignoredNotifications: (await dbGet(STORE_CONFIG, 'ignored_notifications'))?.value || [],
+						customNotificationsList: (await dbGet(STORE_CONFIG, 'custom_notifications_list'))?.value || [],
+						notificationHistory: (await dbGet(STORE_CONFIG, 'notification_history'))?.value || [],
+						mobileMenuStyle: (await dbGet(STORE_CONFIG, 'mobileMenuStyle'))?.value || 'bottom',
+						lineUserIdsList: (await dbGet(STORE_CONFIG, 'lineUserIds_List'))?.value || [],
+						// +++++++++++++++++++++++++
+						
 						password: (await dbGet(STORE_CONFIG, 'password'))?.value || null,
 						autoLockTimeout: (await dbGet(STORE_CONFIG, AUTOLOCK_CONFIG_KEY))?.value || 0, 
 						isDarkMode: (await dbGet(STORE_CONFIG, DARK_MODE_CONFIG_KEY))?.value || false,
-						autoConfirmPassword: (await dbGet(STORE_CONFIG, autoConfirmKey))?.value || false
+						autoConfirmPassword: (await dbGet(STORE_CONFIG, AUTO_CONFIRM_CONFIG_KEY))?.value || false
 					};
 					
 					// สร้าง Blob
@@ -9160,11 +9181,29 @@ document.addEventListener('DOMContentLoaded', () => {
 								await dbPut(STORE_BUDGETS, budget);
 							}
 						}
+						
+						await dbClear(STORE_VOICE_COMMANDS);
+						if (Array.isArray(importedState.voiceCommands)) {
+							for (const item of importedState.voiceCommands) {
+								await dbPut(STORE_VOICE_COMMANDS, item);
+							}
+						}
                         
                         await dbClear(STORE_CONFIG);
-                        await dbPut(STORE_CONFIG, { key: 'password', value: importedState.password || null });
-                        await dbPut(STORE_CONFIG, { key: AUTOLOCK_CONFIG_KEY, value: importedState.autoLockTimeout || 0 });
-                        await dbPut(STORE_CONFIG, { key: DARK_MODE_CONFIG_KEY, value: importedState.isDarkMode || false }); 
+						await dbPut(STORE_CONFIG, { key: 'password', value: importedState.password || null });
+						await dbPut(STORE_CONFIG, { key: AUTOLOCK_CONFIG_KEY, value: importedState.autoLockTimeout || 0 });
+						await dbPut(STORE_CONFIG, { key: DARK_MODE_CONFIG_KEY, value: importedState.isDarkMode || false });
+						await dbPut(STORE_CONFIG, { key: AUTO_CONFIRM_CONFIG_KEY, value: importedState.autoConfirmPassword || false });
+
+						// +++ ค่าตั้งค่าเพิ่มเติม +++
+						await dbPut(STORE_CONFIG, { key: 'showBalanceCard', value: importedState.showBalanceCard ?? false });
+						await dbPut(STORE_CONFIG, { key: 'collapse_preferences', value: importedState.collapsePreferences ?? {} });
+						await dbPut(STORE_CONFIG, { key: 'notification_settings', value: importedState.notifySettings ?? { scheduled: true, recurring: true, budget: true } });
+						await dbPut(STORE_CONFIG, { key: 'ignored_notifications', value: importedState.ignoredNotifications ?? [] });
+						await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: importedState.customNotificationsList ?? [] });
+						await dbPut(STORE_CONFIG, { key: 'notification_history', value: importedState.notificationHistory ?? [] });
+						await dbPut(STORE_CONFIG, { key: 'mobileMenuStyle', value: importedState.mobileMenuStyle ?? 'bottom' });
+						await dbPut(STORE_CONFIG, { key: 'lineUserIds_List', value: importedState.lineUserIdsList ?? [] });
 
                         fileInput.value = null;
                         Swal.fire({
@@ -9300,6 +9339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await dbClear(STORE_CONFIG);
                     await dbClear(STORE_RECURRING); 
                     await dbClear(STORE_BUDGETS);
+					await dbClear(STORE_VOICE_COMMANDS);
                     
                     // เรียก Factory Reset เพื่อคืนค่าเริ่มต้น (ถ้ามีฟังก์ชันนี้)
                     if (typeof window.clearLocalDataForLogout === 'function') {
@@ -12456,6 +12496,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			// SMART VOICE COMMAND (GLOBAL BRAIN V.7)
 			// ============================================
 			window.activateGlobalVoice = async function() {
+				if (!document.getElementById('app-lock-screen').classList.contains('hidden')) {
+					showToast('กรุณาปลดล็อคแอปก่อนใช้คำสั่งเสียง', 'warning');
+					return;
+				}
 				// 1. ตรวจสอบ API
 				const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 				if (!SpeechRecognition) {
@@ -13599,8 +13643,82 @@ document.addEventListener('DOMContentLoaded', () => {
 			// ผูก event กับ form
 			document.getElementById('voice-command-form').addEventListener('submit', saveVoiceCommand);
 
-			// ===== ฟังก์ชันช่วยเหลือเมื่อไม่เข้าใจคำสั่ง (มีปุ่ม X) =====
+			// ============================================
+			// ฟังก์ชันจัดการเมื่อไม่รู้จักคำสั่ง (แต่พยายามเดาข้อมูล)
+			// ============================================
 			function handleFallbackCommand(text) {
+				// -------------------------------
+				// 1. พยายามแยกข้อมูลจากข้อความด้วย parseVoiceInput
+				// -------------------------------
+				const parsed = parseVoiceInput(text);
+
+				// ถ้าแยกได้และมีจำนวนเงินที่ถูกต้อง (>0) ให้เติมฟอร์ม
+				if (parsed && parsed.amount > 0) {
+					let { type, name, amount, description } = parsed;
+
+					// ถ้าไม่มีชื่อรายการ ให้ตั้งชื่อเริ่มต้นตามประเภท
+					if (!name || name.trim() === '') {
+						name = (type === 'income') ? 'รายรับ' :
+							   (type === 'expense') ? 'รายจ่าย' : 'โอนย้าย';
+					}
+
+					// หาหมวดหมู่ที่เหมาะสมจากชื่อและประเภท
+					const category = autoSelectCategory(name, type);
+
+					// เปิด Modal เพิ่มรายการ
+					openModal();
+
+					// รอให้ Modal แสดงผล (setTimeout สั้นๆ) แล้วค่อยเติมข้อมูล
+					setTimeout(() => {
+						// --- เลือกประเภทธุรกรรม ---
+						const radio = document.querySelector(`input[name="tx-type"][value="${type}"]`);
+						if (radio) radio.checked = true;
+
+						// --- อัปเดตการแสดงผลฟอร์มตามประเภท (ซ่อน/แสดงหมวดหมู่ ฯลฯ) ---
+						if (typeof updateFormVisibility === 'function') {
+							updateFormVisibility();
+						}
+
+						// --- เติมชื่อรายการ ---
+						const nameInput = document.getElementById('tx-name');
+						if (nameInput) nameInput.value = name;
+
+						// --- เติมจำนวนเงิน ---
+						const amountInput = document.getElementById('tx-amount');
+						if (amountInput) {
+							amountInput.value = amount;
+							// Trigger event เพื่อให้เครื่องคิดเลขแสดงตัวอย่าง
+							amountInput.dispatchEvent(new Event('keyup'));
+						}
+
+						// --- เติมคำอธิบาย (ถ้ามี) ---
+						if (description && description.trim() !== '') {
+							const descInput = document.getElementById('tx-desc');
+							if (descInput) descInput.value = description;
+						}
+
+						// --- เลือกหมวดหมู่ (ต้องรอให้ dropdown เตรียมข้อมูลก่อน) ---
+						setTimeout(() => {
+							if (type !== 'transfer') {
+								// อัปเดตรายการหมวดหมู่ตามประเภท
+								updateCategoryDropdown(type);
+								const catSelect = document.getElementById('tx-category');
+								if (catSelect) {
+									catSelect.value = category;
+								}
+							}
+						}, 100); // รอ 100ms ให้ dropdown โหลดเสร็จ
+
+					}, 200); // รอ 200ms ให้ Modal แสดงสมบูรณ์
+
+					// แจ้งเตือนสั้นๆ ว่าช่วยเติมข้อมูลให้แล้ว
+					showToast('📝 เติมข้อมูลจากคำพูดให้แล้ว', 'info');
+					return; // จบการทำงาน ไม่ต้องแสดงเมนู fallback
+				}
+
+				// -------------------------------
+				// 2. ถ้าแยกข้อมูลไม่ได้ หรือไม่มีจำนวนเงิน ให้ใช้ fallback เดิม
+				// -------------------------------
 				console.warn("ไม่เข้าใจคำสั่ง:", text);
 
 				if (text.length < 3) {
