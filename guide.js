@@ -903,17 +903,73 @@ window.guideHTML = `
 							</button>
 						</div>
 					</div>
-					<!-- ผู้ช่วยอัจฉริยะ -->
-					<div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-2xl border border-purple-200 dark:border-purple-800 relative">
-						<p class="text-lg text-purple-800 dark:text-purple-300 flex items-start gap-3">
+					<!-- ผู้ช่วยอัจฉริยะ (รวมรายละเอียดคำสั่งเสียงทั้งหมด) โทนสีฟ้า -->
+					<div class="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800 relative">
+						<p class="text-lg text-blue-800 dark:text-blue-300 flex items-start gap-3">
 							<i class="fa-solid fa-brain text-4xl"></i>
 							<span><b>ผู้ช่วยเสียงอัจฉริยะ (Smart Voice Command) </b> เข้าใจบริบท เช่น ขณะอยู่ในฟอร์มเพิ่มรายการ พูดว่า “บันทึก” หรือ “ยกเลิก” จะทำงานตามนั้น</span>
-							<button class="speak-btn ml-2 text-purple-600 hover:text-purple-800 dark:text-purple-400" 
+							<button class="speak-btn ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400" 
 								data-speak="ผู้ช่วยเสียงอัจฉริยะจะตรวจจับหน้าจอปัจจุบัน หากคุณอยู่ในฟอร์มเพิ่มรายการแล้วพูด 'บันทึก' ระบบจะกดปุ่มบันทึกให้ทันที หรือถ้าพูด 'ยกเลิก' ก็จะปิดฟอร์ม นอกจากนี้ยังรองรับคำสั่งทั่วไป เช่น 'เปิดตั้งค่า', 'ไปหน้าบัญชี' ฯลฯ">
 								<i class="fa-solid fa-volume-high"></i>
 							</button>
 						</p>
-						<button data-demo="smartVoice" class="mt-3 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md transition">
+						
+						<!-- รายละเอียดคำสั่งเสียงทั้งหมด -->
+						<div class="mt-6">
+							<h4 class="text-xl font-bold text-blue-700 dark:text-blue-300 mb-3">📋 รายการคำสั่งเสียงที่รองรับทั้งหมด</h4>
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<!-- หมวดนำทาง (ไอคอนสีฟ้า) -->
+								<div class="bg-white/70 dark:bg-gray-800/50 p-4 rounded-xl">
+									<h5 class="font-bold text-blue-600 dark:text-blue-400 mb-2"><i class="fa-solid fa-route mr-2"></i> นำทางไปหน้าต่างๆ</h5>
+									<ul class="space-y-1 text-sm">
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-blue-600">"เปิดหน้าแรก", "ไปหน้าหลัก"</span></li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-blue-600">"เปิดรายการ", "ไปหน้ารายการ"</span></li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-blue-600">"เปิดปฏิทิน", "ไปปฏิทิน"</span></li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-blue-600">"เปิดบัญชี", "ไปหน้าบัญชี"</span></li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-blue-600">"เปิดตั้งค่า", "ไปตั้งค่า"</span></li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-blue-600">"เปิดคู่มือ", "ช่วยเหลือ"</span></li>
+									</ul>
+								</div>
+								<!-- หมวดเพิ่ม/บันทึกข้อมูล -->
+								<div class="bg-white/70 dark:bg-gray-800/50 p-4 rounded-xl">
+									<h5 class="font-bold text-cyan-600 dark:text-cyan-400 mb-2"><i class="fa-solid fa-pen mr-2"></i> เพิ่มและบันทึกข้อมูล</h5>
+									<ul class="space-y-1 text-sm">
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"จ่ายค่าข้าว 60"</span> (เพิ่มรายจ่าย)</li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"ได้เงินเดือน 15000"</span> (เพิ่มรายรับ)</li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"จดด่วน 500 ค่าน้ำ"</span> (บันทึกด่วน)</li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"บันทึก"</span> (เมื่ออยู่ในฟอร์ม)</li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"ยกเลิก"</span> (ปิดฟอร์ม)</li>
+									</ul>
+								</div>
+								<!-- หมวดค้นหาและกรอง -->
+								<div class="bg-white/70 dark:bg-gray-800/50 p-4 rounded-xl">
+									<h5 class="font-bold text-sky-600 dark:text-sky-400 mb-2"><i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหาและกรอง</h5>
+									<ul class="space-y-1 text-sm">
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"ค้นหา กาแฟ"</span> (ค้นหารายการ)</li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"หารายจ่าย"</span> (แสดงเฉพาะรายจ่าย)</li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"ดูรายรับ"</span> (แสดงเฉพาะรายรับ)</li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"แสดงวันนี้"</span>, <span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"เดือนนี้"</span></li>
+									</ul>
+								</div>
+								<!-- หมวดตั้งค่าและควบคุมระบบ -->
+								<div class="bg-white/70 dark:bg-gray-800/50 p-4 rounded-xl">
+									<h5 class="font-bold text-indigo-600 dark:text-indigo-400 mb-2"><i class="fa-solid fa-gear mr-2"></i> ตั้งค่าและควบคุมระบบ</h5>
+									<ul class="space-y-1 text-sm">
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"โหมดมืด"</span> / <span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"โหมดสว่าง"</span></li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"เสียงเปิด"</span> / <span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"เสียงปิด"</span></li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"สำรองข้อมูล"</span> / <span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"backup"</span></li>
+										<li><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"นำเข้าข้อมูล"</span> / <span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">"restore"</span></li>
+									</ul>
+								</div>
+							</div>
+							<!-- เคล็ดลับ (ปรับเป็นสีฟ้าอ่อน) -->
+							<div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-200">
+								<i class="fa-solid fa-lightbulb mr-2"></i>
+								<span><b>เคล็ดลับ:</b> พูดคำสั่งผสมได้ เช่น "จ่ายค่ากาแฟ 50 บาท" หรือ "ค้นหาค่าน้ำเดือนนี้" ระบบจะพยายามเข้าใจและดำเนินการให้ หากไม่เข้าใจจะถามว่าต้องการทำอะไรกับประโยคนั้น</span>
+							</div>
+						</div>
+						<!-- ปุ่มดูตัวอย่าง (ปรับเป็นสีฟ้า) -->
+						<button data-demo="smartVoice" class="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md transition">
 							<i class="fa-regular fa-eye mr-1"></i> ดูตัวอย่าง
 						</button>
 					</div>

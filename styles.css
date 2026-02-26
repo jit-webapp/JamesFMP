@@ -396,3 +396,11 @@ body.has-bottom-nav footer {
 body.has-bottom-nav #page-guide #guide-back-to-top {
     bottom: 100px !important;  /* ปรับให้สูงขึ้นตาม margin-bottom ของ footer */
 }
+
+/* สำหรับส่วนจัดการคำสั่งเสียง */
+#voice-commands-list .delete-voice-command {
+    transition: all 0.2s;
+}
+#voice-commands-list .delete-voice-command:hover {
+    transform: scale(1.1);
+}

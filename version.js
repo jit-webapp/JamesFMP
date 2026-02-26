@@ -3,17 +3,17 @@
 // ============================================
 
 // เวอร์ชันหลัก
-var APP_VERSION = 'v8.5.44';
-var APP_LAST_UPDATED = '25-02-2026';
-var APP_LAST_UPDATED_TH = '25 กุมภาพันธ์ 2569';
+var APP_VERSION = 'v8.5.52';
+var APP_LAST_UPDATED = '26-02-2026';
+var APP_LAST_UPDATED_TH = '26 กุมภาพันธ์ 2569';
 
 // สถานะของแอป (แก้ตรงนี้ที่เดียว!)
 // - 'Beta'  ➜ จะแสดง (Beta)
 // - ''      ➜ ไม่แสดงอะไรเลย (สำหรับเวอร์ชันเต็ม)
 // Beta Version
-//var APP_STATUS = 'Beta';
+var APP_STATUS = 'Beta';
 // Full Version
-var APP_STATUS = '';
+//var APP_STATUS = '';
 
 // ชื่อแบบมีวงเล็บ
 var APP_STATUS_DISPLAY = APP_STATUS ? `(${APP_STATUS})` : '';

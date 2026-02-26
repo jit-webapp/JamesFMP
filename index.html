@@ -875,6 +875,27 @@
                             </div>
                             <p class="text-sm text-gray-500 mt-2 ml-14">หากปิด ยอดคงเหลือสุทธิจะถูกซ่อนจากหน้าแรก</p>
                         </div>
+						
+						<!-- ส่วนจัดการคำสั่งเสียงที่เรียนรู้ -->
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-xl shadow-lg mb-6">
+							<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-voice-commands-content">
+								<h2 class="text-xl font-bold text-purple-600 dark:text-purple-400">
+									<i class="fa-solid fa-microphone mr-2"></i> คำสั่งเสียงที่เรียนรู้
+								</h2>
+								<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
+							</div>
+							<div id="settings-voice-commands-content" class="mt-4 transition-all">
+								<div class="flex justify-end mb-3">
+									<button onclick="openVoiceCommandModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2">
+										<i class="fa-solid fa-plus"></i> เพิ่มคำสั่งใหม่
+									</button>
+								</div>
+								<div id="voice-commands-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
+								<button id="btn-clear-all-voice" class="mt-3 text-sm text-red-500 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg transition-colors">
+									<i class="fa-solid fa-broom mr-1"></i> ล้างคำสั่งที่เรียนรู้ทั้งหมด
+								</button>
+							</div>
+						</div>
 
                         <div class="mb-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
 							<div class="flex items-center justify-between mb-4">
@@ -1535,6 +1556,89 @@
 					บันทึกไว้ก่อน
 				</button>
 			</div>
+		</div>
+	</div>
+	
+	<!-- Modal สำหรับสอนคำสั่งเสียง -->
+	<div id="voice-command-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 hidden z-[85] backdrop-blur-sm">
+		<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+			<div class="flex justify-between items-center mb-6 pb-2 border-b border-gray-100 dark:border-gray-700">
+				<h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400 flex items-center gap-2">
+					<i class="fa-solid fa-microphone-lines"></i>
+					<span id="voice-modal-title">สอนคำสั่งใหม่</span>
+				</h2>
+				<button onclick="closeVoiceCommandModal()" class="text-gray-400 hover:text-red-500 text-3xl w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+					&times;
+				</button>
+			</div>
+
+			<form id="voice-command-form" class="space-y-4">
+				<input type="hidden" id="voice-command-id">
+
+				<!-- คำพูด -->
+				<div>
+					<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🗣️ คำพูดที่ต้องการให้จำ <span class="text-red-500">*</span></label>
+					<input type="text" id="voice-command-text" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500" placeholder="เช่น เปิดบัญชี, เปลี่ยนรหัสผ่าน" required>
+					<p class="text-xs text-gray-400 mt-1">ผู้ใช้ต้องพูดตรงกับคำนี้ ระบบถึงจะทำตาม</p>
+				</div>
+
+				<!-- เลือก Action -->
+				<div>
+					<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🎯 เลือก Action ที่จะทำ <span class="text-red-500">*</span></label>
+					<select id="voice-command-action" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500" required>
+						<option value="">-- กรุณาเลือก --</option>
+						<optgroup label="📱 การนำทาง">
+							<!-- options เดิม -->
+							<option value="openPage">เปิดหน้า (Home, รายการ, ปฏิทิน, บัญชี, ตั้งค่า, คู่มือ)</option>
+							<option value="openSettingsSection">เปิดส่วนในตั้งค่า (ธีม, ความปลอดภัย, ฯลฯ)</option>
+							<!-- NEW: เปิดหน้าบัญชีโดยตรง -->
+							<option value="openAccountsPage">เปิดหน้าบัญชี</option>
+							<option value="openBudgetSettings">เปิดหน้าการตั้งค่างบประมาณ</option>
+							<option value="openRecurringSettings">เปิดหน้าการตั้งค่ารายการประจำ</option>
+						</optgroup>
+
+						<optgroup label="⚙️ การตั้งค่าด่วน">
+							<!-- options เดิม -->
+							<option value="toggleDarkMode">สลับโหมดมืด/สว่าง</option>
+							<option value="toggleBalanceVisibility">แสดง/ซ่อนยอดคงเหลือ</option>
+							<option value="backupData">สำรองข้อมูล</option>
+							<option value="changePassword">เปลี่ยนรหัสผ่าน</option>
+							<!-- NEW: จัดการข้อมูลเพิ่มเติม -->
+							<option value="exportData">ส่งออกข้อมูล (JSON/Excel)</option>
+							<option value="importData">นำเข้าข้อมูล</option>
+							<option value="systemUpdate">ตรวจสอบและอัปเดตเวอร์ชัน / ล้างแคช</option>
+							<option value="clearAllData">ล้างข้อมูลทั้งหมด</option>
+							<option value="hardReset">รีเซ็ตระบบ (Hard Reset)</option>
+							<option value="lockApp">ล็อคแอปทันที</option>
+						</optgroup>
+						<optgroup label="↩️ การจัดการ">
+							<option value="undo">ย้อนกลับ (Undo)</option>
+							<option value="redo">ทำซ้ำ (Redo)</option>
+						</optgroup>
+						<optgroup label="📝 ธุรกรรม">
+							<option value="addTransaction">เพิ่มรายการ (ระบุค่าเริ่มต้น)</option>
+							<option value="quickDraft">จดด่วน</option>
+						</optgroup>
+						<optgroup label="🔍 ค้นหา/กรอง">
+							<option value="search">ค้นหา (ระบุคำเริ่มต้น)</option>
+							<option value="filterByType">กรองตามประเภท (รายรับ/รายจ่าย)</option>
+							<option value="applyTimeFilter">กรองตามช่วงเวลา</option>
+						</optgroup>
+					</select>
+				</div>
+
+				<!-- Dynamic fields (จะแสดงตาม action ที่เลือก) -->
+				<div id="voice-command-dynamic-fields" class="space-y-3 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
+					<!-- JavaScript จะแทรกฟิลด์เพิ่มเติมตรงนี้ -->
+					<p class="text-sm text-gray-500 dark:text-gray-400 italic">เลือก Action เพื่อกำหนดรายละเอียดเพิ่มเติม</p>
+				</div>
+
+				<!-- ปุ่มบันทึก/ยกเลิก -->
+				<div class="flex justify-end gap-3 pt-4">
+					<button type="button" onclick="closeVoiceCommandModal()" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-6 py-2 rounded-xl font-medium transition">ยกเลิก</button>
+					<button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-xl font-medium shadow-lg transition">บันทึกคำสั่ง</button>
+				</div>
+			</form>
 		</div>
 	</div>
 	
