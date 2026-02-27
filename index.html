@@ -705,7 +705,7 @@
 						}
 					});
 				</script>
-				
+
 				<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-xl shadow-lg mb-6 border border-purple-100 dark:border-gray-700 transition-colors">
 					<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-notification-content">
 						<h2 class="text-xl font-bold text-purple-600 dark:text-purple-400">
@@ -745,92 +745,53 @@
 
 						<h3 class="font-bold text-gray-800 dark:text-gray-200 mb-3"><i class="fa-solid fa-pen-to-square mr-2"></i>สร้างการแจ้งเตือนพิเศษ</h3>
 						<div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl space-y-3 transition-colors">
-							<!-- ฟอร์มเพิ่มการแจ้งเตือนพิเศษ (คงไว้) -->
-							...
-						</div>
-						
-						<button id="btn-save-custom-notify" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow transition duration-300 mt-2">
-							บันทึกการแจ้งเตือน
-						</button>
-						
-						<div id="active-custom-notify-list" class="mt-4 space-y-2"></div>
-						<div class="flex justify-end mb-2">
-							<button id="btn-clear-custom-expired" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg transition-colors">
-								<i class="fa-solid fa-broom mr-1"></i> ล้างรายการที่แจ้งเตือนแล้ว
-							</button>
-						</div>
-
-						<div id="active-custom-notify-list" class="..."></div>
-					</div>
-
-					<!-- 👇 ส่วนที่ต้องลบ (เริ่มจากตรงนี้) -->
-					<hr class="border-gray-200 dark:border-gray-700 my-6">
-
-					<div class="space-y-3">
-						<div class="flex justify-between items-center">
-							<h3 class="font-bold text-gray-800 text-lg">
-								<i class="fa-solid fa-clock-rotate-left mr-2 text-gray-500"></i>ประวัติการแจ้งเตือน
-							</h3>
-							<button id="btn-clear-history" class="text-xs text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded-lg">
-								ล้างประวัติ
-							</button>
-						</div>
-						
-						<button id="btn-toggle-history" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm font-bold transition">
-							แสดงประวัติที่ผ่านมา
-						</button>
-
-						<div id="notification-history-list" class="hidden space-y-2 max-h-60 overflow-y-auto mt-2 pr-1">
-							<p class="text-center text-gray-400 py-4 text-sm">ยังไม่มีประวัติการแจ้งเตือน</p>
-						</div>
-					</div>
-					<!-- 👆 จบส่วนที่ต้องลบ -->
-
-				</div>
-				✅ โค้ดใหม่ (หลังลบส่วนประวัติการแจ้งเตือนแล้ว)
-				html
-				<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-xl shadow-lg mb-6 border border-purple-100 dark:border-gray-700 transition-colors">
-					<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-notification-content">
-						<h2 class="text-xl font-bold text-purple-600 dark:text-purple-400">
-							<i class="fa-solid fa-bell mr-2"></i>ตั้งค่าการแจ้งเตือน
-						</h2>
-						<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
-					</div>
-
-					<div id="settings-notification-content" class="mt-4 transition-all">
-
-						<div class="space-y-4 mb-6">
-							<!-- สวิตช์ทั้ง 3 อัน (คงไว้) -->
-							<div class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300 text-lg">แจ้งเตือน "รายการล่วงหน้า" ถึงกำหนด</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="toggle-notify-scheduled" class="sr-only peer">
-									<div class="w-14 h-7 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-								</label>
+							<div>
+								<label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">ข้อความแจ้งเตือน</label>
+								<input type="text" id="custom-notify-msg" class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-colors" placeholder="เช่น จ่ายค่าประกันรถยนต์">
 							</div>
-							<div class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300 text-lg">แจ้งเตือน "รายการประจำ" (Recurring)</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="toggle-notify-recurring" class="sr-only peer">
-									<div class="w-14 h-7 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-								</label>
+							<div class="grid grid-cols-2 gap-4">
+								<div>
+									<label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">วันที่แจ้งเตือน</label>
+									<input type="date" id="custom-notify-date" class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-colors">
+								</div>
+								<div>
+									<label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">เตือนล่วงหน้า (วัน)</label>
+									<input type="number" id="custom-notify-days" class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-colors" value="0" min="0">
+								</div>
 							</div>
-							<div class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300 text-lg">แจ้งเตือน "งบประมาณ" ใกล้หมด (>80%)</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="toggle-notify-budget" class="sr-only peer">
-									<div class="w-14 h-7 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-								</label>
+								
+								<div class="mt-3 border-t border-gray-200 dark:border-gray-600 pt-3">
+									<label class="block text-sm text-gray-600 dark:text-gray-300 mb-2 font-bold">เวลาแจ้งเตือน</label>
+									<div class="flex flex-wrap items-center gap-4">
+										<label class="inline-flex items-center cursor-pointer">
+											<input type="radio" name="notify-time-type" value="all1day" class="form-radio text-purple-600 w-4 h-4" checked>
+											<span class="ml-2 text-sm text-gray-700 dark:text-gray-300">เตือนทั้งวัน</span>
+										</label>
+										<label class="inline-flex items-center cursor-pointer">
+											<input type="radio" name="notify-time-type" value="specific" class="form-radio text-purple-600 w-4 h-4">
+											<span class="ml-2 text-sm text-gray-700 dark:text-gray-300">ระบุช่วงเวลา</span>
+										</label>
+
+										<div class="ml-auto md:ml-4 flex items-center gap-2">
+											<label class="text-sm text-gray-600 dark:text-gray-400 font-bold hidden sm:block"><i class="fa-solid fa-rotate mr-1"></i>ทำซ้ำ:</label>
+											<select id="custom-notify-repeat" class="text-sm bg-gray-50 border border-gray-300 text-gray-700 rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+												<option value="none">ไม่ซ้ำ (ครั้งเดียว)</option>
+												<option value="weekly">ทุกสัปดาห์</option>
+												<option value="monthly">ทุกเดือน</option>
+												<option value="yearly">ทุกปี</option>
+											</select>
+										</div>
+										</div>
+									
+									<div id="notify-time-input-wrapper" class="hidden mt-2">
+										<input type="time" id="custom-notify-time" class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-colors">
+									</div>
+								</div>
+								
+								<div id="notify-time-input-wrapper" class="hidden mt-2">
+									<input type="time" id="custom-notify-time" class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-colors">
+								</div>
 							</div>
-						</div>
-
-						<hr class="border-gray-200 dark:border-gray-700 my-4">
-
-						<h3 class="font-bold text-gray-800 dark:text-gray-200 mb-3"><i class="fa-solid fa-pen-to-square mr-2"></i>สร้างการแจ้งเตือนพิเศษ</h3>
-						<div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl space-y-3 transition-colors">
-							<!-- ฟอร์มเพิ่มการแจ้งเตือนพิเศษ (คงไว้) -->
-							...
-						</div>
 						
 						<button id="btn-save-custom-notify" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow transition duration-300 mt-2">
 							บันทึกการแจ้งเตือน
