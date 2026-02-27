@@ -3497,10 +3497,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					</div>
 					<div class="flex-1">
 						<div class="flex justify-between items-start">
-							<span class="font-bold text-gray-700">${h.title}</span>
+							<span class="font-bold text-gray-700">${h.action || h.title || ''}</span>
 							<span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">${h.date} ${h.time}</span>
 						</div>
-						<div class="text-gray-600 mt-1">${h.message}</div>
+						<div class="text-gray-600 mt-1">${h.details || h.message || ''}</div>
 					</div>
 				</div>
 			`).join('');
@@ -12241,8 +12241,9 @@ document.addEventListener('DOMContentLoaded', () => {
 							historyKey: historyKey,
 							date: dateStr,
 							time: timeStr,
-							title: alert.title || '',
-							message: alert.message || '',
+							timestamp: new Date().toISOString(),
+							action: alert.title || '',
+							details: alert.message || '',
 							icon: alert.icon || 'fa-bell',
 							color: alert.color || 'text-gray-500'
 						});
