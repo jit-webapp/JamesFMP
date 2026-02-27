@@ -404,3 +404,38 @@ body.has-bottom-nav #page-guide #guide-back-to-top {
 #voice-commands-list .delete-voice-command:hover {
     transform: scale(1.1);
 }
+
+#notification-popover {
+    position: fixed;
+    z-index: 100;
+    background-color: white; /* ตามธีม */
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: 1px solid #e5e7eb;
+    max-width: 90vw;
+    min-width: 300px;
+    width: auto;
+    box-sizing: border-box;
+    transition: none; /* ป้องกัน transition ตอนเปลี่ยนตำแหน่ง */
+}
+
+/* เวอร์ชันมืด (ถ้ามี) */
+body.dark #notification-popover {
+    background-color: #1a1a1a;
+    border-color: #374151;
+    color: #e5e7eb;
+}
+
+@media (max-width: 640px) {
+    #notification-popover {
+        max-width: 95vw !important;
+        min-width: 260px !important;
+    }
+}
+
+/* ให้ข้อความยาว ๆ ขึ้นบรรทัดใหม่ */
+#popover-notification-list .notification-item .flex-1 p {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}

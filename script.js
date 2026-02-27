@@ -1284,7 +1284,65 @@ document.addEventListener('DOMContentLoaded', () => {
 		
 		const notiHistory = await dbGet(STORE_CONFIG, 'notification_history');
 		if (notiHistory) state.notificationHistory = notiHistory.value || [];
+		
+		updateNotificationBadge();
     }
+	
+		// ============================================
+		// Activity Log (ประวัติการกระทำ)
+		// ============================================
+
+		// เพิ่ม log ใหม่
+		function addActivityLog(action, details, icon = 'fa-bell', color = 'text-gray-500') {
+			const log = {
+				id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+				timestamp: new Date().toISOString(),
+				action: action,
+				details: details,
+				icon: icon,
+				color: color,
+				isRead: false
+			};
+
+			if (!state.notificationHistory) state.notificationHistory = [];
+			state.notificationHistory.unshift(log);
+
+			if (state.notificationHistory.length > 100) {
+				state.notificationHistory = state.notificationHistory.slice(0, 100);
+			}
+
+			dbPut(STORE_CONFIG, { key: 'notification_history', value: state.notificationHistory })
+				.then(() => {
+					updateNotificationBadge();
+					if (typeof renderNotificationHistory === 'function') {
+						renderNotificationHistory();
+					}
+					// 🔔 ถ้า popover กำลังเปิดอยู่ ให้รีเฟรชด้วย
+					const popover = document.getElementById('notification-popover');
+					if (popover && !popover.classList.contains('hidden')) {
+						renderNotificationPopover();
+					}
+				})
+				.catch(err => console.error('Save activity log failed', err));
+		}
+
+		// อัปเดต badge บนไอคอนกระดิ่ง
+		function updateNotificationBadge() {
+			const unreadCount = state.notificationHistory?.filter(log => !log.isRead).length || 0;
+			const badge = document.getElementById('notification-badge');
+			const badgeMobile = document.getElementById('notification-badge-mobile');
+			
+			[badge, badgeMobile].forEach(b => {
+				if (b) {
+					if (unreadCount > 0) {
+						b.textContent = unreadCount > 9 ? '9+' : unreadCount;
+						b.classList.remove('hidden');
+					} else {
+						b.classList.add('hidden');
+					}
+				}
+			});
+		}
 	
 		// [เพิ่มใหม่] ฟังก์ชันประมวลผลการแจ้งเตือนซ้ำ (อัปเดตวันที่ให้อัตโนมัติเมื่อเลยกำหนด)
 		function processRepeatingNotifications() {
@@ -2189,7 +2247,149 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('year-picker').addEventListener('input', (e) => handleDateChange(e, currentPage));
         getEl('year-prev').addEventListener('click', () => navigateYear(-1, currentPage));
         getEl('year-next').addEventListener('click', () => navigateYear(1, currentPage));
+		
+		// ============================================
+		// Notification Popover (ปรับปรุงตำแหน่ง)
+		// ============================================
+		const bell = document.getElementById('notification-bell');
+		const bellMobile = document.getElementById('notification-bell-mobile');
+		const popover = document.getElementById('notification-popover');
+		if (!popover) console.warn('ไม่พบ element #notification-popover');
 
+		function togglePopover(event) {
+			if (!popover) return;
+
+			// ถ้ากำลังเปิดอยู่ → ปิด
+			if (!popover.classList.contains('hidden')) {
+				popover.classList.add('hidden');
+				// รีเซ็ต style ที่อาจค้างอยู่
+				popover.style.visibility = '';
+				popover.style.left = '';
+				popover.style.top = '';
+				return;
+			}
+
+			// เตรียมเนื้อหา
+			renderNotificationPopover();
+
+			// --- ขั้นตอนวัดขนาดโดยไม่ให้ผู้ใช้เห็น ---
+			// 1. ทำให้ popover อยู่ใน DOM แต่ซ่อนด้วย visibility: hidden
+			popover.style.visibility = 'hidden';
+			popover.classList.remove('hidden'); // เอา hidden ออก (display กลับมาเป็น block)
+			// ตอนนี้ popover ถูก render แต่ไม่แสดง (visibility: hidden) ทำให้สามารถวัดขนาดได้
+
+			// ตรวจสอบ event.target
+			if (!event || !event.currentTarget) {
+				// fallback: วางมุมขวาบน
+				const popoverWidth = popover.offsetWidth;
+				const popoverHeight = popover.offsetHeight;
+				const margin = 10;
+				popover.style.top = margin + 'px';
+				popover.style.left = (window.innerWidth - popoverWidth - margin) + 'px';
+				popover.style.visibility = 'visible';
+				return;
+			}
+
+			const targetButton = event.currentTarget;
+
+			// 2. วัดขนาดและคำนวณตำแหน่ง
+			const rect = targetButton.getBoundingClientRect();
+			const popoverWidth = popover.offsetWidth;
+			const popoverHeight = popover.offsetHeight;
+			const margin = 10;
+
+			// แนวตั้ง
+			let top = rect.bottom + 5;
+			if (top + popoverHeight > window.innerHeight - margin) {
+				top = rect.top - popoverHeight - 5;
+			}
+			if (top < margin) top = margin;
+
+			// แนวนอน: ขอบขวาตรงกับขอบขวาของปุ่ม
+			let left = rect.right - popoverWidth;
+			if (left < margin) left = margin;
+			if (left + popoverWidth > window.innerWidth - margin) {
+				left = window.innerWidth - popoverWidth - margin;
+			}
+
+			// 3. กำหนดตำแหน่งจริง แล้วเปลี่ยนให้ visible
+			popover.style.top = top + 'px';
+			popover.style.left = left + 'px';
+			popover.style.visibility = 'visible';
+		}
+
+		function renderNotificationPopover() {
+			const listDiv = document.getElementById('popover-notification-list');
+			if (!listDiv) return;
+
+			if (!state.notificationHistory) state.notificationHistory = [];
+
+			const unread = state.notificationHistory.filter(log => !log.isRead);
+			if (unread.length === 0) {
+				listDiv.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">ไม่มีการแจ้งเตือนใหม่</p>';
+				return;
+			}
+
+			const recent = unread.slice(0, 20);
+			let html = '';
+			recent.forEach(log => {
+				const date = new Date(log.timestamp);
+				const timeStr = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+				html += `
+					<div class="notification-item flex items-start gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition cursor-pointer" data-id="${log.id}">
+						<div class="${log.color || 'text-gray-500 dark:text-gray-400'} mt-1">
+							<i class="fa-solid ${log.icon || 'fa-bell'} text-sm"></i>
+						</div>
+						<div class="flex-1 min-w-0">
+							<!-- บรรทัดเดียว: ชื่อแจ้งเตือน (truncate) + เวลาชิดขวา -->
+							<div class="flex justify-between items-start gap-2">
+								<p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">${escapeHTML(log.action)}</p>
+								<span class="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">${timeStr}</span>
+							</div>
+							<p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">${escapeHTML(log.details)}</p>
+						</div>
+					</div>
+				`;
+			});
+
+			listDiv.innerHTML = html;
+
+			// ผูก event คลิกที่รายการเพื่อ mark as read (คงไว้)
+			listDiv.querySelectorAll('.notification-item').forEach(item => {
+				item.addEventListener('click', async (e) => {
+					const id = item.dataset.id;
+					await markNotificationAsRead(id);
+					renderNotificationPopover();
+					updateNotificationBadge();
+				});
+			});
+		}
+
+		// ปุ่มปิด popover
+		document.getElementById('popover-close-btn')?.addEventListener('click', () => {
+			if (popover) popover.classList.add('hidden');
+		});
+
+		// ปุ่มล้างทั้งหมด
+		document.getElementById('popover-clear-all')?.addEventListener('click', async () => {
+			await clearAllNotifications();
+			renderNotificationPopover();
+			updateNotificationBadge();
+		});
+
+		// คลิกนอก popover เพื่อปิด
+		document.addEventListener('click', (e) => {
+			if (popover && !popover.classList.contains('hidden') && 
+				!popover.contains(e.target) && 
+				!e.target.closest('#notification-bell, #notification-bell-mobile')) {
+				popover.classList.add('hidden');
+			}
+		});
+
+		// ผูก event กับปุ่มกระดิ่ง
+		if (bell) bell.addEventListener('click', togglePopover);
+		if (bellMobile) bellMobile.addEventListener('click', togglePopover);
 		
 		// [ใหม่] จัดการปุ่ม "เพิ่มด้วยรูปภาพ" จากหน้าแรก
 		const addImgBtn = getEl('add-img-btn');
@@ -2775,62 +2975,60 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             recForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const getEl = (id) => document.getElementById(id);
-                
-                const id = getEl('rec-id').value;
-                const name = getEl('rec-name').value.trim();
-                const amount = parseFloat(getEl('rec-amount').value);
-                // ดึงค่า type จาก input name="rec-type"
-                const typeEl = document.querySelector('input[name="rec-type"]:checked');
-                const type = typeEl ? typeEl.value : 'expense';
-                
-                const category = getEl('rec-category').value;
-                const accountId = getEl('rec-account').value;
-                const frequency = getEl('rec-frequency').value;
-                const startDate = getEl('rec-start-date').value;
+				e.preventDefault();
+				const getEl = (id) => document.getElementById(id);
 
-                if (!name || isNaN(amount) || amount <= 0) {
-                    Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อและจำนวนเงินที่ถูกต้อง', 'warning');
-                    return;
-                }
+				const id = getEl('rec-id').value;
+				const name = getEl('rec-name').value.trim();
+				const amount = parseFloat(getEl('rec-amount').value);
+				const typeEl = document.querySelector('input[name="rec-type"]:checked');
+				const type = typeEl ? typeEl.value : 'expense';
+				const category = getEl('rec-category').value;
+				const accountId = getEl('rec-account').value;
+				const frequency = getEl('rec-frequency').value;
+				const startDate = getEl('rec-start-date').value;
 
-                const rule = {
-                    id: id || `rec-${Date.now()}`,
-                    name, amount, type, category, accountId, frequency,
-                    nextDueDate: startDate, 
-                    active: true
-                };
+				if (!name || isNaN(amount) || amount <= 0) {
+					Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อและจำนวนเงินที่ถูกต้อง', 'warning');
+					return;
+				}
 
-                try {
-                    await dbPut(STORE_RECURRING, rule);
-                    
-                    // อัปเดต State
-                    if (id) {
-                        const idx = state.recurringRules.findIndex(r => r.id === id);
-                        if (idx !== -1) state.recurringRules[idx] = rule;
-                    } else {
-                        state.recurringRules.push(rule);
-                    }
+				const rule = {
+					id: id || `rec-${Date.now()}`,
+					name, amount, type, category, accountId, frequency,
+					nextDueDate: startDate,
+					active: true
+				};
 
-                    closeRecurringModal(); 
-                    
-                    if (typeof renderRecurringSettings === 'function') {
-                        renderRecurringSettings();
-                    }
-                    
-                    Swal.fire('บันทึกสำเร็จ', 'ตั้งค่ารายการประจำเรียบร้อยแล้ว', 'success');
-                    
-                    // ลองประมวลผลทันทีเผื่อถึงกำหนดวันนี้
-                    if (typeof checkAndProcessRecurring === 'function') {
-                        await checkAndProcessRecurring();
-                    }
+				try {
+					await dbPut(STORE_RECURRING, rule);
 
-                } catch (err) {
-                    console.error(err);
-                    Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
-                }
-            });
+					// ✅ ADD ACTIVITY LOG
+					const freqMap = { 'daily': 'ทุกวัน', 'weekly': 'ทุกสัปดาห์', 'monthly': 'ทุกเดือน', 'yearly': 'ทุกปี' };
+					const actionType = id ? '✏️ แก้ไขรายการประจำ' : '🔄 เพิ่มรายการประจำ';
+					addActivityLog(
+						actionType,
+						`${name} (${formatCurrency(amount)} ${freqMap[frequency]})`,
+						'fa-clock-rotate-left',
+						'text-indigo-600'
+					);
+
+					if (id) {
+						const idx = state.recurringRules.findIndex(r => r.id === id);
+						if (idx !== -1) state.recurringRules[idx] = rule;
+					} else {
+						state.recurringRules.push(rule);
+					}
+
+					closeRecurringModal();
+					if (typeof renderRecurringSettings === 'function') renderRecurringSettings();
+					Swal.fire('บันทึกสำเร็จ', 'ตั้งค่ารายการประจำเรียบร้อยแล้ว', 'success');
+					if (typeof checkAndProcessRecurring === 'function') await checkAndProcessRecurring();
+				} catch (err) {
+					console.error(err);
+					Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
+				}
+			});
 
             // 3. ปุ่มปิด Modal
             const closeBtn = document.getElementById('rec-modal-close-btn');
@@ -3201,11 +3399,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				const msg = document.getElementById('custom-notify-msg').value.trim();
 				const date = document.getElementById('custom-notify-date').value;
 				const days = document.getElementById('custom-notify-days').value;
-				
-				// [จุดสำคัญ 1] ต้องดึงค่าจาก Dropdown ทำซ้ำ
-				const repeatEl = document.getElementById('custom-notify-repeat'); 
-				const repeat = repeatEl ? repeatEl.value : 'none'; 
-				
+				const repeatEl = document.getElementById('custom-notify-repeat');
+				const repeat = repeatEl ? repeatEl.value : 'none';
 				const timeTypeEl = document.querySelector('input[name="notify-time-type"]:checked');
 				const timeType = timeTypeEl ? timeTypeEl.value : 'all1day';
 				let specificTime = null;
@@ -3228,7 +3423,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					advanceDays: days || 0,
 					isAllDay: (timeType === 'all1day'),
 					time: (timeType === 'all1day') ? '00:00' : specificTime,
-					repeat: repeat // [จุดสำคัญ 2] ต้องบันทึกค่า repeat ลง Object
+					repeat: repeat
 				};
 
 				if (editIdx !== undefined) {
@@ -3241,9 +3436,18 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
+
+				// ✅ ADD ACTIVITY LOG
+				addActivityLog(
+					editIdx !== undefined ? '✏️ แก้ไขแจ้งเตือน' : '🔔 เพิ่มแจ้งเตือน',
+					msg,
+					'fa-bell',
+					'text-purple-600'
+				);
+
 				resetCustomNotifyForm();
 				renderCustomNotifyList();
-				renderCalendarView(); // สั่งรีเฟรชปฏิทินทันที
+				renderCalendarView();
 			});
 		}
 		
@@ -3300,6 +3504,42 @@ document.addEventListener('DOMContentLoaded', () => {
 					</div>
 				</div>
 			`).join('');
+		}
+		
+		// ============================================
+		// ฟังก์ชันสำหรับจัดการประวัติกิจกรรม (Activity Log)
+		// ============================================
+
+		// ทำเครื่องหมายว่าอ่านแล้ว
+		async function markNotificationAsRead(logId) {
+			const log = state.notificationHistory.find(l => l.id === logId);
+			if (log) {
+				log.isRead = true;
+				await dbPut(STORE_CONFIG, { key: 'notification_history', value: state.notificationHistory });
+				// ไม่ต้อง renderNotificationHistory เพราะเราไม่ได้ใช้แล้ว แต่ถ้ามีก็เรียก
+				// renderNotificationHistory();
+				// ไม่ต้องเรียก updateNotificationBadge ที่นี่ เพราะจะเรียกจาก caller
+			}
+		}
+
+		// ล้างประวัติทั้งหมด
+		async function clearAllNotifications() {
+			const confirm = await Swal.fire({
+				title: 'ล้างประวัติทั้งหมด?',
+				text: 'คุณต้องการลบประวัติกิจกรรมทั้งหมดใช่หรือไม่?',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#d33',
+				confirmButtonText: 'ล้างทั้งหมด',
+				cancelButtonText: 'ยกเลิก'
+			});
+			if (confirm.isConfirmed) {
+				state.notificationHistory = [];
+				await dbPut(STORE_CONFIG, { key: 'notification_history', value: [] });
+				renderNotificationHistory();
+				updateNotificationBadge();
+				showToast('ล้างประวัติเรียบร้อย', 'success');
+			}
 		}
 
 		// เพิ่ม Event Listener สำหรับปุ่ม History
@@ -3473,34 +3713,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Listener สำหรับปุ่มลบ (เหมือนเดิม)
             document.querySelectorAll('.delete-custom-notify').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const targetBtn = e.target.closest('.delete-custom-notify'); 
-                    if(!targetBtn) return;
-                    const idx = targetBtn.dataset.idx;
-                    
-                    const confirm = await Swal.fire({
-                        title: 'ลบรายการ?',
-                        text: 'ต้องการลบการแจ้งเตือนนี้ใช่ไหม',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'ลบ',
-                        cancelButtonText: 'ยกเลิก',
-                        confirmButtonColor: '#d33',
-                    });
+				btn.addEventListener('click', async (e) => {
+					const targetBtn = e.target.closest('.delete-custom-notify');
+					if (!targetBtn) return;
+					const idx = targetBtn.dataset.idx;
+					const n = state.customNotifications[idx];
 
-                    if (confirm.isConfirmed) {
-                        // ถ้ากำลังแก้ไขรายการที่ถูกลบ ให้รีเซ็ตฟอร์มด้วย
-                        const saveBtn = document.getElementById('btn-save-custom-notify');
-                        if (saveBtn && saveBtn.dataset.editIdx == idx) {
-                            resetCustomNotifyForm();
-                        }
+					const confirm = await Swal.fire({
+						title: 'ลบรายการ?',
+						text: 'ต้องการลบการแจ้งเตือนนี้ใช่ไหม',
+						icon: 'warning',
+						showCancelButton: true,
+						confirmButtonText: 'ลบ',
+						cancelButtonText: 'ยกเลิก',
+						confirmButtonColor: '#d33',
+					});
 
-                        state.customNotifications.splice(idx, 1);
-                        await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
-                        renderCustomNotifyList(); 
-                    }
-                });
-            });
+					if (confirm.isConfirmed) {
+						const saveBtn = document.getElementById('btn-save-custom-notify');
+						if (saveBtn && saveBtn.dataset.editIdx == idx) resetCustomNotifyForm();
+
+						state.customNotifications.splice(idx, 1);
+						await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
+
+						// ✅ ADD ACTIVITY LOG
+						addActivityLog(
+							'🗑️ ลบแจ้งเตือน',
+							n.message,
+							'fa-bell',
+							'text-red-600'
+						);
+
+						renderCustomNotifyList();
+					}
+				});
+			});
         }
 
 		// 2. ฟังก์ชันแสดงประวัติการแจ้งเตือน (Notification History)
@@ -3509,28 +3756,49 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!list) return;
 
 			if (!state.notificationHistory || state.notificationHistory.length === 0) {
-				list.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">ยังไม่มีประวัติการแจ้งเตือน</p>';
+				list.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">ยังไม่มีประวัติกิจกรรม</p>';
 				return;
 			}
 
-			const sortedHistory = [...state.notificationHistory].reverse();
+			// เรียงลำดับจากใหม่ไปเก่า (เราทำ unshift ไว้แล้ว แต่เผื่อ)
+			const sorted = [...state.notificationHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-			list.innerHTML = sortedHistory.map(h => `
-				<div class="flex items-start gap-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-sm mb-2 transition-colors">
-					<div class="${h.color || 'text-gray-500 dark:text-gray-400'} mt-0.5 text-lg">
-						<i class="fa-solid ${h.icon || 'fa-bell'}"></i>
-					</div>
-					<div class="flex-1">
-						<div class="flex justify-between items-start">
-							<span class="font-bold text-gray-700 dark:text-gray-200">${h.title}</span>
-							<span class="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-								${h.date} ${h.time}
-							</span>
+			let html = '';
+			sorted.forEach(log => {
+				const date = new Date(log.timestamp);
+				const dateStr = date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+				const timeStr = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+				const readClass = log.isRead ? 'opacity-50' : '';
+
+				html += `
+					<div class="flex items-start gap-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-sm mb-2 transition-colors ${readClass}">
+						<div class="${log.color || 'text-gray-500 dark:text-gray-400'} mt-0.5 text-lg">
+							<i class="fa-solid ${log.icon || 'fa-bell'}"></i>
 						</div>
-						<div class="text-gray-600 dark:text-gray-400 mt-1 text-xs">${h.message}</div>
+						<div class="flex-1">
+							<div class="flex justify-between items-start">
+								<span class="font-bold text-gray-700 dark:text-gray-200">${escapeHTML(log.action)}</span>
+								<span class="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+									${dateStr} ${timeStr}
+								</span>
+							</div>
+							<div class="text-gray-600 dark:text-gray-400 mt-1 text-xs">${escapeHTML(log.details)}</div>
+						</div>
+						${!log.isRead ? `<button class="mark-read-btn text-blue-500 hover:text-blue-700 p-1" data-id="${log.id}" title="ทำเครื่องหมายว่าอ่านแล้ว"><i class="fa-solid fa-check-circle"></i></button>` : ''}
 					</div>
-				</div>
-			`).join('');
+				`;
+			});
+
+			list.innerHTML = html;
+
+			// ผูกปุ่ม mark as read
+			document.querySelectorAll('.mark-read-btn').forEach(btn => {
+				btn.addEventListener('click', async (e) => {
+					e.stopPropagation();
+					const id = e.currentTarget.dataset.id;
+					await markNotificationAsRead(id);
+				});
+			});
 		}
 
 		// 3. เรียกใช้งานปุ่มเปิด/ปิด History และปุ่มล้างประวัติ
@@ -3717,26 +3985,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 	
 	function applyMobileMenuStyle() {
-				const bottomNav = document.getElementById('bottom-nav');
-				const mobileMenuButton = document.getElementById('mobile-menu-button');
-				const mobileHomeButton = document.getElementById('mobile-home-button');
-				const mobileMenu = document.getElementById('mobile-menu');
-				const body = document.body;
+		const bottomNav = document.getElementById('bottom-nav');
+		const mobileMenuButton = document.getElementById('mobile-menu-button');
+		const mobileHomeButton = document.getElementById('mobile-home-button');
+		const mobileBell = document.getElementById('notification-bell-mobile'); // ดึงปุ่มกระดิ่ง
+		const mobileMenu = document.getElementById('mobile-menu');
+		const body = document.body;
 
-				if (state.mobileMenuStyle === 'bottom') {
-					// แสดง Bottom Nav, ซ่อนปุ่มเมนูเดิม
-					if (bottomNav) bottomNav.classList.remove('hidden');
-					if (mobileMenuButton) mobileMenuButton.classList.add('hidden');
-					if (mobileHomeButton) mobileHomeButton.classList.add('hidden');
-					if (mobileMenu) mobileMenu.classList.add('hidden');
-					body.classList.add('has-bottom-nav');
-				} else {
-					// ซ่อน Bottom Nav, แสดงปุ่มเมนูเดิม
-					if (bottomNav) bottomNav.classList.add('hidden');
-					if (mobileMenuButton) mobileMenuButton.classList.remove('hidden');
-					if (mobileHomeButton) mobileHomeButton.classList.remove('hidden');
-					body.classList.remove('has-bottom-nav');
-			}
+		if (state.mobileMenuStyle === 'bottom') {
+			// แสดง Bottom Nav, ซ่อนปุ่มเมนูเดิม (แต่ไม่ซ่อนปุ่มกระดิ่ง)
+			if (bottomNav) bottomNav.classList.remove('hidden');
+			if (mobileMenuButton) mobileMenuButton.classList.add('hidden');
+			if (mobileHomeButton) mobileHomeButton.classList.add('hidden');
+			// ปุ่มกระดิ่ง (mobileBell) จะยังคงแสดงอยู่
+			if (mobileMenu) mobileMenu.classList.add('hidden');
+			body.classList.add('has-bottom-nav');
+		} else {
+			// ซ่อน Bottom Nav, แสดงปุ่มเมนูเดิม
+			if (bottomNav) bottomNav.classList.add('hidden');
+			if (mobileMenuButton) mobileMenuButton.classList.remove('hidden');
+			if (mobileHomeButton) mobileHomeButton.classList.remove('hidden');
+			// ปุ่มกระดิ่งแสดงตามปกติ
+			body.classList.remove('has-bottom-nav');
+		}
 	}
 	
 	// ฟังก์ชันอัปเดตสี active ของ Bottom Navigation
@@ -6245,12 +6516,20 @@ document.addEventListener('DOMContentLoaded', () => {
 						const idx = e.currentTarget.dataset.index;
 						const targetName = savedIds[idx].name;
 
-						// 🔒 ถามรหัสผ่านก่อนลบ
 						const hasAuth = await promptForPassword(`ยืนยันลบ: ${targetName}`);
 						if (!hasAuth) return;
 
 						savedIds.splice(idx, 1);
 						await dbPut(STORE_CONFIG, { key: 'lineUserIds_List', value: savedIds });
+
+						// ✅ ADD ACTIVITY LOG
+						addActivityLog(
+							'🗑️ ลบ LINE User',
+							targetName,
+							'fa-line',
+							'text-red-600'
+						);
+
 						renderList();
 						Swal.fire('ลบสำเร็จ', '', 'success');
 					});
@@ -6262,9 +6541,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			// ฟังก์ชันปุ่มเพิ่ม (เพิ่ม Password Prompt)
 			btnAdd.addEventListener('click', async () => {
 				const valId = inputId.value.trim();
-				const valName = inputName.value.trim(); // รับชื่อเล่น
+				const valName = inputName.value.trim();
 
-				// ตรวจสอบความถูกต้อง
 				if (!valId.startsWith('U') || valId.length < 30) {
 					Swal.fire('ID ไม่ถูกต้อง', 'User ID ต้องขึ้นต้นด้วย U และยาว 33 ตัวอักษร', 'warning');
 					return;
@@ -6278,32 +6556,34 @@ document.addEventListener('DOMContentLoaded', () => {
 					return;
 				}
 
-				// 🔒 ถามรหัสผ่านก่อนเพิ่ม
 				const hasAuth = await promptForPassword('ยืนยันรหัสผ่านเพื่อเพิ่มผู้รับแจ้งเตือน');
 				if (!hasAuth) return;
 
-				// บันทึกเป็น Object { id, name }
 				savedIds.push({ id: valId, name: valName });
 				await dbPut(STORE_CONFIG, { key: 'lineUserIds_List', value: savedIds });
-				
+
+				// ✅ ADD ACTIVITY LOG
+				addActivityLog(
+					'📢 เพิ่ม LINE User',
+					`${valName} (${valId.substring(0, 6)}...)`,
+					'fa-line',
+					'text-green-500'
+				);
+
 				inputId.value = '';
 				inputName.value = '';
 				renderList();
-				
-				// ส่งข้อความต้อนรับ (ใช้ URL จาก config)
+
 				const GAS_URL = window.LINE_CONFIG ? window.LINE_CONFIG.NOTIFY_GAS_URL : '';
 				if (GAS_URL) {
 					fetch(GAS_URL, {
-						method: 'POST', 
+						method: 'POST',
 						mode: 'no-cors',
-						headers: {'Content-Type': 'application/json'},
-						body: JSON.stringify({ 
-							userIds: [valId], 
-							message: `🎉 สวัสดีคุณ ${valName}!\nคุณถูกเพิ่มเข้าสู่ระบบแจ้งเตือน FMPro แล้ว ✅` 
-						})
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ userIds: [valId], message: `🎉 สวัสดีคุณ ${valName}!\nคุณถูกเพิ่มเข้าสู่ระบบแจ้งเตือน FMPro แล้ว ✅` })
 					});
 				}
-				
+
 				Swal.fire('สำเร็จ', `เพิ่มคุณ ${valName} เรียบร้อยแล้ว`, 'success');
 			});
 		}
@@ -6581,33 +6861,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // [แก้ไข] เพิ่มการเช็ครหัสผ่านก่อนลบ Recurring
     window.deleteRecurringRule = async (id) => {
-        // +++ เพิ่มส่วนนี้ +++
-        const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบรายการประจำ');
-        if (!hasPermission) return;
-        // ++++++++++++++++++
+		const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบรายการประจำ');
+		if (!hasPermission) return;
 
-        const result = await Swal.fire({
-            title: 'ลบรายการประจำ?',
-            text: "รายการนี้จะไม่ถูกสร้างอัตโนมัติอีกต่อไป",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'ลบเลย',
-            cancelButtonText: 'ยกเลิก'
-        });
+		const rule = state.recurringRules.find(r => r.id === id);
+		const result = await Swal.fire({
+			title: 'ลบรายการประจำ?',
+			text: "รายการนี้จะไม่ถูกสร้างอัตโนมัติอีกต่อไป",
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonColor: '#d33',
+			confirmButtonText: 'ลบเลย',
+			cancelButtonText: 'ยกเลิก'
+		});
 
-        if (result.isConfirmed) {
-            try {
-                await dbDelete(STORE_RECURRING, id);
-                state.recurringRules = state.recurringRules.filter(r => r.id !== id);
-                renderRecurringSettings();
-                Swal.fire('ลบแล้ว', '', 'success');
-            } catch (err) {
-                console.error(err);
-                Swal.fire('Error', 'ลบไม่สำเร็จ', 'error');
-            }
-        }
-    }
+		if (result.isConfirmed) {
+			try {
+				await dbDelete(STORE_RECURRING, id);
+				state.recurringRules = state.recurringRules.filter(r => r.id !== id);
+
+				// ✅ ADD ACTIVITY LOG
+				addActivityLog(
+					'🗑️ ลบรายการประจำ',
+					rule.name,
+					'fa-clock-rotate-left',
+					'text-red-600'
+				);
+
+				renderRecurringSettings();
+				Swal.fire('ลบแล้ว', '', 'success');
+			} catch (err) {
+				console.error(err);
+				Swal.fire('Error', 'ลบไม่สำเร็จ', 'error');
+			}
+		}
+	};
 
     
     function renderPaginationControls(source, totalPages, currentPage) {
@@ -7560,7 +7848,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		document.getElementById('calculator-popover').classList.add('hidden');
 
 		const getEl = (id) => document.getElementById(id);
-		
+
 		const rawAmount = getEl('tx-amount').value;
 		let finalAmount = safeCalculate(rawAmount);
 		if (finalAmount === null || finalAmount <= 0) {
@@ -7570,7 +7858,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		finalAmount = parseFloat(finalAmount.toFixed(2));
 		const txId = getEl('tx-id').value;
 		const type = document.querySelector('input[name="tx-type"]:checked').value;
-		
+
 		let transaction = {
 			id: txId || `tx-${new Date().getTime()}`,
 			type: type,
@@ -7581,7 +7869,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			category: null,
 			accountId: null,
 			toAccountId: null,
-			receiptBase64: currentReceiptBase64 
+			receiptBase64: currentReceiptBase64
 		};
 
 		transaction.name = getEl('tx-name').value.trim();
@@ -7589,23 +7877,21 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (type === 'income' || type === 'expense') {
 			transaction.category = getEl('tx-category').value;
 			transaction.accountId = getEl('tx-account').value;
-			
+
 			if (!transaction.name || !transaction.category || !transaction.accountId) {
 				Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกชื่อรายการ, หมวดหมู่, และบัญชี', 'warning');
 				return;
 			}
 
-			// Auto-learn (frequency-based) พร้อมรองรับข้อมูลเก่า
+			// Auto-learn (frequency-based)
 			try {
 				const existingIndex = state.autoCompleteList.findIndex(item => item.name === transaction.name && item.type === transaction.type);
 				if (existingIndex >= 0) {
 					let item = state.autoCompleteList[existingIndex];
-					
-					// ✅ ถ้าเป็นข้อมูลเก่า (ไม่มี categories) ให้แปลงเป็นโครงสร้างใหม่
 					if (!item.categories) {
 						const oldCat = item.category || 'อื่นๆ';
 						item = {
-							id: item.id || `auto_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, // ⚠️ เก็บ id เดิมหรือสร้างใหม่
+							id: item.id || `auto_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
 							name: item.name,
 							type: item.type,
 							categories: { [oldCat]: item.count || 1 },
@@ -7614,18 +7900,16 @@ document.addEventListener('DOMContentLoaded', () => {
 							lastUsed: item.lastUsed || new Date().toISOString()
 						};
 					}
-					
 					const currentCat = transaction.category;
 					item.categories[currentCat] = (item.categories[currentCat] || 0) + 1;
 					item.totalUses = (item.totalUses || 0) + 1;
 					item.lastAmount = transaction.amount;
 					item.lastUsed = new Date().toISOString();
-					
 					await dbPut(STORE_AUTO_COMPLETE, item);
 					state.autoCompleteList[existingIndex] = item;
 				} else {
 					const newItem = {
-						id: `auto_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, // ⚠️ เพิ่ม id
+						id: `auto_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
 						name: transaction.name,
 						type: transaction.type,
 						categories: { [transaction.category]: 1 },
@@ -7638,7 +7922,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			} catch (autoLearnErr) {
 				console.error('❌ Auto-learn error:', autoLearnErr);
-				// ไม่ควรทำให้การบันทึกล้มเหลว — ให้ผ่านไปได้
 			}
 
 		} else if (type === 'transfer') {
@@ -7646,56 +7929,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			transaction.accountId = getEl('tx-account-from').value;
 			transaction.toAccountId = getEl('tx-account-to').value;
-			
+
 			if (!transaction.accountId || !transaction.toAccountId) {
 				Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกบัญชีต้นทางและปลายทาง', 'warning');
 				return;
 			}
 			if (transaction.accountId === transaction.toAccountId) {
-					Swal.fire('ข้อมูลผิดพลาด', 'บัญชีต้นทางและปลายทางต้องไม่ซ้ำกัน', 'warning');
+				Swal.fire('ข้อมูลผิดพลาด', 'บัญชีต้นทางและปลายทางต้องไม่ซ้ำกัน', 'warning');
 				return;
 			}
 		}
 
 		try {
-			// 1. บันทึกรายการลง DB หลัก
 			await dbPut(STORE_TRANSACTIONS, transaction);
 
-			// =========================================================
-			// [ส่วนที่เพิ่ม] ตรวจสอบและลบ Draft หลังจากบันทึกสำเร็จ
-			// =========================================================
+			// ✅ ADD ACTIVITY LOG
+			const typeLabel = transaction.type === 'income' ? 'รายรับ' : (transaction.type === 'expense' ? 'รายจ่าย' : 'โอนย้าย');
+			if (txId) {
+				const oldTx = state.transactions.find(t => t.id === txId);
+				addActivityLog(
+					'✏️ แก้ไขรายการ',
+					`${oldTx.name} → ${transaction.name} (${formatCurrency(transaction.amount)} ${typeLabel})`,
+					'fa-pencil',
+					'text-blue-600'
+				);
+			} else {
+				addActivityLog(
+					'➕ เพิ่มรายการ',
+					`${transaction.name} ${formatCurrency(transaction.amount)} (${typeLabel})`,
+					'fa-plus-circle',
+					'text-green-600'
+				);
+			}
+
+			// เช็ค draft
 			const hiddenDraftInput = document.getElementById('hidden-draft-id');
 			const draftIdToDelete = hiddenDraftInput ? hiddenDraftInput.value : null;
-
 			if (draftIdToDelete) {
-				try {
-					// ลบออกจาก Store Draft
-					await dbDelete(STORE_DRAFTS, draftIdToDelete);
-					// ล้างค่า ID ที่ซ่อนไว้
-					if(hiddenDraftInput) hiddenDraftInput.value = ''; 
-					// อัปเดตกล่องแสดงผลหน้าแรก
-					if (typeof renderDraftsWidget === 'function') {
-						renderDraftsWidget(); 
-					}
-				} catch (e) {
-					console.error("Error deleting draft:", e);
-				}
+				await dbDelete(STORE_DRAFTS, draftIdToDelete);
+				hiddenDraftInput.value = '';
+				if (typeof renderDraftsWidget === 'function') renderDraftsWidget();
 			}
-	
-			// =========================================================
-			// [เพิ่มใหม่] ตรวจสอบและแนะนำให้บันทึกเป็นรายการที่ใช้บ่อย
-			// =========================================================
+
+			// แนะนำรายการที่ใช้บ่อย (ถ้าเกิน threshold)
 			if (type !== 'transfer' && transaction.name) {
-				// นับจำนวนครั้งที่ชื่อนี้เคยถูกบันทึก (จาก state.transactions)
-				const nameCount = state.transactions.filter(tx => 
-					tx.name === transaction.name && tx.type === type
-				).length;
-
-				// กำหนด threshold ที่ 3 ครั้ง (ปรับได้)
+				const nameCount = state.transactions.filter(tx => tx.name === transaction.name && tx.type === type).length;
 				const SUGGEST_THRESHOLD = 3;
-
 				if (nameCount >= SUGGEST_THRESHOLD && !state.frequentItems.includes(transaction.name)) {
-					// ใช้ setTimeout เพื่อไม่ให้รบกวน flow หลัก
 					setTimeout(() => {
 						Swal.fire({
 							title: '✨ เพิ่มเป็นรายการที่ใช้บ่อย?',
@@ -7705,42 +7985,22 @@ document.addEventListener('DOMContentLoaded', () => {
 							confirmButtonText: '✅ ใช่, เพิ่มเลย',
 							cancelButtonText: '❌ ไม่ต้อง',
 							confirmButtonColor: '#10b981',
-							cancelButtonColor: '#6b7280',
-							reverseButtons: true,
-							customClass: {
-								popup: state.isDarkMode ? 'swal2-popup' : '',
-							},
-							background: state.isDarkMode ? '#1a1a1a' : '#fff',
-							color: state.isDarkMode ? '#e5e7eb' : '#545454',
+							cancelButtonColor: '#6b7280'
 						}).then(async (result) => {
 							if (result.isConfirmed) {
-								try {
-									// บันทึกเข้า frequentItems
-									await dbPut(STORE_FREQUENT_ITEMS, { name: transaction.name });
-									state.frequentItems.push(transaction.name);
-									
-									// อัปเดต dropdown ในหน้าเพิ่มรายการ
-									renderDropdownList();
-									
-									// แจ้งเตือน success
-									showToast(`เพิ่ม "${transaction.name}" ในรายการที่ใช้บ่อยแล้ว`, 'success');
-									
-									// ถ้าอยู่ในหน้า settings ให้รีเฟรชด้วย
-									if (typeof renderSettings === 'function') renderSettings();
-								} catch (err) {
-									console.error('เพิ่มไม่สำเร็จ', err);
-									showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
-								}
+								await dbPut(STORE_FREQUENT_ITEMS, { name: transaction.name });
+								state.frequentItems.push(transaction.name);
+								renderDropdownList();
+								showToast(`เพิ่ม "${transaction.name}" ในรายการที่ใช้บ่อยแล้ว`, 'success');
+								if (typeof renderSettings === 'function') renderSettings();
 							}
 						});
-					}, 800); // หน่วงเวลา 0.8 วินาที หลังบันทึกสำเร็จ
+					}, 800);
 				}
 			}
 
-			// เช็คว่าถ้ามี txId แสดงว่าเป็นการ "แก้ไข" ถ้าไม่มีคือ "เพิ่มใหม่"
-			const actionType = txId ? 'edit' : 'add'; 
-			sendLineAlert(transaction, actionType);
-			
+			sendLineAlert(transaction, txId ? 'edit' : 'add');
+
 			if (txId) {
 				const oldTx = state.transactions.find(t => t.id === txId);
 				state.transactions = state.transactions.map(t => t.id === txId ? transaction : t);
@@ -7749,50 +8009,39 @@ document.addEventListener('DOMContentLoaded', () => {
 				state.transactions.push(transaction);
 				setLastUndoAction({ type: 'tx-add', data: transaction });
 			}
-			
-			// Logic บันทึก Recurring
-			const txRecurringCheckbox = document.getElementById('tx-is-recurring'); 
+
+			// Logic Recurring
+			const txRecurringCheckbox = document.getElementById('tx-is-recurring');
 			const isRecurring = txRecurringCheckbox ? txRecurringCheckbox.checked : false;
-			
 			if (isRecurring) {
 				const freq = document.getElementById('tx-recurring-freq').value;
 				const nextDueDate = calculateNextDueDate(transaction.date.slice(0, 10), freq);
-				
 				const newRule = {
 					id: `rec-${Date.now()}`,
 					name: transaction.name,
 					amount: transaction.amount,
 					type: transaction.type,
-					category: transaction.category || 'โอนย้าย', 
+					category: transaction.category || 'โอนย้าย',
 					accountId: transaction.accountId,
-					toAccountId: transaction.toAccountId || null, 
+					toAccountId: transaction.toAccountId || null,
 					frequency: freq,
-					nextDueDate: nextDueDate, 
+					nextDueDate: nextDueDate,
 					active: true
 				};
-
 				await dbPut(STORE_RECURRING, newRule);
 				state.recurringRules.push(newRule);
 			}
 
-			if (currentPage === 'home') {
-				renderAll();
-			}
-			if (currentPage === 'list') {
-				renderListPage();
-			}
-			if (currentPage === 'calendar') { 
-				renderCalendarView();
-			}
-
+			if (currentPage === 'home') renderAll();
+			if (currentPage === 'list') renderListPage();
+			if (currentPage === 'calendar') renderCalendarView();
 			await refreshAccountDetailModalIfOpen();
-			
 			renderBudgetWidget();
 			renderDropdownList();
-			
+
 			if (state.pendingCommandToLearn && state.pendingCommandToLearn.action === 'addTransaction') {
 				const savedData = {
-					type: transaction.type,                // ✅ เพิ่ม type
+					type: transaction.type,
 					name: transaction.name,
 					category: transaction.category,
 					amount: transaction.amount,
@@ -7802,17 +8051,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				await askToLearnCommand(state.pendingCommandToLearn.text, savedData);
 				state.pendingCommandToLearn = null;
 			}
-			
+
 			closeModal();
 			renderSettings();
-			const isLogged = window.auth && window.auth.currentUser;
 
+			const isLogged = window.auth && window.auth.currentUser;
 			Swal.fire({
 				title: 'บันทึกสำเร็จ!',
 				text: 'บันทึกข้อมูลของคุณเรียบร้อยแล้ว',
 				icon: 'success',
-				timer: isLogged ? 1000 : undefined, 
-				showConfirmButton: !isLogged 
+				timer: isLogged ? 1000 : undefined,
+				showConfirmButton: !isLogged
 			});
 		} catch (err) {
 			console.error("Failed to save transaction:", err);
@@ -8043,46 +8292,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function handleDeleteClick(buttonEl) {
-        const txId = buttonEl.dataset.id;
-        const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบ');
-        if (!hasPermission) {
-            return;
-        }
-        
-        Swal.fire({
-            title: 'แน่ใจหรือไม่?',
-            text: "คุณต้องการลบรายการนี้ใช่หรือไม่",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#aaa',
-            confirmButtonText: 'ใช่, ลบเลย!',
-            cancelButtonText: 'ยกเลิก'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                const oldTx = state.transactions.find(tx => tx.id === txId);
-				// +++ เพิ่มบรรทัดนี้ครับ (ส่งแจ้งเตือนก่อนลบ) +++
-                if (oldTx) {
-                    sendLineAlert(oldTx, 'delete');
-                }
-                // +++++++++++++++++++++++++++++++++++++++
-                try {
-                    await dbDelete(STORE_TRANSACTIONS, txId);
-                    state.transactions = state.transactions.filter(tx => tx.id !== txId);
-                    setLastUndoAction({ type: 'tx-delete', data: JSON.parse(JSON.stringify(oldTx)) });
-                    if (currentPage === 'home') renderAll();
-                    if (currentPage === 'list') renderListPage();
-                    if (currentPage === 'calendar') renderCalendarView(); 
+   async function handleDeleteClick(buttonEl) {
+		const txId = buttonEl.dataset.id;
+		const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบ');
+		if (!hasPermission) return;
 
-                    // +++ Update Account Detail Modal if open +++
-                    await refreshAccountDetailModalIfOpen();
-					
+		Swal.fire({
+			title: 'แน่ใจหรือไม่?',
+			text: "คุณต้องการลบรายการนี้ใช่หรือไม่",
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonColor: '#d33',
+			cancelButtonColor: '#aaa',
+			confirmButtonText: 'ใช่, ลบเลย!',
+			cancelButtonText: 'ยกเลิก'
+		}).then(async (result) => {
+			if (result.isConfirmed) {
+				const oldTx = state.transactions.find(tx => tx.id === txId);
+				sendLineAlert(oldTx, 'delete');
+				try {
+					await dbDelete(STORE_TRANSACTIONS, txId);
+					state.transactions = state.transactions.filter(tx => tx.id !== txId);
+					setLastUndoAction({ type: 'tx-delete', data: JSON.parse(JSON.stringify(oldTx)) });
+
+					// ✅ ADD ACTIVITY LOG
+					addActivityLog(
+						'🗑️ ลบรายการ',
+						`${oldTx.name} ${formatCurrency(oldTx.amount)} (${oldTx.type === 'income' ? 'รายรับ' : oldTx.type === 'expense' ? 'รายจ่าย' : 'โอนย้าย'})`,
+						'fa-trash',
+						'text-red-600'
+					);
+
+					if (currentPage === 'home') renderAll();
+					if (currentPage === 'list') renderListPage();
+					if (currentPage === 'calendar') renderCalendarView();
+					await refreshAccountDetailModalIfOpen();
 					renderBudgetWidget();
 
-                    // --- โค้ดใหม่: ใช้ตรรกะเดียวกับตอนบันทึก ---
 					const isLogged = window.auth && window.auth.currentUser;
-
 					Swal.fire({
 						title: 'ลบแล้ว!',
 						text: 'รายการของคุณถูกลบแล้ว',
@@ -8090,13 +8337,13 @@ document.addEventListener('DOMContentLoaded', () => {
 						timer: isLogged ? 1000 : undefined,
 						showConfirmButton: !isLogged
 					});
-                } catch (err) {
-                    console.error("Failed to delete transaction:", err);
-                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
-                }
-            }
-        });
-    }
+				} catch (err) {
+					console.error("Failed to delete transaction:", err);
+					Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
+				}
+			}
+		});
+	}
 
     function handlePaginationClick(e, source) {
         const btn = e.target.closest('button');
@@ -8114,144 +8361,160 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleAddAccount(e) {
-        e.preventDefault();
-        const getEl = (id) => document.getElementById(id);
-        document.getElementById('account-calculator-popover').classList.add('hidden'); 
+		e.preventDefault();
+		const getEl = (id) => document.getElementById(id);
+		document.getElementById('account-calculator-popover').classList.add('hidden');
 
-        const name = getEl('input-account-name').value.trim();
-        const type = getEl('select-account-type').value;
-        
-        const rawBalance = getEl('input-account-balance').value;
-        let initialBalance = safeCalculate(rawBalance);
-        if (initialBalance === null) {
-             Swal.fire('ข้อมูลไม่ถูกต้อง', 'ยอดเริ่มต้นไม่ถูกต้อง', 'warning');
-            return;
-        }
-        initialBalance = parseFloat(initialBalance.toFixed(2));
-        if (!name) {
-            Swal.fire('ข้อผิดพลาด', 'กรุณาใส่ชื่อบัญชี', 'warning');
-            return;
-        }
-        
-        const defaultIconName = type === 'credit' ? 'fa-credit-card' : (type === 'liability' ? 'fa-file-invoice-dollar' : 'fa-wallet');
+		const name = getEl('input-account-name').value.trim();
+		const type = getEl('select-account-type').value;
 
-        const newAccount = {
-            id: `acc-${Date.now()}`,
-            name: name,
-            type: type,
-            initialBalance: initialBalance,
-            icon: defaultIconName,
-            iconName: defaultIconName, 
-            displayOrder: Date.now() 
-        };
-        try {
-            await dbPut(STORE_ACCOUNTS, newAccount);
-            state.accounts.push(newAccount);
-            setLastUndoAction({ type: 'account-add', data: newAccount }); 
-            renderAccountSettingsList();
-            if (currentPage === 'home') renderAll(); 
-            getEl('form-add-account').reset();
-            getEl('input-account-balance').value = 0;
-            getEl('acc-calc-preview').textContent = '';
-            Swal.fire('เพิ่มสำเร็จ', `บัญชี <b class="text-purple-600">${escapeHTML(name)}</b> ถูกเพิ่มเรียบร้อยแล้ว`, 'success');
+		const rawBalance = getEl('input-account-balance').value;
+		let initialBalance = safeCalculate(rawBalance);
+		if (initialBalance === null) {
+			Swal.fire('ข้อมูลไม่ถูกต้อง', 'ยอดเริ่มต้นไม่ถูกต้อง', 'warning');
+			return;
+		}
+		initialBalance = parseFloat(initialBalance.toFixed(2));
+		if (!name) {
+			Swal.fire('ข้อผิดพลาด', 'กรุณาใส่ชื่อบัญชี', 'warning');
+			return;
+		}
 
-        } catch (err) {
-            console.error("Failed to add account:", err);
-            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเพิ่มบัญชีได้', 'error');
-        }
-    }
+		const defaultIconName = type === 'credit' ? 'fa-credit-card' : (type === 'liability' ? 'fa-file-invoice-dollar' : 'fa-wallet');
+
+		const newAccount = {
+			id: `acc-${Date.now()}`,
+			name: name,
+			type: type,
+			initialBalance: initialBalance,
+			icon: defaultIconName,
+			iconName: defaultIconName,
+			displayOrder: Date.now()
+		};
+		try {
+			await dbPut(STORE_ACCOUNTS, newAccount);
+			state.accounts.push(newAccount);
+			setLastUndoAction({ type: 'account-add', data: newAccount });
+
+			// ✅ ADD ACTIVITY LOG
+			addActivityLog(
+				'🏦 เพิ่มบัญชี',
+				`${name} (${type === 'cash' ? 'เงินสด' : type === 'credit' ? 'บัตรเครดิต' : 'หนี้สิน'})`,
+				'fa-wallet',
+				'text-purple-600'
+			);
+
+			renderAccountSettingsList();
+			if (currentPage === 'home') renderAll();
+			getEl('form-add-account').reset();
+			getEl('input-account-balance').value = 0;
+			getEl('acc-calc-preview').textContent = '';
+			Swal.fire('เพิ่มสำเร็จ', `บัญชี <b class="text-purple-600">${escapeHTML(name)}</b> ถูกเพิ่มเรียบร้อยแล้ว`, 'success');
+		} catch (err) {
+			console.error("Failed to add account:", err);
+			Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเพิ่มบัญชีได้', 'error');
+		}
+	}
 
     async function handleEditAccountSubmit(e) {
-        const getEl = (id) => document.getElementById(id);
-        document.getElementById('edit-account-calculator-popover').classList.add('hidden'); 
+		e.preventDefault();
+		const getEl = (id) => document.getElementById(id);
+		document.getElementById('edit-account-calculator-popover').classList.add('hidden');
 
-        const accountId = getEl('edit-account-id').value;
-        const name = getEl('edit-account-name').value.trim();
-        const type = getEl('edit-account-type').value;
-        
-        const rawBalance = getEl('edit-account-balance').value;
-        let initialBalance = safeCalculate(rawBalance);
-        
-        if (initialBalance === null) {
-             Swal.fire('ข้อมูลไม่ถูกต้อง', 'ยอดเริ่มต้นไม่ถูกต้อง', 'warning');
-             return;
-        }
-        initialBalance = parseFloat(initialBalance.toFixed(2));
+		const accountId = getEl('edit-account-id').value;
+		const name = getEl('edit-account-name').value.trim();
+		const type = getEl('edit-account-type').value;
 
-        if (!name || !accountId) {
-            Swal.fire('ข้อผิดพลาด', 'ข้อมูลไม่ถูกต้อง', 'error');
-            return;
-        }
-        
-        const accountIndex = state.accounts.findIndex(a => a.id === accountId);
-        if (accountIndex === -1) {
-            Swal.fire('ข้อผิดพลาด', 'ไม่พบบัญชี', 'error');
-            return;
-        }
-        
-        const oldAccount = JSON.parse(JSON.stringify(state.accounts[accountIndex])); 
-        
-        const defaultIconName = type === 'credit' ? 'fa-credit-card' : (type === 'liability' ? 'fa-file-invoice-dollar' : 'fa-wallet');
+		const rawBalance = getEl('edit-account-balance').value;
+		let initialBalance = safeCalculate(rawBalance);
+		if (initialBalance === null) {
+			Swal.fire('ข้อมูลไม่ถูกต้อง', 'ยอดเริ่มต้นไม่ถูกต้อง', 'warning');
+			return;
+		}
+		initialBalance = parseFloat(initialBalance.toFixed(2));
 
-        const updatedAccount = {
-            ...state.accounts[accountIndex], 
-            name: name,
-            type: type,
-            initialBalance: initialBalance,
-            icon: defaultIconName, 
-            iconName: state.accounts[accountIndex].iconName || defaultIconName 
-        };
+		if (!name || !accountId) {
+			Swal.fire('ข้อผิดพลาด', 'ข้อมูลไม่ถูกต้อง', 'error');
+			return;
+		}
 
-        try {
-            await dbPut(STORE_ACCOUNTS, updatedAccount);
-            state.accounts[accountIndex] = updatedAccount;
-            setLastUndoAction({ type: 'account-edit', oldData: oldAccount, newData: updatedAccount }); 
-			
-			// [NEW] ตรวจสอบและบันทึกรายการปรับปรุงยอด (ถ้ามีการกรอกมา)
-            const adjAmountVal = getEl('adjust-tx-amount').value;
-            const adjType = getEl('adjust-tx-type').value;
-            const adjDesc = getEl('adjust-tx-desc').value.trim();
-            
-            let adjMessage = ''; // เอาไว้เก็บข้อความแจ้งเตือนเพิ่ม
+		const accountIndex = state.accounts.findIndex(a => a.id === accountId);
+		if (accountIndex === -1) {
+			Swal.fire('ข้อผิดพลาด', 'ไม่พบบัญชี', 'error');
+			return;
+		}
 
-            if (adjAmountVal && parseFloat(adjAmountVal) > 0) {
-                const amount = parseFloat(adjAmountVal);
-                // สร้าง Transaction ใหม่
-                const newTx = {
-                    id: `tx-adj-${Date.now()}`,
-                    type: adjType, // 'income' หรือ 'expense'
-                    amount: amount,
-                    name: adjDesc || (adjType === 'income' ? 'ดอกเบี้ยรับ/ปรับยอดเพิ่ม' : 'ค่าธรรมเนียม/ปรับยอดลด'),
-                    category: 'ปรับปรุงยอดบัญชี', 
-                    accountId: accountId,
-                    date: new Date().toISOString(), // ใช้วันเวลาปัจจุบัน
-                    desc: 'ปรับปรุงยอดผ่านเมนูแก้ไขบัญชี'
-                };
-                
-                await dbPut(STORE_TRANSACTIONS, newTx);
-                state.transactions.push(newTx);
-                
-                // แจ้งเตือน Line (ถ้ามีฟังก์ชันนี้)
-                if (typeof sendLineAlert === 'function') {
-                    sendLineAlert(newTx, 'add');
-                }
-                
-                adjMessage = `<br><span class="text-sm text-gray-500">และบันทึกรายการปรับปรุงยอด ${formatCurrency(amount)} เรียบร้อย</span>`;
-            }
-			
-            renderAccountSettingsList();
-            if (currentPage === 'home') renderAll(); 
-            openAccountModal(null, true); 
-            Swal.fire({
-                title: 'สำเร็จ',
-                html: `อัปเดตข้อมูลบัญชีเรียบร้อยแล้ว${adjMessage}`,
-                icon: 'success'
-            });
-        } catch (err) {
-             console.error("Failed to edit account:", err);
-            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตบัญชีได้', 'error');
-        }
-    }
+		const oldAccount = JSON.parse(JSON.stringify(state.accounts[accountIndex]));
+
+		const defaultIconName = type === 'credit' ? 'fa-credit-card' : (type === 'liability' ? 'fa-file-invoice-dollar' : 'fa-wallet');
+
+		const updatedAccount = {
+			...state.accounts[accountIndex],
+			name: name,
+			type: type,
+			initialBalance: initialBalance,
+			icon: defaultIconName,
+			iconName: state.accounts[accountIndex].iconName || defaultIconName
+		};
+
+		try {
+			await dbPut(STORE_ACCOUNTS, updatedAccount);
+			state.accounts[accountIndex] = updatedAccount;
+			setLastUndoAction({ type: 'account-edit', oldData: oldAccount, newData: updatedAccount });
+
+			// ✅ ADD ACTIVITY LOG สำหรับแก้ไขบัญชี
+			addActivityLog(
+				'✏️ แก้ไขบัญชี',
+				`${oldAccount.name} → ${updatedAccount.name}`,
+				'fa-pencil',
+				'text-blue-600'
+			);
+
+			// บันทึกรายการปรับปรุงยอด (ถ้ามี)
+			const adjAmountVal = getEl('adjust-tx-amount').value;
+			const adjType = getEl('adjust-tx-type').value;
+			const adjDesc = getEl('adjust-tx-desc').value.trim();
+
+			let adjMessage = '';
+			if (adjAmountVal && parseFloat(adjAmountVal) > 0) {
+				const amount = parseFloat(adjAmountVal);
+				const newTx = {
+					id: `tx-adj-${Date.now()}`,
+					type: adjType,
+					amount: amount,
+					name: adjDesc || (adjType === 'income' ? 'ดอกเบี้ยรับ/ปรับยอดเพิ่ม' : 'ค่าธรรมเนียม/ปรับยอดลด'),
+					category: 'ปรับปรุงยอดบัญชี',
+					accountId: accountId,
+					date: new Date().toISOString(),
+					desc: 'ปรับปรุงยอดผ่านเมนูแก้ไขบัญชี'
+				};
+				await dbPut(STORE_TRANSACTIONS, newTx);
+				state.transactions.push(newTx);
+				sendLineAlert(newTx, 'add');
+				adjMessage = `<br><span class="text-sm text-gray-500">และบันทึกรายการปรับปรุงยอด ${formatCurrency(amount)} เรียบร้อย</span>`;
+
+				// ✅ ADD ACTIVITY LOG สำหรับปรับปรุงยอด
+				addActivityLog(
+					'💰 ปรับปรุงยอด',
+					`${adjDesc || (adjType === 'income' ? 'ดอกเบี้ยรับ' : 'ค่าธรรมเนียม')} ${formatCurrency(amount)} (${updatedAccount.name})`,
+					'fa-calculator',
+					'text-orange-600'
+				);
+			}
+
+			renderAccountSettingsList();
+			if (currentPage === 'home') renderAll();
+			openAccountModal(null, true);
+			Swal.fire({
+				title: 'สำเร็จ',
+				html: `อัปเดตข้อมูลบัญชีเรียบร้อยแล้ว${adjMessage}`,
+				icon: 'success'
+			});
+		} catch (err) {
+			console.error("Failed to edit account:", err);
+			Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตบัญชีได้', 'error');
+		}
+	}
     
     async function handleMoveAccount(accountId, direction) {
         const sortedAccounts = getSortedAccounts();
@@ -8318,167 +8581,204 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleDeleteAccountClick(buttonEl) {
-        const accountId = buttonEl.dataset.id;
-        const acc = state.accounts.find(a => a.id === accountId);
-        if (!acc) return;
+		const accountId = buttonEl.dataset.id;
+		const acc = state.accounts.find(a => a.id === accountId);
+		if (!acc) return;
 
-        const txInUse = state.transactions.find(tx => tx.accountId === accountId || tx.toAccountId === accountId);
-        if (txInUse) {
-            Swal.fire('ลบไม่ได้', 'ไม่สามารถลบบัญชีนี้ได้เนื่องจากมีธุรกรรมที่เกี่ยวข้อง (เช่น รายรับ/รายจ่าย หรือการโอนย้าย)', 'error');
-            return;
-        }
-        
-        Swal.fire({
-            title: 'ยืนยันการลบ?',
-            html: `คุณต้องการลบบัญชี: <b class="text-purple-600">${escapeHTML(acc.name)}</b> ใช่หรือไม่?<br><small>(จะลบได้ก็ต่อเมื่อไม่มีธุรกรรมใดๆ อ้างอิงถึง)</small>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#aaa',
-            confirmButtonText: 'ใช่, ลบเลย!',
-            cancelButtonText: 'ยกเลิก'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    const oldAccount = JSON.parse(JSON.stringify(acc)); 
-                    await dbDelete(STORE_ACCOUNTS, accountId);
-                    state.accounts = state.accounts.filter(a => a.id !== accountId);
-                    setLastUndoAction({ type: 'account-delete', data: oldAccount }); 
-                    renderAccountSettingsList();
-                    if (currentPage === 'home') renderAll();
-                    Swal.fire('ลบแล้ว!', 'บัญชีถูกลบแล้ว', 'success');
-                } catch (err) {
-                    console.error("Failed to delete account:", err);
-                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
-                }
-            }
-        });
-    }
+		const txInUse = state.transactions.find(tx => tx.accountId === accountId || tx.toAccountId === accountId);
+		if (txInUse) {
+			Swal.fire('ลบไม่ได้', 'ไม่สามารถลบบัญชีนี้ได้เนื่องจากมีธุรกรรมที่เกี่ยวข้อง', 'error');
+			return;
+		}
+
+		Swal.fire({
+			title: 'ยืนยันการลบ?',
+			html: `คุณต้องการลบบัญชี: <b class="text-purple-600">${escapeHTML(acc.name)}</b> ใช่หรือไม่?<br><small>(จะลบได้ก็ต่อเมื่อไม่มีธุรกรรมใดๆ อ้างอิงถึง)</small>`,
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonColor: '#d33',
+			cancelButtonColor: '#aaa',
+			confirmButtonText: 'ใช่, ลบเลย!',
+			cancelButtonText: 'ยกเลิก'
+		}).then(async (result) => {
+			if (result.isConfirmed) {
+				try {
+					const oldAccount = JSON.parse(JSON.stringify(acc));
+					await dbDelete(STORE_ACCOUNTS, accountId);
+					state.accounts = state.accounts.filter(a => a.id !== accountId);
+					setLastUndoAction({ type: 'account-delete', data: oldAccount });
+
+					// ✅ ADD ACTIVITY LOG
+					addActivityLog(
+						'🗑️ ลบบัญชี',
+						acc.name,
+						'fa-trash',
+						'text-red-600'
+					);
+
+					renderAccountSettingsList();
+					if (currentPage === 'home') renderAll();
+					Swal.fire('ลบแล้ว!', 'บัญชีถูกลบแล้ว', 'success');
+				} catch (err) {
+					console.error("Failed to delete account:", err);
+					Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
+				}
+			}
+		});
+	}
 
 
     async function handleAddCategory(e) {
-        e.preventDefault();
-        const formId = e.target.id;
-        const type = (formId === 'form-add-income-cat') ? 'income' : 'expense';
-        const input = document.getElementById(`input-${type}-cat`);
-        const name = input.value.trim();
+		e.preventDefault();
+		const formId = e.target.id;
+		const type = (formId === 'form-add-income-cat') ? 'income' : 'expense';
+		const input = document.getElementById(`input-${type}-cat`);
+		const name = input.value.trim();
 
-        if (name && !state.categories[type].includes(name)) {
-            state.categories[type].push(name);
-            try {
-                await dbPut(STORE_CATEGORIES, { type: type, items: state.categories[type] });
-                setLastUndoAction({ type: 'cat-add', catType: type, name: name });
-                renderSettings();
-                input.value = '';
-            } catch (err) {
-                console.error("Failed to add category:", err);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกหมวดหมู่ได้', 'error');
-                state.categories[type] = state.categories[type].filter(cat => cat !== name);
-            }
-        } else if (!name) {
-            Swal.fire('ข้อผิดพลาด', 'กรุณาใส่ชื่อหมวดหมู่', 'warning');
-        } else {
-            Swal.fire('ข้อผิดพลาด', 'มีหมวดหมู่นี้อยู่แล้ว', 'error');
-        }
-    }
+		if (name && !state.categories[type].includes(name)) {
+			state.categories[type].push(name);
+			try {
+				await dbPut(STORE_CATEGORIES, { type: type, items: state.categories[type] });
+				setLastUndoAction({ type: 'cat-add', catType: type, name: name });
+
+				// ✅ ADD ACTIVITY LOG
+				addActivityLog(
+					'🏷️ เพิ่มหมวดหมู่',
+					`${name} (${type === 'income' ? 'รายรับ' : 'รายจ่าย'})`,
+					'fa-tag',
+					'text-green-600'
+				);
+
+				renderSettings();
+				input.value = '';
+			} catch (err) {
+				console.error("Failed to add category:", err);
+				Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกหมวดหมู่ได้', 'error');
+				state.categories[type] = state.categories[type].filter(cat => cat !== name);
+			}
+		} else if (!name) {
+			Swal.fire('ข้อผิดพลาด', 'กรุณาใส่ชื่อหมวดหมู่', 'warning');
+		} else {
+			Swal.fire('ข้อผิดพลาด', 'มีหมวดหมู่นี้อยู่แล้ว', 'error');
+		}
+	}
 
     // [แก้ไข] เพิ่มการถามรหัสผ่านก่อนลบหมวดหมู่
     async function handleDeleteCategory(buttonEl) {
-        const type = buttonEl.dataset.type;
-        const name = buttonEl.dataset.name;
+		const type = buttonEl.dataset.type;
+		const name = buttonEl.dataset.name;
 
-        // +++ เพิ่มส่วนนี้ +++
-        const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบหมวดหมู่');
-        if (!hasPermission) return;
-        // ++++++++++++++++++
+		const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบหมวดหมู่');
+		if (!hasPermission) return;
 
-        Swal.fire({
-            title: 'ยืนยันการลบ?',
-            html: `คุณต้องการลบหมวดหมู่: <b class="text-purple-600">${escapeHTML(name)}</b> ใช่หรือไม่?`,
-            icon: 'warning',
-            showCancelButton: true,
-             confirmButtonColor: '#d33',
-            cancelButtonColor: '#aaa',
-            confirmButtonText: 'ใช่, ลบเลย!',
-            cancelButtonText: 'ยกเลิก'
-        }).then(async (result) => {
-            // ... (โค้ดเดิมด้านในเหมือนเดิม)
-             if (result.isConfirmed) {
-                const oldCategories = [...state.categories[type]];
-                state.categories[type] = state.categories[type].filter(cat => cat !== name);
-                try {
-                     await dbPut(STORE_CATEGORIES, { type: type, items: state.categories[type] });
-                    setLastUndoAction({ type: 'cat-delete', catType: type, name: name });
-                    renderSettings();
-                    Swal.fire('ลบแล้ว!', 'หมวดหมู่ถูกลบแล้ว', 'success');
-                } catch (err) {
-                    console.error("Failed to delete category:", err);
-                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบหมวดหมู่ได้', 'error');
-                    state.categories[type] = oldCategories;
-                }
-            }
-        });
-    }
+		Swal.fire({
+			title: 'ยืนยันการลบ?',
+			html: `คุณต้องการลบหมวดหมู่: <b class="text-purple-600">${escapeHTML(name)}</b> ใช่หรือไม่?`,
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonColor: '#d33',
+			cancelButtonColor: '#aaa',
+			confirmButtonText: 'ใช่, ลบเลย!',
+			cancelButtonText: 'ยกเลิก'
+		}).then(async (result) => {
+			if (result.isConfirmed) {
+				const oldCategories = [...state.categories[type]];
+				state.categories[type] = state.categories[type].filter(cat => cat !== name);
+				try {
+					await dbPut(STORE_CATEGORIES, { type: type, items: state.categories[type] });
+					setLastUndoAction({ type: 'cat-delete', catType: type, name: name });
+
+					// ✅ ADD ACTIVITY LOG
+					addActivityLog(
+						'🗑️ ลบหมวดหมู่',
+						`${name} (${type === 'income' ? 'รายรับ' : 'รายจ่าย'})`,
+						'fa-tag',
+						'text-red-600'
+					);
+
+					renderSettings();
+					Swal.fire('ลบแล้ว!', 'หมวดหมู่ถูกลบแล้ว', 'success');
+				} catch (err) {
+					console.error("Failed to delete category:", err);
+					Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบหมวดหมู่ได้', 'error');
+					state.categories[type] = oldCategories;
+				}
+			}
+		});
+	}
 
     async function handleAddFrequentItem(e) {
-        e.preventDefault();
-        const input = document.getElementById('input-frequent-item');
-        const name = input.value.trim();
+		e.preventDefault();
+		const input = document.getElementById('input-frequent-item');
+		const name = input.value.trim();
 
-        if (name && !state.frequentItems.includes(name)) {
-            try {
-                await dbPut(STORE_FREQUENT_ITEMS, { name: name });
-                state.frequentItems.push(name);
-                setLastUndoAction({ type: 'item-add', name: name });
-                renderSettings();
-                input.value = '';
-            } catch (err) {
-                console.error("Failed to add frequent item:", err);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกรายการได้', 'error');
-            }
-        } else if (!name) {
-            Swal.fire('ข้อผิดพลาด', 'กรุณาใส่ชื่อรายการ', 'warning');
-        } else {
-            Swal.fire('ข้อผิดพลาด', 'มีรายการนี้อยู่แล้ว', 'error');
-        }
-    }
+		if (name && !state.frequentItems.includes(name)) {
+			try {
+				await dbPut(STORE_FREQUENT_ITEMS, { name: name });
+				state.frequentItems.push(name);
+				setLastUndoAction({ type: 'item-add', name: name });
+
+				// ✅ ADD ACTIVITY LOG
+				addActivityLog(
+					'⭐ เพิ่มรายการใช้บ่อย',
+					name,
+					'fa-star',
+					'text-yellow-600'
+				);
+
+				renderSettings();
+				input.value = '';
+			} catch (err) {
+				console.error("Failed to add frequent item:", err);
+				Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกรายการได้', 'error');
+			}
+		} else if (!name) {
+			Swal.fire('ข้อผิดพลาด', 'กรุณาใส่ชื่อรายการ', 'warning');
+		} else {
+			Swal.fire('ข้อผิดพลาด', 'มีรายการนี้อยู่แล้ว', 'error');
+		}
+	}
 
     // [แก้ไข] เพิ่มการถามรหัสผ่านก่อนลบรายการที่ใช้บ่อย
     async function handleDeleteFrequentItem(buttonEl) {
-        const name = buttonEl.dataset.name;
-        
-        // +++ เพิ่มส่วนนี้ +++
-        const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบรายการ');
-        if (!hasPermission) return;
-        // ++++++++++++++++++
+		const name = buttonEl.dataset.name;
 
-        Swal.fire({
-            title: 'ยืนยันการลบ?',
-            html: `คุณต้องการลบรายการที่ใช้บ่อย: <b class="text-purple-600">${escapeHTML(name)}</b> ใช่หรือไม่?`,
-            icon: 'warning',
-            showCancelButton: true,
-             confirmButtonColor: '#d33',
-            cancelButtonColor: '#aaa',
-            confirmButtonText: 'ใช่, ลบเลย!',
-            cancelButtonText: 'ยกเลิก'
-        }).then(async (result) => {
-            // ... (โค้ดเดิมด้านในเหมือนเดิม)
-             if (result.isConfirmed) {
-                try {
-                    await dbDelete(STORE_FREQUENT_ITEMS, name);
-                    state.frequentItems = state.frequentItems.filter(item => 
-                    item !== name);
-                    setLastUndoAction({ type: 'item-delete', name: name });
-                    renderSettings();
-                    Swal.fire('ลบแล้ว!', 'รายการที่ใช้บ่อยถูกลบแล้ว', 'success');
+		const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบรายการ');
+		if (!hasPermission) return;
 
-                 } catch (err) {
-                    console.error("Failed to delete frequent item:", err);
-                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบรายการได้', 'error');
-                }
-            }
-        });
-    }
+		Swal.fire({
+			title: 'ยืนยันการลบ?',
+			html: `คุณต้องการลบรายการที่ใช้บ่อย: <b class="text-purple-600">${escapeHTML(name)}</b> ใช่หรือไม่?`,
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonColor: '#d33',
+			cancelButtonColor: '#aaa',
+			confirmButtonText: 'ใช่, ลบเลย!',
+			cancelButtonText: 'ยกเลิก'
+		}).then(async (result) => {
+			if (result.isConfirmed) {
+				try {
+					await dbDelete(STORE_FREQUENT_ITEMS, name);
+					state.frequentItems = state.frequentItems.filter(item => item !== name);
+					setLastUndoAction({ type: 'item-delete', name: name });
+
+					// ✅ ADD ACTIVITY LOG
+					addActivityLog(
+						'🗑️ ลบรายการใช้บ่อย',
+						name,
+						'fa-star',
+						'text-red-600'
+					);
+
+					renderSettings();
+					Swal.fire('ลบแล้ว!', 'รายการที่ใช้บ่อยถูกลบแล้ว', 'success');
+				} catch (err) {
+					console.error("Failed to delete frequent item:", err);
+					Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบรายการได้', 'error');
+				}
+			}
+		});
+	}
     
     async function handleToggleFavorite() {
         const nameInput = document.getElementById('tx-name');
@@ -10425,22 +10725,26 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 
 					const newBudget = { category, amount };
-
 					try {
 						await dbPut(STORE_BUDGETS, newBudget);
-						
-						// อัปเดต State (ถ้ามีอยู่แล้วให้ทับ ถ้าไม่มีให้เพิ่ม)
+
 						const idx = state.budgets.findIndex(b => b.category === category);
 						if (idx >= 0) state.budgets[idx] = newBudget;
 						else state.budgets.push(newBudget);
 
+						// ✅ ADD ACTIVITY LOG
+						const actionType = idx >= 0 ? '✏️ แก้ไขงบประมาณ' : '📊 เพิ่มงบประมาณ';
+						addActivityLog(
+							actionType,
+							`${category} ${formatCurrency(amount)}`,
+							'fa-sack-dollar',
+							'text-orange-600'
+						);
+
 						renderBudgetSettingsList();
 						populateBudgetCategoryDropdown();
 						document.getElementById('form-add-budget').reset();
-						
-						// รีเฟรช Widget หน้าแรกทันที
 						renderBudgetWidget();
-						
 						Swal.fire('สำเร็จ', `ตั้งงบประมาณหมวด <b>${category}</b> เรียบร้อย`, 'success');
 					} catch (err) {
 						console.error(err);
@@ -10450,44 +10754,44 @@ document.addEventListener('DOMContentLoaded', () => {
 				
 				// [NEW] ฟังก์ชันแก้ไขงบประมาณ (ต้องใส่รหัสผ่าน)
 				window.editBudget = async (category) => {
-					// 1. ถามรหัสผ่าน
 					const hasPermission = await promptForPassword('ยืนยันรหัสผ่านเพื่อแก้ไขงบประมาณ');
 					if (!hasPermission) return;
 
-					// 2. หาข้อมูลเดิม
 					const budget = state.budgets.find(b => b.category === category);
 					if (!budget) return;
 
-					// 3. แสดง Popup ให้แก้ตัวเลข
 					const { value: newAmount } = await Swal.fire({
 						title: `แก้ไขงบหมวด: ${category}`,
 						input: 'number',
 						inputLabel: 'กำหนดวงเงินใหม่ (บาท)',
 						inputValue: budget.amount,
 						showCancelButton: true,
-						confirmButtonColor: '#3b82f6', // สีน้ำเงิน (Standard)
+						confirmButtonColor: '#3b82f6',
 						confirmButtonText: 'บันทึกแก้ไข',
 						cancelButtonText: 'ยกเลิก',
 						inputValidator: (value) => {
-							if (!value || value <= 0) {
-								return 'กรุณาใส่วงเงินที่ถูกต้อง';
-							}
+							if (!value || value <= 0) return 'กรุณาใส่วงเงินที่ถูกต้อง';
 						}
 					});
 
-					// 4. บันทึก
 					if (newAmount) {
 						try {
 							const updatedBudget = { category, amount: parseFloat(newAmount) };
-							
 							await dbPut(STORE_BUDGETS, updatedBudget);
-							
+
 							const idx = state.budgets.findIndex(b => b.category === category);
 							if (idx >= 0) state.budgets[idx] = updatedBudget;
 
+							// ✅ ADD ACTIVITY LOG
+							addActivityLog(
+								'✏️ แก้ไขงบประมาณ',
+								`${category} → ${formatCurrency(updatedBudget.amount)}`,
+								'fa-pencil',
+								'text-blue-600'
+							);
+
 							renderBudgetSettingsList();
 							renderBudgetWidget();
-							
 							Swal.fire('เรียบร้อย', 'แก้ไขวงเงินงบประมาณแล้ว', 'success');
 						} catch (err) {
 							console.error(err);
@@ -10498,11 +10802,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// [UPDATE] ฟังก์ชันลบงบประมาณ (ต้องใส่รหัสผ่าน)
 				window.deleteBudget = async (category) => {
-					// 1. ถามรหัสผ่าน
 					const hasPermission = await promptForPassword('ยืนยันรหัสผ่านเพื่อลบงบประมาณ');
 					if (!hasPermission) return;
 
-					// 2. ยืนยันการลบ
 					const result = await Swal.fire({
 						title: 'ยืนยันการลบ?',
 						text: `คุณต้องการลบงบประมาณหมวด "${category}" ใช่ไหม?`,
@@ -10516,13 +10818,19 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (result.isConfirmed) {
 						try {
 							await dbDelete(STORE_BUDGETS, category);
-							
 							state.budgets = state.budgets.filter(b => b.category !== category);
-							
+
+							// ✅ ADD ACTIVITY LOG
+							addActivityLog(
+								'🗑️ ลบงบประมาณ',
+								category,
+								'fa-trash',
+								'text-red-600'
+							);
+
 							renderBudgetSettingsList();
-							populateBudgetCategoryDropdown(); 
+							populateBudgetCategoryDropdown();
 							renderBudgetWidget();
-							
 							Swal.fire('ลบแล้ว', 'รายการงบประมาณถูกลบเรียบร้อย', 'success');
 						} catch (err) {
 							console.error(err);
@@ -10752,7 +11060,6 @@ document.addEventListener('DOMContentLoaded', () => {
 						return;
 					}
 
-					// ถามรหัสผ่านก่อนอนุญาตให้ตั้งค่า
 					const hasPermission = await promptForPassword('ยืนยันรหัสผ่านเพื่อตั้งค่าสแกนนิ้ว');
 					if (!hasPermission) return;
 
@@ -10764,7 +11071,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					});
 
 					try {
-						// สร้าง Challenge สุ่ม (ปกติควรมาจาก Server แต่ทำ Local ใช้แบบนี้ได้)
 						const challenge = new Uint8Array(32);
 						window.crypto.getRandomValues(challenge);
 
@@ -10777,26 +11083,25 @@ document.addEventListener('DOMContentLoaded', () => {
 								displayName: "Device Owner"
 							},
 							pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-							authenticatorSelection: { 
-								authenticatorAttachment: "platform", // บังคับใช้ตัวสแกนในเครื่อง (TouchID/FaceID)
-								userVerification: "required" 
-							},
+							authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
 							timeout: 60000
 						};
 
 						const credential = await navigator.credentials.create({ publicKey });
-						
-						// แปลง Credential ID เป็น String เพื่อเก็บใน LocalStorage
 						const credentialId = bufferToBase64url(credential.rawId);
-						
-						// บันทึกลง LocalStorage
 						localStorage.setItem('local_biometric_id', credentialId);
 						state.biometricId = credentialId;
 
-						renderSettings(); // อัปเดตหน้า UI
-						
-						Swal.fire('สำเร็จ', 'เปิดใช้งานสแกนนิ้ว/ใบหน้าสำหรับเครื่องนี้แล้ว', 'success');
+						// ✅ ADD ACTIVITY LOG
+						addActivityLog(
+							'🖐️ เปิดใช้งาน Biometric',
+							'สแกนนิ้ว/ใบหน้า',
+							'fa-fingerprint',
+							'text-blue-600'
+						);
 
+						renderSettings();
+						Swal.fire('สำเร็จ', 'เปิดใช้งานสแกนนิ้ว/ใบหน้าสำหรับเครื่องนี้แล้ว', 'success');
 					} catch (err) {
 						console.error(err);
 						Swal.fire('ล้มเหลว', 'การลงทะเบียนถูกยกเลิกหรือไม่สำเร็จ', 'error');
@@ -10805,11 +11110,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// 2. ยกเลิก (Unregister)
 				async function removeBiometric() {
-					// [เพิ่มใหม่] 1. ถามรหัสผ่านก่อนดำเนินการ
 					const hasPermission = await promptForPassword('ยืนยันรหัสผ่านเพื่อยกเลิกสแกนนิ้ว');
 					if (!hasPermission) return;
 
-					// 2. แสดง Popup ยืนยันตามปกติ
 					const result = await Swal.fire({
 						title: 'ยกเลิกการสแกน?',
 						text: "คุณจะต้องใช้รหัสผ่านในการเข้าใช้งานแทน",
@@ -10823,11 +11126,19 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (result.isConfirmed) {
 						localStorage.removeItem('local_biometric_id');
 						state.biometricId = null;
+
+						// ✅ ADD ACTIVITY LOG
+						addActivityLog(
+							'🖐️ ปิดใช้งาน Biometric',
+							'สแกนนิ้ว/ใบหน้า',
+							'fa-fingerprint',
+							'text-gray-600'
+						);
+
 						renderSettings();
 						Swal.fire('เรียบร้อย', 'ยกเลิกการสแกนนิ้วบนเครื่องนี้แล้ว', 'success');
 					}
 				}
-
 				// 3. ตรวจสอบตัวตน (Verify) - ใช้ตอน Login หรือ Prompt
 				async function verifyBiometricIdentity() {
 					if (!state.biometricId) return false;
