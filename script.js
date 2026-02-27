@@ -947,6 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isDarkMode: false, 
 		activeModalId: null, // เช่น 'form-modal', 'quick-draft-modal', null
 		pendingCommandToLearn: null,
+		lineNotifyActions: { add: true, edit: true, delete: true }, // ค่าเริ่มต้น
         settingsCollapse: {},
         autoLockTimeout: 0,
 		budgets: [],
@@ -1213,6 +1214,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 state.settingsCollapse = defaultCollapseSettings;
             }
+			
+			// โหลด LINE Notify Actions
+			const lineNotifyActionsConfig = await dbGet(STORE_CONFIG, 'lineNotifyActions');
+			if (lineNotifyActionsConfig) {
+				state.lineNotifyActions = lineNotifyActionsConfig.value;
+			} else {
+				state.lineNotifyActions = { add: true, edit: true, delete: true };
+			}
             
             // [เดิม] 9. โหลด Config ย่อยอื่นๆ
             const showBalanceConfig = await dbGet(STORE_CONFIG, 'showBalanceCard');
@@ -6136,7 +6145,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			clearAllBtn.addEventListener('click', async () => {
 				const confirm = await Swal.fire({
 					title: 'ล้างคำสั่งทั้งหมด?',
-					text: 'คุณต้องการลบคำสั่งที่เรียนรู้ทั้งหมดใช่หรือไม่?',
+					text: 'คุณต้องการลบคำสั่งที่เรียนรู้ทั้งหมดใช่หรือไม่? (ข้อมูลบน Cloud จะถูกลบด้วย)',
 					icon: 'warning',
 					showCancelButton: true,
 					confirmButtonColor: '#d33',
@@ -6144,11 +6153,42 @@ document.addEventListener('DOMContentLoaded', () => {
 					cancelButtonText: 'ยกเลิก'
 				});
 				if (confirm.isConfirmed) {
-					await dbClear(STORE_VOICE_COMMANDS);
+					const allCommands = await dbGetAll(STORE_VOICE_COMMANDS);
+					for (const cmd of allCommands) {
+						await dbDelete(STORE_VOICE_COMMANDS, cmd.id); // ✅ ใช้ dbDelete เพื่อลบ Cloud
+					}
 					renderVoiceCommandsList();
 					showToast('ล้างคำสั่งทั้งหมดแล้ว', 'success');
 				}
 			});
+		}
+		
+		// --- LINE Notify Actions ---
+		const notifyAdd = document.getElementById('notify-on-add');
+		const notifyEdit = document.getElementById('notify-on-edit');
+		const notifyDelete = document.getElementById('notify-on-delete');
+
+		if (notifyAdd && notifyEdit && notifyDelete) {
+			// set checked ตาม state
+			notifyAdd.checked = state.lineNotifyActions.add;
+			notifyEdit.checked = state.lineNotifyActions.edit;
+			notifyDelete.checked = state.lineNotifyActions.delete;
+
+			// ฟังก์ชันบันทึกเมื่อเปลี่ยน
+			const saveNotifyActions = async () => {
+				const newActions = {
+					add: notifyAdd.checked,
+					edit: notifyEdit.checked,
+					delete: notifyDelete.checked
+				};
+				state.lineNotifyActions = newActions;
+				await dbPut(STORE_CONFIG, { key: 'lineNotifyActions', value: newActions });
+				showToast('บันทึกการตั้งค่า LINE แล้ว', 'success');
+			};
+
+			notifyAdd.addEventListener('change', saveNotifyActions);
+			notifyEdit.addEventListener('change', saveNotifyActions);
+			notifyDelete.addEventListener('change', saveNotifyActions);
 		}
 			
 		// 7. Line โหลดรายชื่อ ID จาก DB (เวอร์ชันใหม่: มีชื่อเล่น + รหัสผ่าน)
@@ -7751,8 +7791,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			renderDropdownList();
 			
 			if (state.pendingCommandToLearn && state.pendingCommandToLearn.action === 'addTransaction') {
-				// สร้าง object ข้อมูลที่เพิ่งบันทึก (transaction)
 				const savedData = {
+					type: transaction.type,                // ✅ เพิ่ม type
 					name: transaction.name,
 					category: transaction.category,
 					amount: transaction.amount,
@@ -8690,6 +8730,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						recurringRules: recurringData, 
 						budgets: await dbGetAll(STORE_BUDGETS),
 						voiceCommands: await dbGetAll(STORE_VOICE_COMMANDS),
+						lineNotifyActions: state.lineNotifyActions, 
 						
 						// +++ ค่าตั้งค่าเพิ่มเติม +++
 						showBalanceCard: (await dbGet(STORE_CONFIG, 'showBalanceCard'))?.value || false,
@@ -9187,6 +9228,11 @@ document.addEventListener('DOMContentLoaded', () => {
 							for (const item of importedState.voiceCommands) {
 								await dbPut(STORE_VOICE_COMMANDS, item);
 							}
+						}
+						
+						// นำเข้า LINE Notify Actions
+						if (importedState.lineNotifyActions) {
+							await dbPut(STORE_CONFIG, { key: 'lineNotifyActions', value: importedState.lineNotifyActions });
 						}
                         
                         await dbClear(STORE_CONFIG);
@@ -10814,6 +10860,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				
 				// --- ฟังก์ชันส่งแจ้งเตือน LINE (เวอร์ชันรองรับรายการล่วงหน้า) ---
 				async function sendLineAlert(transactionData, action = 'add') {
+					
+					// ตรวจสอบว่า action นี้ได้รับอนุญาตให้แจ้งเตือนหรือไม่
+					const notifyActions = state.lineNotifyActions || { add: true, edit: true, delete: true };
+					if (!notifyActions[action]) {
+						console.log(`LINE Alert: Skipped ${action} (disabled by user)`);
+						return; // ไม่ต้องแจ้งเตือน
+					}
+
 					// 1. ดึงรายการ ID ทั้งหมด
 					let targetIds = [];
 					try {
@@ -10830,7 +10884,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					const now = new Date();
 					// ถ้าเวลาในรายการมากกว่าเวลาปัจจุบัน ให้ถือว่าเป็นรายการล่วงหน้า
 					const isFuture = txDate > now;
-
+					
 					// 3. เตรียม Header ตาม Action และสถานะเวลา
 					let headerText = '';
 					if (action === 'add') {
@@ -12491,6 +12545,56 @@ document.addEventListener('DOMContentLoaded', () => {
 					console.warn(e);
 				}
 			}
+			
+			// ฟังก์ชันสำหรับปุ่มไมค์ใน modal สอนคำสั่ง
+			function startVoiceForCommand() {
+				const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+				if (!SpeechRecognition) {
+					Swal.fire('ไม่รองรับ', 'เบราว์เซอร์นี้ไม่รองรับการจดจำเสียง', 'error');
+					return;
+				}
+
+				const micBtn = document.getElementById('btn-voice-command-mic');
+				const input = document.getElementById('voice-command-text');
+				if (!micBtn || !input) return;
+
+				// เปลี่ยนไอคอนขณะกำลังฟัง
+				const originalHtml = micBtn.innerHTML;
+				micBtn.innerHTML = '<i class="fa-solid fa-microphone-lines fa-beat text-xl text-red-500"></i>';
+				micBtn.disabled = true;
+
+				const recognition = new SpeechRecognition();
+				recognition.lang = 'th-TH';
+				recognition.interimResults = false;
+				recognition.maxAlternatives = 1;
+
+				recognition.onresult = (event) => {
+					const transcript = event.results[0][0].transcript;
+					input.value = transcript;
+					input.dispatchEvent(new Event('input', { bubbles: true })); // กระตุ้น event ถ้ามี validation
+					stopListening();
+				};
+
+				recognition.onerror = (event) => {
+					console.error('Speech error:', event.error);
+					if (event.error !== 'no-speech' && event.error !== 'aborted') {
+						Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถจดจำเสียงได้', 'error');
+					}
+					stopListening();
+				};
+
+				recognition.onend = () => {
+					stopListening();
+				};
+
+				recognition.start();
+
+				function stopListening() {
+					micBtn.innerHTML = originalHtml;
+					micBtn.disabled = false;
+					recognition.stop();
+				}
+			}
 
 			// ============================================
 			// SMART VOICE COMMAND (GLOBAL BRAIN V.7)
@@ -12752,19 +12856,39 @@ document.addEventListener('DOMContentLoaded', () => {
 						break;
 
 					case 'addTransaction':
-						openModal();
-						setTimeout(() => {
-							if (cmd.defaultName) document.getElementById('tx-name').value = cmd.defaultName;
-							if (cmd.defaultCategory) {
-								setTimeout(() => {
-									document.getElementById('tx-category').value = cmd.defaultCategory;
-								}, 100);
-							}
-							if (cmd.defaultAmount) document.getElementById('tx-amount').value = cmd.defaultAmount;
-							if (cmd.defaultDesc) document.getElementById('tx-desc').value = cmd.defaultDesc;
-							speak('เปิดฟอร์มเพิ่มรายการตามที่คุณสอนไว้');
-						}, 300);
-						break;
+					openModal();
+					setTimeout(() => {
+						// ✅ ตั้งค่าประเภทรายการ
+						if (cmd.defaultType) {
+							const radio = document.querySelector(`input[name="tx-type"][value="${cmd.defaultType}"]`);
+							if (radio) radio.checked = true;
+							updateFormVisibility();                 // ซ่อน/แสดงฟิลด์ตามประเภท
+							updateCategoryDropdown(cmd.defaultType); // โหลดหมวดหมู่ตามประเภท
+						}
+
+						// เติมชื่อรายการ (รอให้ dropdown หมวดหมู่อัปเดตก่อน)
+						if (cmd.defaultName) {
+							document.getElementById('tx-name').value = cmd.defaultName;
+						}
+
+						// ตั้งค่าหมวดหมู่ (ต้องรอสักครู่ให้ dropdown เตรียมข้อมูลเสร็จ)
+						if (cmd.defaultCategory) {
+							setTimeout(() => {
+								const catSelect = document.getElementById('tx-category');
+								if (catSelect) catSelect.value = cmd.defaultCategory;
+							}, 200);
+						}
+
+						if (cmd.defaultAmount) {
+							document.getElementById('tx-amount').value = cmd.defaultAmount;
+							document.getElementById('tx-amount').dispatchEvent(new Event('keyup'));
+						}
+						if (cmd.defaultDesc) {
+							document.getElementById('tx-desc').value = cmd.defaultDesc;
+						}
+						speak('เปิดฟอร์มเพิ่มรายการตามที่คุณสอนไว้');
+					}, 300);
+					break;
 
 					case 'quickDraft':
 						openQuickDraftModal();
@@ -13128,12 +13252,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// ===== ฟังก์ชันใส่ข้อมูลอัจฉริยะ =====
 			function handleSmartDataEntry(text, lowerText) {
-				// จดบันทึกด่วน
-				if (lowerText.match(/^(จด|โน้ต|บันทึก|note|draft|จดไว|ช่วยจำ)\s*(.+)/)) {
+				// จดด่วน - รองรับช่องว่างไม่จำกัด และอาจมี "บาท" อยู่ตรงกลาง
+				const draftMatch = lowerText.match(/^(จดด่วน|จด|โน้ต|บันทึก|note|draft|จดไว|ช่วยจำ)[\s　]*(.+)/i);
+				if (draftMatch) {
 					openQuickDraftModal();
-					const content = text.replace(/^(จด|โน้ต|บันทึก|note|draft|จดไว|ช่วยจำ)\s*/i, '');
-					smartParseContent(content);
-					return true;
+					let content = draftMatch[2]; // ส่วนที่เหลือหลังคำนำหน้า
+					content = content.trim();
+
+					// แยกตัวเลข (จำนวนเงิน) และข้อความ
+					const amountMatch = content.match(/(\d+(?:\.\d+)?)/);
+					let amount = null;
+					let note = '';
+
+					if (amountMatch) {
+						amount = parseFloat(amountMatch[0]);
+						// ตัดตัวเลขและคำว่า "บาท" ออก เหลือข้อความล้วน
+						note = content.replace(amountMatch[0], '').replace(/บาท|฿/gi, '').trim();
+					} else {
+						note = content;
+					}
+
+					// รอให้ Modal แสดงแล้วค่อยกรอกข้อมูล
+					setTimeout(() => {
+						if (amount) document.getElementById('draft-amount').value = amount;
+						if (note) document.getElementById('draft-note').value = note;
+					}, 100);
+
+					return true; // ✅ สำคัญมาก: หยุดการทำงาน ไม่ให้ไป transaction detection
 				}
 				
 				// เพิ่มบัญชีใหม่
@@ -13475,6 +13620,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				modal.classList.remove('hidden');
 				state.activeModalId = 'voice-command-modal';
+				
+				// [เพิ่ม] ผูกปุ่มไมค์หลังจาก modal เปิด
+				const micBtn = document.getElementById('btn-voice-command-mic');
+				if (micBtn) {
+					const newMicBtn = micBtn.cloneNode(true);  // ล้าง event เก่า
+					micBtn.parentNode.replaceChild(newMicBtn, micBtn);
+					newMicBtn.addEventListener('click', startVoiceForCommand);
+				}
 			}
 			window.openVoiceCommandModal = openVoiceCommandModal;
 
@@ -13526,17 +13679,35 @@ document.addEventListener('DOMContentLoaded', () => {
 						html = '<p class="text-sm text-gray-500">✅ Action นี้ไม่ต้องการรายละเอียดเพิ่มเติม</p>';
 						break;
 					case 'addTransaction':
-						html = `
-							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">💰 ชื่อรายการเริ่มต้น</label>
-							<input type="text" id="vc-tx-name" value="${existingData?.defaultName || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-2" placeholder="เช่น ค่ากาแฟ">
-							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📂 หมวดหมู่เริ่มต้น</label>
-							<input type="text" id="vc-tx-category" value="${existingData?.defaultCategory || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-2" placeholder="เช่น อาหาร">
-							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🔢 จำนวนเงินเริ่มต้น</label>
-							<input type="number" id="vc-tx-amount" value="${existingData?.defaultAmount || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-2" placeholder="50">
-							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📝 หมายเหตุเริ่มต้น</label>
-							<input type="text" id="vc-tx-desc" value="${existingData?.defaultDesc || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg" placeholder="เช่น ไม่ใส่ความหวาน">
-						`;
-						break;
+					html = `
+						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📊 ประเภทรายการ</label>
+						<select id="vc-tx-type" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3">
+							<option value="expense" ${existingData?.defaultType === 'expense' ? 'selected' : ''}>รายจ่าย</option>
+							<option value="income" ${existingData?.defaultType === 'income' ? 'selected' : ''}>รายรับ</option>
+							<option value="transfer" ${existingData?.defaultType === 'transfer' ? 'selected' : ''}>โอนย้าย</option>
+						</select>
+
+						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">💰 ชื่อรายการเริ่มต้น</label>
+						<input list="vc-tx-name-datalist" id="vc-tx-name" value="${existingData?.defaultName || ''}" 
+							   class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-1" 
+							   placeholder="พิมพ์หรือเลือกชื่อรายการ">
+						<datalist id="vc-tx-name-datalist">
+							${generateItemOptions()}
+						</datalist>
+						<p class="text-xs text-gray-500 mb-3">สามารถพิมพ์ชื่อใหม่หรือเลือกจากที่มีอยู่</p>
+
+						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📂 หมวดหมู่เริ่มต้น</label>
+						<select id="vc-tx-category" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3">
+							${generateCategoryOptions(existingData?.defaultType || 'expense', existingData?.defaultCategory)}
+						</select>
+
+						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🔢 จำนวนเงินเริ่มต้น</label>
+						<input type="number" id="vc-tx-amount" value="${existingData?.defaultAmount || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3" placeholder="50">
+
+						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📝 หมายเหตุเริ่มต้น</label>
+						<input type="text" id="vc-tx-desc" value="${existingData?.defaultDesc || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg" placeholder="เช่น ไม่ใส่ความหวาน">
+					`;
+					break;
 					case 'quickDraft':
 						html = `
 							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🔢 จำนวนเงินเริ่มต้น</label>
@@ -13575,6 +13746,61 @@ document.addEventListener('DOMContentLoaded', () => {
 						html = '<p class="text-sm text-gray-500">⚠️ ไม่มีฟิลด์เพิ่มเติมสำหรับ Action นี้</p>';
 				}
 				container.innerHTML = html;
+				
+				if (action === 'addTransaction') {
+					const typeSelect = document.getElementById('vc-tx-type');
+					if (typeSelect) {
+						typeSelect.addEventListener('change', function() {
+							const catSelect = document.getElementById('vc-tx-category');
+							if (catSelect) {
+								catSelect.innerHTML = generateCategoryOptions(this.value);
+							}
+						});
+					}
+				}
+			}
+			
+			// Helper: สร้าง options สำหรับชื่อรายการ (จาก frequentItems + autoCompleteList)
+			function generateItemOptions() {
+				let options = '';
+				const existingNames = new Set();
+
+				// เพิ่มจากรายการที่ใช้บ่อย
+				if (state.frequentItems && state.frequentItems.length) {
+					state.frequentItems.forEach(item => {
+						options += `<option value="${escapeHTML(item)}">`;
+						existingNames.add(item);
+					});
+				}
+				// เพิ่มจาก Auto‑Learn (ที่ไม่ซ้ำ)
+				if (state.autoCompleteList && state.autoCompleteList.length) {
+					state.autoCompleteList.forEach(item => {
+						if (!existingNames.has(item.name)) {
+							options += `<option value="${escapeHTML(item.name)}">`;
+							existingNames.add(item.name);
+						}
+					});
+				}
+				return options;
+			}
+
+			// Helper: สร้าง options สำหรับหมวดหมู่ ตาม type
+			function generateCategoryOptions(type, selectedCategory = '') {
+				let categories = [];
+				if (type === 'transfer') {
+					categories = ['โอนย้าย']; // หรือจะปล่อยว่างก็ได้
+				} else {
+					categories = state.categories[type] || [];
+				}
+				let options = '';
+				categories.forEach(cat => {
+					const selected = (cat === selectedCategory) ? 'selected' : '';
+					options += `<option value="${escapeHTML(cat)}" ${selected}>${escapeHTML(cat)}</option>`;
+				});
+				if (categories.length === 0) {
+					options = '<option value="">-- ไม่มีหมวดหมู่ --</option>';
+				}
+				return options;
 			}
 			
 			async function saveVoiceCommand(e) {
@@ -13598,6 +13824,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						params.section = document.getElementById('vc-settings-section')?.value;
 						break;
 					case 'addTransaction':
+						params.defaultType = document.getElementById('vc-tx-type')?.value;
 						params.defaultName = document.getElementById('vc-tx-name')?.value;
 						params.defaultCategory = document.getElementById('vc-tx-category')?.value;
 						params.defaultAmount = parseFloat(document.getElementById('vc-tx-amount')?.value) || 0;
@@ -13820,6 +14047,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						id: commandId,
 						command: spokenText,
 						action: data.action || 'addTransaction',
+						defaultType: data.type,
 						defaultName,
 						defaultCategory,
 						defaultAmount,
@@ -13832,7 +14060,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					try {
 						// ตรวจสอบซ้ำก่อนบันทึก
 						const existing = await dbGetAll(STORE_VOICE_COMMANDS);
-						const duplicate = existing.find(cmd => cmd.command.toLowerCase() === spokenText.toLowerCase());
+						const spokenLower = spokenText.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ''); // ตัดเครื่องหมายวรรคตอน
+						const duplicate = existing.find(cmd => {
+							return cmd.command.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '') === spokenLower;
+						});
 						if (duplicate) {
 							const overwrite = await Swal.fire({
 								title: 'มีคำสั่งนี้อยู่แล้ว',
@@ -13847,6 +14078,7 @@ document.addEventListener('DOMContentLoaded', () => {
 								color: state.isDarkMode ? '#e5e7eb' : '#1f2937',
 							});
 							if (overwrite.isConfirmed) {
+								duplicate.defaultType = defaultType;
 								duplicate.defaultName = defaultName;
 								duplicate.defaultCategory = defaultCategory;
 								duplicate.defaultAmount = defaultAmount;

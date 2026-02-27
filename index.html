@@ -610,6 +610,40 @@
 					</div>
 					
 					<div id="settings-line-content" class="transition-all">
+					
+					<div class="flex flex-col gap-2 mb-3">
+					<!-- ตัวเลือกแจ้งเตือนตามประเภท -->
+					<div class="mt-4 border-t border-gray-200 pt-4">
+						<h4 class="font-medium text-gray-700 mb-3">แจ้งเตือนเมื่อ:</h4>
+						<div class="space-y-3">
+							<!-- เพิ่ม -->
+							<label class="flex items-center justify-between">
+								<span class="text-gray-700 dark:text-gray-300">➕ เพิ่มรายการใหม่</span>
+								<label class="relative inline-flex items-center cursor-pointer">
+									<input type="checkbox" id="notify-on-add" class="sr-only peer">
+									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+								</label>
+							</label>
+							<!-- แก้ไข -->
+							<label class="flex items-center justify-between">
+								<span class="text-gray-700 dark:text-gray-300">✏️ แก้ไขรายการ</span>
+								<label class="relative inline-flex items-center cursor-pointer">
+									<input type="checkbox" id="notify-on-edit" class="sr-only peer">
+									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+								</label>
+							</label>
+							<!-- ลบ -->
+							<label class="flex items-center justify-between">
+								<span class="text-gray-700 dark:text-gray-300">🗑️ ลบรายการ</span>
+								<label class="relative inline-flex items-center cursor-pointer">
+									<input type="checkbox" id="notify-on-delete" class="sr-only peer">
+									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+								</label>
+							</label>
+						</div>
+					</div>
+					</div>
+					
 						<div class="flex flex-col gap-2 mb-3">
 							<div class="flex gap-2">
 								<input type="text" id="input-line-nickname" class="w-1/3 p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-purple-500" placeholder="ชื่อเล่น (เช่น เจมส์)">
@@ -630,7 +664,7 @@
 						</p>
 					</div>
 				</div>
-
+				
 				<!-- เพิ่ม script เล็กน้อยที่ท้าย body หรือในฟังก์ชันที่ทำงานหลังโหลด DOM -->
 				<script>
 					// ตั้งค่า LINE OA URL เมื่อโหลดหน้าเว็บ
@@ -956,15 +990,17 @@
                                     </div>
                                 </button>
                                 <input type="file" id="import-file-input" class="hidden" accept=".json">
-								<button id="btn-system-update" class="col-span-2 bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 text-lg mb-2">
-									<i class="fa-solid fa-rotate mr-2 animate-spin-slow"></i> ตรวจสอบและอัปเดตเวอร์ชันล่าสุด / ล้างแคช
-								</button>
-								
-								<div class="col-span-2 mt-4 pt-4 border-t border-gray-200">
-									<button id="btn-hard-reset" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 text-lg">
-										<i class="fa-solid fa-power-off text-red-400 mr-2"></i> ล้างระบบแก้แอปค้าง แอปพัง อัพเดทไม่ได้ (Hard Reset)
-									</button>
-								</div>
+									<div class="col-span-2 mt-2 pt-2 border-t border-gray-200">
+										<!-- ปุ่มตรวจสอบอัปเดต (ย้ายมาอยู่บน) -->
+										<button id="btn-system-update" class="w-full bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 text-lg mb-3">
+											<i class="fa-solid fa-rotate mr-2 animate-spin-slow"></i> ตรวจสอบและอัปเดตเวอร์ชันล่าสุด / ล้างแคช
+										</button>
+
+										<!-- ปุ่ม Hard Reset (เดิม) -->
+										<button id="btn-hard-reset" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 text-lg">
+											<i class="fa-solid fa-power-off text-red-400 mr-2"></i> ล้างระบบแก้แอปค้าง แอปพัง อัพเดทไม่ได้ (Hard Reset)
+										</button>
+									</div>
 
                                 <button id="btn-clear-all" class="col-span-2 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 text-lg"> <i class="fa-solid fa-trash-alt mr-2"></i> รีเซ็ตและล้างข้อมูลทั้งหมด
                                 </button>
@@ -1578,7 +1614,12 @@
 				<!-- คำพูด -->
 				<div>
 					<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🗣️ คำพูดที่ต้องการให้จำ <span class="text-red-500">*</span></label>
-					<input type="text" id="voice-command-text" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500" placeholder="เช่น เปิดบัญชี, เปลี่ยนรหัสผ่าน" required>
+					<div class="relative">
+						<input type="text" id="voice-command-text" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 pr-12" placeholder="เช่น เปิดบัญชี, เปลี่ยนรหัสผ่าน" required>
+						<button type="button" id="btn-voice-command-mic" class="absolute inset-y-0 right-0 flex items-center pr-3 text-purple-600 hover:text-purple-800 dark:text-purple-400">
+							<i class="fa-solid fa-microphone text-xl"></i>
+						</button>
+					</div>
 					<p class="text-xs text-gray-400 mt-1">ผู้ใช้ต้องพูดตรงกับคำนี้ ระบบถึงจะทำตาม</p>
 				</div>
 
