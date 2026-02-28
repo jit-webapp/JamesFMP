@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 	
     const DB_NAME = 'expenseTrackerDB_JamesIT';
-    const DB_VERSION = 9; // *** อัปเดตเป็นเวอร์ชัน 9 ***
+    const DB_VERSION = 10; // *** อัปเดตเป็นเวอร์ชัน 10 ***
 	
     const STORE_TRANSACTIONS = 'transactions';
     const STORE_CATEGORIES = 'categories';
@@ -45,6 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const STORE_DRAFTS = 'drafts'; // *** เพิ่ม Store สำหรับ Draft ***
 	const LINE_USER_ID_KEY = 'lineUserId'; // LineID
 	const STORE_VOICE_COMMANDS = 'voiceCommands'; // *** เพิ่ม Store สำหรับคำสั่งเสียงที่เรียนรู้ ***
+	const STORE_ICS_IMPORTS = 'icsImports';      // เก็บข้อมูลกลุ่มไฟล์
+	const STORE_IMPORTED_EVENTS = 'importedEvents'; // เก็บเหตุการณ์แต่ละรายการ
     
     const PAGE_IDS = ['page-home', 'page-list', 'page-calendar', 'page-accounts', 'page-settings', 'page-guide']; // เพิ่ม 'page-accounts'
     // ********** Master Password Config **********
@@ -411,6 +413,22 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 					console.log('IndexedDB Upgrade: Running v9 migration (Added "voiceCommands" store)');
 				}
+				
+				// --- V10: ICS Import Support ---
+				if (event.oldVersion < 10) {
+					// Store สำหรับกลุ่มไฟล์
+					if (!db.objectStoreNames.contains(STORE_ICS_IMPORTS)) {
+						db.createObjectStore(STORE_ICS_IMPORTS, { keyPath: 'id' });
+					}
+					// Store สำหรับเหตุการณ์
+					if (!db.objectStoreNames.contains(STORE_IMPORTED_EVENTS)) {
+						const evStore = db.createObjectStore(STORE_IMPORTED_EVENTS, { keyPath: 'id' });
+						evStore.createIndex('importId', 'importId', { unique: false });
+						evStore.createIndex('date', 'start', { unique: false });
+					}
+					console.log('IndexedDB Upgrade: Added ICS import stores');
+				}
+				
             };
 
             request.onsuccess = (event) => {
@@ -1291,7 +1309,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				console.warn('Budgets store not ready yet', err);
 				state.budgets = [];
 			}
-            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            
+			try {
+				state.icsImports = await dbGetAll(STORE_ICS_IMPORTS) || [];
+				state.importedEvents = await dbGetAll(STORE_IMPORTED_EVENTS) || [];
+			} catch (err) {
+				console.warn('ICS stores not ready', err);
+				state.icsImports = [];
+				state.importedEvents = [];
+			}
 
         } catch (e) {
             console.error("Failed to load state from DB, using defaults.", e);
@@ -4059,6 +4085,91 @@ document.addEventListener('DOMContentLoaded', () => {
 				switchChartMode('time');
 			});
 		}
+		
+		// ปุ่มจัดการกิจกรรม
+		const manageBtn = document.getElementById('btn-manage-imported');
+		if (manageBtn) {
+			manageBtn.addEventListener('click', openImportedEventsModal);
+		}
+
+		// สวิตช์กิจกรรมที่นำเข้า
+		const toggleImported = document.getElementById('cal-toggle-imported');
+		if (toggleImported) {
+			toggleImported.addEventListener('change', renderCalendarView);
+		}
+
+		// ปุ่มนำเข้า ICS (สร้าง input file ชั่วคราว)
+		const importBtn = document.getElementById('btn-import-ics'); // ถ้าเราจะเพิ่มปุ่มนี้
+		// แต่ถ้าไม่ต้องการปุ่มแยก เราสามารถใช้ปุ่มจัดการแล้วมีปุ่ม "+ นำเข้า" ใน modal ก็ได้
+		// ในที่นี้เราจะเพิ่มปุ่มนำเข้าใน modal ด้วย (เพิ่มใน HTML ของ modal)
+		// ดังนั้นใน modal เราจะเพิ่มปุ่ม "นำเข้า ICS" ที่ด้านบน
+		
+		// ปุ่มนำเข้า ICS ใน modal
+		const importModalBtn = document.getElementById('btn-import-ics-modal');
+		if (importModalBtn) {
+			importModalBtn.addEventListener('click', () => {
+				// สร้าง input element แบบซ่อนเพื่อให้ผู้ใช้เลือกไฟล์
+				const fileInput = document.createElement('input');
+				fileInput.type = 'file';
+				fileInput.accept = '.ics, .ical, text/calendar'; // ระบุชนิดไฟล์ที่รองรับ
+				fileInput.style.display = 'none'; // ซ่อนไว้
+				document.body.appendChild(fileInput); // ต้องแนบไปกับ body เพื่อให้ทำงาน
+
+				// เมื่อผู้ใช้เลือกไฟล์แล้ว
+				fileInput.onchange = (e) => {
+					const file = e.target.files[0];
+					if (file) {
+						// เรียกฟังก์ชันนำเข้า ICS
+						importICS(file);
+					}
+					// ลบ input element ทิ้งเพื่อไม่ให้รกหน่วยความจำ
+					fileInput.remove();
+				};
+
+				// จำลองการคลิกเพื่อเปิดหน้าต่างเลือกไฟล์
+				fileInput.click();
+			});
+		}
+		
+		const deleteAllBtn = document.getElementById('btn-delete-all-imported');
+			if (deleteAllBtn) {
+				deleteAllBtn.addEventListener('click', async () => {
+					const confirm = await Swal.fire({
+						title: 'ลบกิจกรรมทั้งหมด?',
+						text: 'คุณต้องการลบไฟล์ ICS ที่นำเข้าและกิจกรรมทั้งหมดใช่หรือไม่',
+						icon: 'warning',
+						showCancelButton: true,
+						confirmButtonColor: '#ef4444',
+						confirmButtonText: 'ใช่, ลบทั้งหมด',
+						cancelButtonText: 'ยกเลิก'
+					});
+					if (confirm.isConfirmed) {
+						// ลบทั้งหมด
+						for (const ev of state.importedEvents) {
+							await dbDelete(STORE_IMPORTED_EVENTS, ev.id);
+						}
+						for (const grp of state.icsImports) {
+							await dbDelete(STORE_ICS_IMPORTS, grp.id);
+						}
+						state.importedEvents = [];
+						state.icsImports = [];
+						closeImportedEventsModal();
+						renderCalendarView();
+						showToast('ลบกิจกรรมทั้งหมดแล้ว', 'success');
+					}
+				});
+			}
+			
+			// ใน setupEventListeners()
+			const moneyToggle = document.getElementById('cal-toggle-money');
+			if (moneyToggle) {
+				moneyToggle.addEventListener('change', renderCalendarView);
+			}
+
+			const importedToggle = document.getElementById('cal-toggle-imported');
+			if (importedToggle) {
+				importedToggle.addEventListener('change', renderCalendarView);
+			}
 	
     }
 	
@@ -5545,119 +5656,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-    // ==========================================
-	// ส่วนจัดการวันสำคัญ (ฉบับอัปเดตปี 2569/2026 ตาม MyHora)
-	// ==========================================
-
-	// 1. วันหยุดราชการสำรอง (กรณีดึง Online ไม่ได้ หรือใช้เป็นฐานข้อมูลหลัก)
-	const OFFLINE_HOLIDAYS = {
-		// 2026 (ปีปัจจุบัน)
-		'2026-01-01': 'วันขึ้นปีใหม่',
-		'2026-03-03': 'วันมาฆบูชา',
-		'2026-04-06': 'วันจักรี',
-		'2026-04-13': 'วันสงกรานต์',
-		'2026-04-14': 'วันสงกรานต์',
-		'2026-04-15': 'วันสงกรานต์',
-		'2026-05-01': 'วันแรงงานแห่งชาติ',
-		'2026-05-04': 'วันฉัตรมงคล',
-		'2026-05-31': 'วันวิสาขบูชา',        // เลื่อนเป็นเดือน 7 (ปีอธิกมาส)
-		'2026-06-01': 'ชดเชยวันวิสาขบูชา',
-		'2026-06-03': 'วันเฉลิมพระชนมพรรษาพระราชินี',
-		'2026-07-28': 'วันเฉลิมพระชนมพรรษา ร.10',
-		'2026-07-29': 'วันอาสาฬหบูชา',       // เลื่อนเป็นเดือน 8 หนที่สอง
-		'2026-07-30': 'วันเข้าพรรษา',
-		'2026-08-12': 'วันแม่แห่งชาติ',
-		'2026-10-13': 'วันนวมินทรมหาราช',
-		'2026-10-23': 'วันปิยมหาราช',
-		'2026-12-05': 'วันพ่อแห่งชาติ',
-		'2026-12-10': 'วันรัฐธรรมนูญ',
-		'2026-12-31': 'วันสิ้นปี'
-	};
-
-	// 2. ฟังก์ชันดึงวันหยุดราชการ (Online + Fallback)
-	async function fetchPublicHolidays(year) {
-		// ถ้าเป็นปี 2026 ให้ใช้ข้อมูลที่เราเตรียมไว้เลย (แม่นยำกว่า API บางตัว)
-		if (year === 2026) return OFFLINE_HOLIDAYS;
-
-		// ปีอื่นๆ ลองดึงจาก API
-		if (holidayCache[year]) return holidayCache[year];
-		try {
-			const response = await fetch(`https://date.nager.at/api/v3/publicholidays/${year}/TH`);
-			if (!response.ok) throw new Error('API Connect Failed');
-			const data = await response.json();
-			const holidays = {};
-			data.forEach(item => { holidays[item.date] = item.localName || item.name; });
-			holidayCache[year] = holidays;
-			return holidays;
-		} catch (error) {
-			// ถ้าดึงไม่ได้ ให้คืนค่าว่างหรือข้อมูล Offline (ถ้ามี)
-			return OFFLINE_HOLIDAYS; 
-		}
-	}
-
-	// 3. ฟังก์ชันคำนวณวันพระ (ฉบับแก้ไขปี 2569 ตาม MyHora)
-	function calculateBuddhistHolyDays(year) {
-		const yearNum = parseInt(year);
-		
-		// ข้อมูลวันพระปี 2569 (2026) - ปีอธิกมาส (มีเดือน 8 สองหน)
-		if (yearNum === 2026) {
-			return [
-				// มกราคม
-				'2026-01-03', '2026-01-11', '2026-01-18', '2026-01-26',
-				// กุมภาพันธ์
-				'2026-02-02', '2026-02-10', '2026-02-16', '2026-02-24',
-				// มีนาคม
-				'2026-03-03', // มาฆบูชา
-				'2026-03-11', '2026-03-18', '2026-03-26',
-				// เมษายน
-				'2026-04-02', '2026-04-10', '2026-04-16', '2026-04-24',
-				// พฤษภาคม
-				'2026-05-01', '2026-05-09', '2026-05-16', '2026-05-24', 
-				'2026-05-31', // วิสาขบูชา (เดือน 7)
-				// มิถุนายน
-				'2026-06-08', '2026-06-14', '2026-06-22', '2026-06-29',
-				// กรกฎาคม
-				'2026-07-07', '2026-07-14', '2026-07-22', 
-				'2026-07-29', // อาสาฬหบูชา (เดือน 8-8)
-				// สิงหาคม
-				'2026-08-06', '2026-08-13', '2026-08-21', '2026-08-28',
-				// กันยายน
-				'2026-09-05', '2026-09-11', '2026-09-19', '2026-09-26',
-				// ตุลาคม
-				'2026-10-04', '2026-10-11', '2026-10-19', 
-				'2026-10-26', // ออกพรรษา
-				// พฤศจิกายน
-				'2026-11-03', '2026-11-09', '2026-11-17', 
-				'2026-11-24', // ลอยกระทง
-				// ธันวาคม
-				'2026-12-02', '2026-12-09', '2026-12-17', '2026-12-24'
-			];
-		} 
-		
-		// ปี 2025 (เผื่อกดดูย้อนหลัง)
-		if (yearNum === 2025) {
-			 return [
-				'2025-01-06','2025-01-13','2025-01-21','2025-01-28','2025-02-05','2025-02-12','2025-02-20','2025-02-26',
-				'2025-03-06','2025-03-13','2025-03-21','2025-03-28','2025-04-05','2025-04-12','2025-04-20','2025-04-26',
-				'2025-05-04','2025-05-11','2025-05-19','2025-05-26','2025-06-03','2025-06-10','2025-06-18','2025-06-25',
-				'2025-07-03','2025-07-10','2025-07-18','2025-07-25','2025-08-01','2025-08-09','2025-08-16','2025-08-24',
-				'2025-08-31','2025-09-07','2025-09-15','2025-09-22','2025-09-30','2025-10-07','2025-10-15','2025-10-22',
-				'2025-10-30','2025-11-06','2025-11-14','2025-11-20','2025-11-28','2025-12-05','2025-12-13','2025-12-20','2025-12-28'
-			];
-		}
-
-		return []; // ปีอื่นๆ คืนค่าว่าง (หรือจะเขียนสูตรคำนวณเพิ่มก็ได้)
-	}
-
-	// 3. ฟังก์ชัน Render ปฏิทิน (อัปเดตใหม่)
-	// ============================================
-	// 1. ฟังก์ชันแสดงปฏิทิน (เรียกใช้ showDailyDetails)
-	// ============================================
 	async function renderCalendarView() {
 		try {
 			const calendarEl = document.getElementById('calendar-container');
 			const yearInput = document.getElementById('cal-year-input');
-
 			if (!calendarEl || !yearInput) return;
 
 			let currentYearVal = parseInt(yearInput.value);
@@ -5665,149 +5667,76 @@ document.addEventListener('DOMContentLoaded', () => {
 				currentYearVal = new Date(state.calendarCurrentDate || new Date()).getFullYear();
 			}
 
-			const onlineHolidays = (typeof fetchPublicHolidays === 'function') ? await fetchPublicHolidays(currentYearVal) : {};
-			const buddhistDays = (typeof calculateBuddhistHolyDays === 'function') ? calculateBuddhistHolyDays(currentYearVal) : [];
-
-			const showHoliday = document.getElementById('cal-toggle-holiday')?.checked ?? true;
-			const showBuddhist = document.getElementById('cal-toggle-buddhist')?.checked ?? true;
-			const showMoney = document.getElementById('cal-toggle-money')?.checked ?? true;
+			// *** ตรวจสอบสถานะสวิตช์ ***
+			const showImported = document.getElementById('cal-toggle-imported')?.checked ?? true;
 
 			const calendarEvents = [];
 
-			// --- (ส่วนสร้าง Events: วันหยุด/วันพระ/ยอดเงิน ใช้โค้ดเดิม) ---
-			if (showHoliday) {
-				for (const [date, name] of Object.entries(onlineHolidays)) {
-					calendarEvents.push({ id: 'hol-' + date, start: date, allDay: true, display: 'background', backgroundColor: '#fee2e2', classNames: ['holiday-bg-event'] });
-					calendarEvents.push({ id: 'hol-txt-' + date, title: name, start: date, allDay: true, color: 'transparent', textColor: '#ef4444', classNames: ['font-bold', 'text-xs', 'holiday-text-label'] });
-				}
-			}
-			if (showBuddhist) {
-				buddhistDays.forEach(date => {
-					calendarEvents.push({ id: 'bud-' + date, title: '🙏 วันพระ', start: date, allDay: true, color: '#fef08a', textColor: '#854d0e', classNames: ['text-xs', 'font-medium', 'buddhist-event'] });
+			// --- เพิ่มกิจกรรมที่นำเข้า (ถ้าเปิดสวิตช์) ---
+			if (showImported && state.importedEvents) {
+				// สร้าง map ของกลุ่มที่เปิดใช้งาน (importId -> isVisible)
+				const visibleGroups = new Map();
+				state.icsImports.forEach(grp => {
+					visibleGroups.set(grp.id, grp.isVisible !== false);
+				});
+
+				state.importedEvents.forEach(ev => {
+					// ตรวจสอบว่ากลุ่มของ event นี้เปิดอยู่หรือไม่
+					if (visibleGroups.get(ev.importId) !== false) {
+						calendarEvents.push({
+							id: ev.id,
+							title: ev.title,
+							start: ev.start,
+							allDay: true,
+							color: ev.color || '#8b5cf6',
+							textColor: '#ffffff',
+							classNames: ['imported-event'],
+							extendedProps: { importId: ev.importId }
+						});
+					}
 				});
 			}
+
+			// --- ถ้ามีเหตุการณ์อื่น ๆ เช่น รายการธุรกรรม (ยอดเงิน) ก็คงไว้ตามเดิม ---
+			const showMoney = document.getElementById('cal-toggle-money')?.checked ?? true;
 			if (showMoney && state.transactions) {
 				const dailyTotals = {};
 				state.transactions.forEach(tx => {
-					const dateStr = tx.date.slice(0, 10);
+					const dateStr = tx.date.slice(0, 10); // เอาเฉพาะวันที่ YYYY-MM-DD
 					if (!dailyTotals[dateStr]) dailyTotals[dateStr] = { income: 0, expense: 0 };
-					if (tx.type === 'expense') dailyTotals[dateStr].expense += tx.amount;
-					else if (tx.type === 'income') dailyTotals[dateStr].income += tx.amount;
+					if (tx.type === 'income') dailyTotals[dateStr].income += tx.amount;
+					else if (tx.type === 'expense') dailyTotals[dateStr].expense += tx.amount;
 				});
+
 				Object.keys(dailyTotals).forEach(date => {
 					const totals = dailyTotals[date];
 					const isFuture = date > new Date().toISOString().slice(0, 10);
-					if (totals.income > 0) calendarEvents.push({ id: date + '-inc', title: '+' + formatCurrency(totals.income).replace(/[^\d.,-]/g, ''), start: date, allDay: true, color: '#22c55e', classNames: ['money-event'] });
-					if (totals.expense > 0) calendarEvents.push({ id: date + '-exp', title: '-' + formatCurrency(totals.expense).replace(/[^\d.,-]/g, ''), start: date, allDay: true, color: (isFuture ? '#f59e0b' : '#ef4444'), classNames: ['money-event'] });
+					if (totals.income > 0) {
+						calendarEvents.push({
+							id: date + '-inc',
+							title: '+' + formatCurrency(totals.income).replace(/[^\d.,-]/g, ''),
+							start: date,
+							allDay: true,
+							color: '#22c55e',
+							textColor: '#ffffff',
+							classNames: ['money-event']
+						});
+					}
+					if (totals.expense > 0) {
+						calendarEvents.push({
+							id: date + '-exp',
+							title: '-' + formatCurrency(totals.expense).replace(/[^\d.,-]/g, ''),
+							start: date,
+							allDay: true,
+							color: isFuture ? '#f59e0b' : '#ef4444',
+							textColor: '#ffffff',
+							classNames: ['money-event']
+						});
+					}
 				});
 			}
 
-			// --- Events แจ้งเตือนพิเศษ (ฉบับแก้ไข: แก้ปัญหา Timezone และวันล้นเดือน) ---
-            if (state.customNotifications) {
-                state.customNotifications.forEach(notif => {
-                    // 1. แยกชิ้นส่วนวันที่เอง เพื่อป้องกัน Timezone เพี้ยน (บังคับเป็น Local Time)
-                    const parts = notif.date.split('-'); 
-                    const startYear = parseInt(parts[0]);
-                    const startMonth = parseInt(parts[1]) - 1; // เดือนใน JS เริ่มที่ 0 (ม.ค.=0)
-                    const startDay = parseInt(parts[2]);
-
-                    const startDateObj = new Date(startYear, startMonth, startDay);
-                    const repeat = notif.repeat || 'none';
-                    const targetYear = currentYearVal; // ปีที่ปฏิทินกำลังแสดง
-
-                    // ฟังก์ชันช่วยใส่ Event ลงปฏิทิน
-                    const addEvent = (d) => {
-                        // จัดรูปแบบ YYYY-MM-DD โดยใช้ Local Time ไม่แปลงเป็น UTC
-                        const year = d.getFullYear();
-                        const month = String(d.getMonth() + 1).padStart(2, '0');
-                        const day = String(d.getDate()).padStart(2, '0');
-                        const dateStr = `${year}-${month}-${day}`;
-
-                        let startVal = dateStr;
-                        let isAllDayEvt = true;
-                        
-                        if (notif.isAllDay === false && notif.time) {
-                            startVal = `${dateStr}T${notif.time}`;
-                            isAllDayEvt = false;
-                        }
-
-                        calendarEvents.push({
-                            id: notif.id,
-                            title: notif.message,
-                            start: startVal,
-                            allDay: isAllDayEvt,
-                            color: '#7c3aed',
-                            textColor: '#ffffff',
-                            classNames: ['custom-notify-event', 'text-xs'],
-                            extendedProps: { originalDate: notif.date }
-                        });
-                    };
-
-                    if (repeat === 'none') {
-                        // --- ไม่ซ้ำ ---
-                        // เช็คปีให้ตรงกัน
-                        if (startYear === targetYear) {
-                            addEvent(startDateObj);
-                        }
-
-                    } else if (repeat === 'weekly') {
-                        // --- ทุกสัปดาห์ ---
-                        let d = new Date(startYear, startMonth, startDay);
-                        
-                        // ข้ามปีเก่าๆ มาปีปัจจุบันให้เร็วขึ้น (Performance)
-                        // ถ้าปีเริ่มต้น เก่ากว่าปีปัจจุบันมาก ให้ขยับทีละ 1 ปี (แบบหยาบ) ก่อน
-                        if (d.getFullYear() < targetYear - 1) {
-                             d.setFullYear(targetYear - 1); 
-                             // พอขยับปี วันในสัปดาห์จะเปลี่ยน ต้องจูนกลับมาให้ตรงวันเดิม (จันทร์, อังคาร ฯลฯ)
-                             while (d.getDay() !== startDateObj.getDay()) {
-                                 d.setDate(d.getDate() + 1);
-                             }
-                        }
-
-                        // วนลูปทีละ 7 วัน
-                        while (d.getFullYear() <= targetYear) {
-                            // ต้องไม่ใช่อดีตก่อนวันเริ่ม และต้องอยู่ในปีที่แสดงผล
-                            if (d >= startDateObj && d.getFullYear() === targetYear) {
-                                addEvent(d);
-                            }
-                            d.setDate(d.getDate() + 7);
-                            
-                            // กันลูปไม่รู้จบ
-                            if (d.getFullYear() > targetYear + 1) break;
-                        }
-
-                    } else if (repeat === 'monthly') {
-                        // --- ทุกเดือน ---
-                        for (let m = 0; m < 12; m++) {
-                            // สร้างวันที่ในเดือนนั้นๆ ของปีที่แสดง
-                            // *ทริค: ใช้ startDay ตรงๆ
-                            const checkDate = new Date(targetYear, m, startDay);
-
-                            // เช็ค 1: วันล้นเดือนหรือไม่? (สำคัญมาก)
-                            // เช่น ตั้งวันที่ 31 แล้วไปเช็คเดือนกุมภา (m=1) JS จะปัดเป็น 3 มีนา
-                            // checkDate.getMonth() จะได้ 2 (มีนา) ซึ่งไม่ตรงกับ m (กุมภา) -> แปลว่าเดือนนั้นไม่มีวันที่ 31
-                            if (checkDate.getMonth() !== m) continue;
-
-                            // เช็ค 2: ต้องไม่ก่อนวันเริ่ม
-                            if (checkDate < startDateObj) continue;
-
-                            addEvent(checkDate);
-                        }
-
-                    } else if (repeat === 'yearly') {
-                        // --- ทุกปี ---
-                        const checkDate = new Date(targetYear, startMonth, startDay);
-
-                        // เช็ค: วันล้นเดือน (กรณี 29 ก.พ. ในปีที่ไม่ใช่อธิกสุรทิน)
-                        if (checkDate.getMonth() === startMonth) {
-                             if (checkDate >= startDateObj) {
-                                addEvent(checkDate);
-                             }
-                        }
-                    }
-                });
-            }
-
+			// สร้าง FullCalendar ใหม่
 			if (typeof myCalendar !== 'undefined' && myCalendar) myCalendar.destroy();
 
 			const initialDate = state.calendarCurrentDate || new Date().toISOString().slice(0, 10);
@@ -5824,25 +5753,16 @@ document.addEventListener('DOMContentLoaded', () => {
 				fixedWeekCount: false,
 				events: calendarEvents,
 				eventOrder: "start,-duration,allDay,title",
-
-				// [จุดสำคัญ] เมื่อคลิกวันที่ -> เรียก showDailyDetails เพื่อโชว์รายการ+ปุ่มกด
-				dateClick: function(info) {
-					showDailyDetails(info.dateStr);
-				},
-				eventClick: function(info) {
-					const dateStr = info.event.startStr.slice(0, 10);
-					showDailyDetails(dateStr);
-				},
-				
+				dateClick: function(info) { showDailyDetails(info.dateStr); },
+				eventClick: function(info) { showDailyDetails(info.event.startStr.slice(0, 10)); },
 				datesSet: function(info) {
 					const currentStart = info.view.currentStart;
 					const offset = currentStart.getTimezoneOffset();
 					const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
 					state.calendarCurrentDate = localDate.toISOString().slice(0, 10);
-					
 					if (parseInt(yearInput.value) !== currentStart.getFullYear()) {
 						yearInput.value = currentStart.getFullYear();
-						renderCalendarView();
+						// ไม่ต้องโหลดซ้ำเพราะ events ถูกกำหนดไว้แล้ว
 					}
 				}
 			});
@@ -5897,6 +5817,18 @@ document.addEventListener('DOMContentLoaded', () => {
 					</li>`;
 			});
 			notifyHtml += '</ul></div>';
+		}
+		
+		// หา imported events ในวันนี้
+		const dailyImported = state.importedEvents.filter(ev => ev.start === dateStr);
+
+		let importedHtml = '';
+		if (dailyImported.length > 0) {
+			importedHtml = '<div class="mb-4"><h5 class="font-bold text-purple-700 text-sm mb-2 text-left">📅 กิจกรรมที่นำเข้า:</h5><ul class="space-y-2">';
+			dailyImported.forEach(ev => {
+				importedHtml += `<li class="flex justify-between items-center bg-purple-50 dark:bg-purple-900/20 p-2 rounded text-sm text-gray-700 dark:text-gray-300">${escapeHTML(ev.title)}</li>`;
+			});
+			importedHtml += '</ul></div>';
 		}
 
 		// แสดง Popup
@@ -14899,6 +14831,285 @@ document.addEventListener('DOMContentLoaded', () => {
 				name = name.replace(/^(จ่าย|ซื้อ|ค่า|รายจ่าย|รับ|ได้|รายรับ|โอน)\s*/i, '').trim();
 				return name || 'รายการ';
 			}
+			
+			async function importICS(file) {
+				const reader = new FileReader();
+
+				reader.onload = async (e) => {
+					try {
+						const icsData = e.target.result;
+						const jcalData = ICAL.parse(icsData);
+						const comp = new ICAL.Component(jcalData);
+						const vevents = comp.getAllSubcomponents('vevent');
+
+						if (vevents.length === 0) {
+							showToast('ไม่พบเหตุการณ์ในไฟล์นี้', 'warning');
+							return;
+						}
+
+						// --- ชุดสีสำเร็จรูป (เลือกสีที่สดใสและแตกต่างกัน) ---
+						const colorPalette = [
+							'#FF5733', // ส้ม
+							'#33FF57', // เขียว
+							'#3357FF', // น้ำเงิน
+							'#FF33F1', // ชมพู
+							'#F1FF33', // เหลือง
+							'#33FFF5', // ฟ้า
+							'#FF8C33', // ส้มอ่อน
+							'#8C33FF', // ม่วง
+							'#FF3366', // แดงชมพู
+							'#33FF99', // เขียวมินต์
+							'#6633FF', // ม่วงเข้ม
+							'#FF9933', // ส้มเหลือง
+							'#00CC99', // เขียวน้ำทะเล
+							'#CC00CC', // ม่วงอมชมพู
+							'#FFCC00'  // ทอง
+						];
+
+						// --- สร้างกลุ่ม (import group) ---
+						const groupId = `import_${Date.now()}`;
+						const group = {
+							id: groupId,
+							fileName: file.name,
+							importedAt: new Date().toISOString(),
+							eventCount: vevents.length,
+							isVisible: true
+						};
+
+						// --- แปลงแต่ละ event เป็นฟอร์แมตที่เราจะเก็บ ---
+						const eventsToAdd = [];
+						vevents.forEach((vevent, idx) => {
+							const summary = vevent.getFirstPropertyValue('summary') || 'ไม่มีชื่อ';
+							const dtstart = vevent.getFirstPropertyValue('dtstart');
+							if (!dtstart) return;
+
+							const startDate = dtstart.toJSDate();
+							const isAllDay = !dtstart.toICALString().includes('T');
+							const startStr = isAllDay
+								? startDate.toISOString().split('T')[0]               // YYYY-MM-DD
+								: startDate.toISOString().slice(0, 16).replace('T', ' '); // YYYY-MM-DD HH:mm
+
+							// *** เลือกสีจาก palette โดยวนตาม index ***
+							const eventColor = colorPalette[idx % colorPalette.length];
+
+							eventsToAdd.push({
+								id: `${groupId}_${idx}`,
+								title: summary,
+								start: startStr,
+								allDay: isAllDay,
+								color: eventColor,                 // กำหนดสี
+								textColor: '#ffffff',                // ตัวหนังสือสีขาว (มองเห็นชัด)
+								importId: groupId,
+								source: 'ics_import'
+							});
+						});
+
+						// --- บันทึกลง IndexedDB ---
+						await dbPut(STORE_ICS_IMPORTS, group);
+						for (const ev of eventsToAdd) {
+							await dbPut(STORE_IMPORTED_EVENTS, ev);
+						}
+
+						// --- อัปเดต state ---
+						state.icsImports = await dbGetAll(STORE_ICS_IMPORTS);
+						state.importedEvents = await dbGetAll(STORE_IMPORTED_EVENTS);
+
+						// --- รีเฟรชหน้าจอ ---
+						renderCalendarView();
+						closeImportedEventsModal();
+						openImportedEventsModal();
+
+						showToast(`นำเข้า ${eventsToAdd.length} รายการจากไฟล์ ${file.name} สำเร็จ`, 'success');
+					} catch (err) {
+						console.error('ICS import error:', err);
+						showToast('ไม่สามารถอ่านไฟล์ ICS ได้ (ไฟล์อาจเสียหาย)', 'error');
+					}
+				};
+
+				reader.readAsText(file);
+			}
+			
+			async function openImportedEventsModal() {
+				const modal = document.getElementById('imported-events-modal');
+				const groupsDiv = document.getElementById('imported-groups-list');
+				if (!modal || !groupsDiv) return;
+
+				// โหลดข้อมูลล่าสุด
+				state.icsImports = await dbGetAll(STORE_ICS_IMPORTS) || [];
+				state.importedEvents = await dbGetAll(STORE_IMPORTED_EVENTS) || [];
+
+				// สร้าง HTML
+				if (state.icsImports.length === 0) {
+					groupsDiv.innerHTML = '<p class="text-center text-gray-400 py-8 border-2 border-dashed border-gray-200 rounded-xl">ยังไม่มีกิจกรรมที่นำเข้า</p>';
+				} else {
+					let html = '';
+					// เรียงกลุ่มตามวันที่นำเข้า (ใหม่สุดก่อน)
+					const sortedGroups = [...state.icsImports].sort((a, b) => new Date(b.importedAt) - new Date(a.importedAt));
+
+					sortedGroups.forEach(group => {
+						const eventsInGroup = state.importedEvents.filter(ev => ev.importId === group.id);
+						const visible = group.isVisible !== false;
+
+						html += `
+							<div class="group-item bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600 mb-3" data-group-id="${group.id}">
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-3">
+										<!-- สวิตช์เปิด/ปิดกลุ่ม (ใช้ checkbox แบบ custom) -->
+										<label class="relative inline-flex items-center cursor-pointer">
+											<input type="checkbox" class="sr-only peer group-visibility-toggle" data-group="${group.id}" ${visible ? 'checked' : ''}>
+											<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+										</label>
+										<div>
+											<span class="font-bold text-gray-800 dark:text-gray-200">${escapeHTML(group.fileName)}</span>
+											<span class="text-xs text-gray-500 dark:text-gray-400 block">นำเข้าเมื่อ ${new Date(group.importedAt).toLocaleDateString('th-TH')} • ${eventsInGroup.length} รายการ</span>
+										</div>
+									</div>
+									<div class="flex gap-1">
+										<button class="text-red-500 hover:text-red-700 delete-group-btn p-2" data-group="${group.id}" title="ลบกลุ่มนี้">
+											<i class="fa-solid fa-trash"></i>
+										</button>
+									</div>
+								</div>
+
+								<!-- รายการย่อย (ยุบได้) -->
+								<div class="mt-3 ml-14 space-y-1 max-h-40 overflow-y-auto">
+									${eventsInGroup.map(ev => `
+										<div class="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-700 text-sm">
+											<span class="text-gray-700 dark:text-gray-300">📌 ${escapeHTML(ev.title)} <span class="text-gray-400 text-xs">(${ev.start})</span></span>
+											<button class="text-red-400 hover:text-red-600 delete-event-btn" data-event="${ev.id}" title="ลบรายการนี้">
+												<i class="fa-solid fa-times-circle"></i>
+											</button>
+										</div>
+									`).join('')}
+								</div>
+							</div>
+						`;
+					});
+					groupsDiv.innerHTML = html;
+
+					// ใช้ event delegation ที่ groupsDiv
+					groupsDiv.addEventListener('change', async (e) => {
+						const target = e.target;
+						if (target.matches('.group-visibility-toggle')) {
+							const groupId = target.dataset.group;
+							const isChecked = target.checked;
+							await toggleGroupVisibility(groupId, isChecked);
+						}
+					});
+
+					// --- ผูก event สำหรับปุ่มลบกลุ่ม ---
+					groupsDiv.querySelectorAll('.delete-group-btn').forEach(btn => {
+						btn.addEventListener('click', async (e) => {
+							e.stopPropagation();
+							const groupId = e.currentTarget.dataset.group;
+							const group = state.icsImports.find(g => g.id === groupId);
+							const confirm = await Swal.fire({
+								title: 'ลบกลุ่มนี้?',
+								text: `คุณต้องการลบ "${group?.fileName || 'กลุ่ม'}" และกิจกรรมทั้งหมดในกลุ่มนี้ใช่หรือไม่`,
+								icon: 'warning',
+								showCancelButton: true,
+								confirmButtonColor: '#ef4444',
+								confirmButtonText: 'ลบ',
+								cancelButtonText: 'ยกเลิก'
+							});
+							if (confirm.isConfirmed) {
+								await deleteGroup(groupId);
+							}
+						});
+					});
+
+					// --- ผูก event สำหรับปุ่มลบทีละรายการ ---
+					groupsDiv.querySelectorAll('.delete-event-btn').forEach(btn => {
+						btn.addEventListener('click', async (e) => {
+							e.stopPropagation();
+							const eventId = e.currentTarget.dataset.event;
+							const confirm = await Swal.fire({
+								title: 'ลบรายการนี้?',
+								text: 'คุณต้องการลบกิจกรรมนี้ใช่หรือไม่',
+								icon: 'question',
+								showCancelButton: true,
+								confirmButtonColor: '#ef4444',
+								confirmButtonText: 'ลบ',
+								cancelButtonText: 'ยกเลิก'
+							});
+							if (confirm.isConfirmed) {
+								await deleteSingleEvent(eventId);
+							}
+						});
+					});
+				}
+
+				// แสดง modal
+				modal.classList.remove('hidden');
+			}
+
+			function closeImportedEventsModal() {
+				document.getElementById('imported-events-modal').classList.add('hidden');
+			}
+			
+			async function toggleGroupVisibility(groupId, isVisible) {
+				const group = state.icsImports.find(g => g.id === groupId);
+				if (!group) return;
+				group.isVisible = isVisible;
+				await dbPut(STORE_ICS_IMPORTS, group);
+				// รีเฟรชปฏิทิน
+				renderCalendarView();
+				// อัปเดต state
+				state.icsImports = await dbGetAll(STORE_ICS_IMPORTS);
+			}
+
+			async function deleteGroup(groupId) {
+				// ลบเหตุการณ์ทั้งหมดในกลุ่มนี้
+				const eventsToDelete = state.importedEvents.filter(ev => ev.importId === groupId);
+				for (const ev of eventsToDelete) {
+					await dbDelete(STORE_IMPORTED_EVENTS, ev.id);
+				}
+				// ลบกลุ่ม
+				await dbDelete(STORE_ICS_IMPORTS, groupId);
+
+				// อัปเดต state
+				state.icsImports = state.icsImports.filter(g => g.id !== groupId);
+				state.importedEvents = state.importedEvents.filter(ev => ev.importId !== groupId);
+
+				// ปิด modal และเปิดใหม่เพื่อรีเฟรช
+				closeImportedEventsModal();
+				openImportedEventsModal();
+				renderCalendarView();
+				showToast('ลบกลุ่มและกิจกรรมเรียบร้อย', 'success');
+			}
+
+			async function deleteSingleEvent(eventId) {
+				const event = state.importedEvents.find(ev => ev.id === eventId);
+				if (!event) return;
+
+				await dbDelete(STORE_IMPORTED_EVENTS, eventId);
+				state.importedEvents = state.importedEvents.filter(ev => ev.id !== eventId);
+
+				// อัปเดตจำนวนในกลุ่ม
+				const group = state.icsImports.find(g => g.id === event.importId);
+				if (group) {
+					group.eventCount -= 1;
+					if (group.eventCount <= 0) {
+						// ถ้าไม่มีรายการเหลือ ให้ลบกลุ่มทิ้งด้วย
+						await dbDelete(STORE_ICS_IMPORTS, group.id);
+						state.icsImports = state.icsImports.filter(g => g.id !== group.id);
+					} else {
+						await dbPut(STORE_ICS_IMPORTS, group);
+					}
+				}
+
+				// รีเฟรช modal และปฏิทิน
+				closeImportedEventsModal();
+				openImportedEventsModal();
+				renderCalendarView();
+				showToast('ลบรายการแล้ว', 'success');
+			}
+			
+			// ทำให้ฟังก์ชันเป็น global
+			window.closeImportedEventsModal = function() {
+				const modal = document.getElementById('imported-events-modal');
+				if (modal) modal.classList.add('hidden');
+			};
 			
 
         });
