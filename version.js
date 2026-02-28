@@ -3,9 +3,9 @@
 // ============================================
 
 // เวอร์ชันหลัก
-var APP_VERSION = 'v8.5.62';
-var APP_LAST_UPDATED = '27-02-2026';
-var APP_LAST_UPDATED_TH = '27 กุมภาพันธ์ 2569';
+var APP_VERSION = 'v8.5.64';
+var APP_LAST_UPDATED = '28-02-2026';
+var APP_LAST_UPDATED_TH = '28 กุมภาพันธ์ 2569';
 
 // สถานะของแอป (แก้ตรงนี้ที่เดียว!)
 // - 'Beta'  ➜ จะแสดง (Beta)

@@ -429,7 +429,7 @@ body.dark #notification-popover {
 @media (max-width: 640px) {
     #notification-popover {
         max-width: 95vw !important;
-        min-width: 260px !important;
+        min-width: 300px !important;
     }
 }
 

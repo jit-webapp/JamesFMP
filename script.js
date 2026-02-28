@@ -1062,7 +1062,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     // ***************************************************************
-
+	function detectDeviceType() {
+		const ua = navigator.userAgent;
+		if (/iPhone|iPad|iPod/i.test(ua)) {
+			return { type: 'ios', icon: 'fa-apple', label: 'iPhone/iPad' };
+		} else if (/Android/i.test(ua)) {
+			// ถ้าต้องการแยกยี่ห้อ (Samsung, Xiaomi ฯลฯ) อาจเพิ่ม regex ต่อไป
+			if (/SM-|Samsung/i.test(ua)) return { type: 'samsung', icon: 'fa-mobile-screen', label: 'Samsung' };
+			if (/Xiaomi|Redmi/i.test(ua)) return { type: 'xiaomi', icon: 'fa-mobile-screen', label: 'Xiaomi' };
+			return { type: 'android', icon: 'fa-mobile-screen', label: 'Android' };
+		} else if (/Windows|Mac|Linux/i.test(ua)) {
+			return { type: 'desktop', icon: 'fa-computer', label: 'คอมพิวเตอร์' };
+		}
+		return { type: 'unknown', icon: 'fa-question-circle', label: 'ไม่ทราบ' };
+	}
 
     async function loadStateFromDB() {
         try {
@@ -1293,7 +1306,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		// ============================================
 
 		// เพิ่ม log ใหม่
-		function addActivityLog(action, details, icon = 'fa-bell', color = 'text-gray-500') {
+		function addActivityLog(action, details, icon = 'fa-bell', color = 'text-gray-500', extraProps = {}) {
+			const device = detectDeviceType(); // ต้องมีฟังก์ชันนี้อยู่แล้ว
 			const log = {
 				id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
 				timestamp: new Date().toISOString(),
@@ -1301,7 +1315,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				details: details,
 				icon: icon,
 				color: color,
-				isRead: false
+				device: device,
+				isRead: false,
+				...extraProps   // รวม property เพิ่มเติม เช่น hasReceipt
 			};
 
 			if (!state.notificationHistory) state.notificationHistory = [];
@@ -1317,7 +1333,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (typeof renderNotificationHistory === 'function') {
 						renderNotificationHistory();
 					}
-					// 🔔 ถ้า popover กำลังเปิดอยู่ ให้รีเฟรชด้วย
 					const popover = document.getElementById('notification-popover');
 					if (popover && !popover.classList.contains('hidden')) {
 						renderNotificationPopover();
@@ -2321,41 +2336,39 @@ document.addEventListener('DOMContentLoaded', () => {
 		function renderNotificationPopover() {
 			const listDiv = document.getElementById('popover-notification-list');
 			if (!listDiv) return;
-
 			if (!state.notificationHistory) state.notificationHistory = [];
-
 			const unread = state.notificationHistory.filter(log => !log.isRead);
 			if (unread.length === 0) {
 				listDiv.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">ไม่มีการแจ้งเตือนใหม่</p>';
 				return;
 			}
-
 			const recent = unread.slice(0, 20);
 			let html = '';
 			recent.forEach(log => {
 				const date = new Date(log.timestamp);
 				const timeStr = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-
+				// ใช้ hasReceipt แทนการตรวจสอบจากข้อความ
+				const hasReceipt = log.hasReceipt === true;
+				const receiptIcon = hasReceipt ? '<i class="fa-solid fa-image text-purple-500 text-xs ml-1" title="มีรูปแนบ"></i>' : '';
+				const deviceIcon = log.device?.icon ? `<i class="fa-solid ${log.device.icon} text-gray-400 text-xs ml-1" title="${log.device.label}"></i>` : '';
 				html += `
 					<div class="notification-item flex items-start gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition cursor-pointer" data-id="${log.id}">
 						<div class="${log.color || 'text-gray-500 dark:text-gray-400'} mt-1">
 							<i class="fa-solid ${log.icon || 'fa-bell'} text-sm"></i>
 						</div>
 						<div class="flex-1 min-w-0">
-							<!-- บรรทัดเดียว: ชื่อแจ้งเตือน (truncate) + เวลาชิดขวา -->
-							<div class="flex justify-between items-start gap-2">
-								<p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">${escapeHTML(log.action)}</p>
+							<div class="flex justify-between items-start gap-2 flex-wrap">
+								<p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
+									${escapeHTML(log.action)} ${receiptIcon} ${deviceIcon}
+								</p>
 								<span class="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">${timeStr}</span>
 							</div>
-							<p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">${escapeHTML(log.details)}</p>
+							<p class="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5 whitespace-pre-wrap">${escapeHTML(log.details)}</p>
 						</div>
 					</div>
 				`;
 			});
-
 			listDiv.innerHTML = html;
-
-			// ผูก event คลิกที่รายการเพื่อ mark as read (คงไว้)
 			listDiv.querySelectorAll('.notification-item').forEach(item => {
 				item.addEventListener('click', async (e) => {
 					const id = item.dataset.id;
@@ -2365,7 +2378,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				});
 			});
 		}
-
 		// ปุ่มปิด popover
 		document.getElementById('popover-close-btn')?.addEventListener('click', () => {
 			if (popover) popover.classList.add('hidden');
@@ -3481,29 +3493,49 @@ document.addEventListener('DOMContentLoaded', () => {
 		function renderNotificationHistory() {
 			const list = document.getElementById('notification-history-list');
 			if (!list) return;
-
 			if (state.notificationHistory.length === 0) {
-				list.innerHTML = '<p class="text-center text-gray-400 py-4 text-sm">ยังไม่มีประวัติการแจ้งเตือน</p>';
+				list.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">ยังไม่มีประวัติกิจกรรม</p>';
 				return;
 			}
-
-			// เรียงลำดับจากใหม่ไปเก่า (ล่าสุดอยู่บน)
-			const sortedHistory = [...state.notificationHistory].reverse();
-
-			list.innerHTML = sortedHistory.map(h => `
-				<div class="flex items-start gap-3 bg-white p-3 rounded-lg border border-gray-100 shadow-sm text-sm mb-2">
-					<div class="${h.color || 'text-gray-500'} mt-0.5 text-lg">
-						<i class="fa-solid ${h.icon || 'fa-bell'}"></i>
-					</div>
-					<div class="flex-1">
-						<div class="flex justify-between items-start">
-							<span class="font-bold text-gray-700">${h.action || h.title || ''}</span>
-							<span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">${h.date} ${h.time}</span>
+			const sorted = [...state.notificationHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+			let html = '';
+			sorted.forEach(log => {
+				const date = new Date(log.timestamp);
+				const dateStr = date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+				const timeStr = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+				const readClass = log.isRead ? 'opacity-50' : '';
+				// ใช้ hasReceipt แทนการตรวจสอบจากข้อความ
+				const hasReceipt = log.hasReceipt === true;
+				const receiptIcon = hasReceipt ? '<i class="fa-solid fa-image text-purple-500 text-xs ml-1" title="มีรูปแนบ"></i>' : '';
+				const deviceIcon = log.device?.icon ? `<i class="fa-solid ${log.device.icon} text-gray-400 text-xs ml-1" title="${log.device.label}"></i>` : '';
+				html += `
+					<div class="flex items-start gap-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-sm mb-2 transition-colors ${readClass}">
+						<div class="${log.color || 'text-gray-500 dark:text-gray-400'} mt-0.5 text-lg">
+							<i class="fa-solid ${log.icon || 'fa-bell'}"></i>
 						</div>
-						<div class="text-gray-600 mt-1">${h.details || h.message || ''}</div>
+						<div class="flex-1">
+							<div class="flex justify-between items-start">
+								<span class="font-bold text-gray-700 dark:text-gray-200">
+									${escapeHTML(log.action)} ${receiptIcon} ${deviceIcon}
+								</span>
+								<span class="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+									${dateStr} ${timeStr}
+								</span>
+							</div>
+							<div class="text-gray-600 dark:text-gray-400 mt-1 text-xs">${escapeHTML(log.details)}</div>
+						</div>
+						${!log.isRead ? `<button class="mark-read-btn text-blue-500 hover:text-blue-700 p-1" data-id="${log.id}" title="ทำเครื่องหมายว่าอ่านแล้ว"><i class="fa-solid fa-check-circle"></i></button>` : ''}
 					</div>
-				</div>
-			`).join('');
+				`;
+			});
+			list.innerHTML = html;
+			document.querySelectorAll('.mark-read-btn').forEach(btn => {
+				btn.addEventListener('click', async (e) => {
+					e.stopPropagation();
+					const id = e.currentTarget.dataset.id;
+					await markNotificationAsRead(id);
+				});
+			});
 		}
 		
 		// ============================================
@@ -7956,9 +7988,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			} else {
 				addActivityLog(
 					'➕ เพิ่มรายการ',
-					`${transaction.name} ${formatCurrency(transaction.amount)} (${typeLabel})`,
+					`${transaction.name} ${formatCurrency(transaction.amount)} (${typeLabel})${transaction.desc ? ' – ' + transaction.desc : ''}`,
 					'fa-plus-circle',
-					'text-green-600'
+					'text-green-600',
+					{ hasReceipt: !!transaction.receiptBase64 }   // ส่งค่า true/false
 				);
 			}
 
