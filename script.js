@@ -1064,16 +1064,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // ***************************************************************
 	function detectDeviceType() {
 		const ua = navigator.userAgent;
+		// iOS
 		if (/iPhone|iPad|iPod/i.test(ua)) {
 			return { type: 'ios', icon: 'fa-apple', label: 'iPhone/iPad' };
-		} else if (/Android/i.test(ua)) {
-			// ถ้าต้องการแยกยี่ห้อ (Samsung, Xiaomi ฯลฯ) อาจเพิ่ม regex ต่อไป
+		}
+		// Android
+		else if (/Android/i.test(ua)) {
+			// แยกยี่ห้อต่าง ๆ (เรียงลำดับตามความเฉพาะเจาะจง)
 			if (/SM-|Samsung/i.test(ua)) return { type: 'samsung', icon: 'fa-mobile-screen', label: 'Samsung' };
-			if (/Xiaomi|Redmi/i.test(ua)) return { type: 'xiaomi', icon: 'fa-mobile-screen', label: 'Xiaomi' };
+			if (/Xiaomi|Redmi|Mi\s/i.test(ua)) return { type: 'xiaomi', icon: 'fa-mobile-screen', label: 'Xiaomi' };
+			if (/OPPO|CPH\d{4}/i.test(ua)) return { type: 'oppo', icon: 'fa-mobile-screen', label: 'OPPO' };
+			if (/Vivo|VIVO/i.test(ua)) return { type: 'vivo', icon: 'fa-mobile-screen', label: 'Vivo' };
+			if (/HUAWEI|Huawei|HUAWEI/i.test(ua)) return { type: 'huawei', icon: 'fa-mobile-screen', label: 'Huawei' };
+			if (/Pixel|Google\sPixel/i.test(ua)) return { type: 'pixel', icon: 'fa-mobile-screen', label: 'Google Pixel' };
+			if (/OnePlus/i.test(ua)) return { type: 'oneplus', icon: 'fa-mobile-screen', label: 'OnePlus' };
+			if (/Nokia/i.test(ua)) return { type: 'nokia', icon: 'fa-mobile-screen', label: 'Nokia' };
+			// ถ้าไม่ตรงยี่ห้อใด ๆ ให้คืนค่าเป็น Android ทั่วไป
 			return { type: 'android', icon: 'fa-mobile-screen', label: 'Android' };
-		} else if (/Windows|Mac|Linux/i.test(ua)) {
+		}
+		// Desktop
+		else if (/Windows|Mac|Linux/i.test(ua)) {
 			return { type: 'desktop', icon: 'fa-computer', label: 'คอมพิวเตอร์' };
 		}
+		// ไม่ทราบ
 		return { type: 'unknown', icon: 'fa-question-circle', label: 'ไม่ทราบ' };
 	}
 
@@ -1245,6 +1258,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const darkModeConfig = await dbGet(STORE_CONFIG, DARK_MODE_CONFIG_KEY);
             state.isDarkMode = darkModeConfig ? darkModeConfig.value : false;
+			
+			const voiceConfig = await dbGet(STORE_CONFIG, 'isVoiceEnabled');
+            state.isVoiceEnabled = voiceConfig !== undefined ? voiceConfig.value : true;
 
             const autoConfirmConfig = await dbGet(STORE_CONFIG, AUTO_CONFIRM_CONFIG_KEY);
             state.autoConfirmPassword = autoConfirmConfig ? autoConfirmConfig.value : false;
@@ -2748,6 +2764,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setupDarkModeListener();
 		
+		const toggleVoiceBtn = document.getElementById('toggle-smart-voice');
+        if (toggleVoiceBtn) {
+            toggleVoiceBtn.addEventListener('change', async (e) => {
+                const isChecked = e.target.checked;
+                state.isVoiceEnabled = isChecked;
+                try {
+                    await dbPut(STORE_CONFIG, { key: 'isVoiceEnabled', value: isChecked });
+                    showToast(isChecked ? "เปิดเสียงตอบรับแล้ว" : "ปิดเสียงตอบรับแล้ว", "success");
+                    
+                    // ถ้ากำลังพูดอยู่และถูกสั่งปิด ให้เสียงหยุดทันที
+                    if (!isChecked && window.speechSynthesis) {
+                        window.speechSynthesis.cancel();
+                    }
+                } catch (err) {
+                    console.error("Failed to save voice config:", err);
+                }
+            });
+        }
+		
 		// +++ เพิ่มส่วนนี้ +++
         const toggleAutoConfirmBtn = getEl('toggle-auto-confirm-password');
         if (toggleAutoConfirmBtn) {
@@ -3016,14 +3051,19 @@ document.addEventListener('DOMContentLoaded', () => {
 					await dbPut(STORE_RECURRING, rule);
 
 					// ✅ ADD ACTIVITY LOG
-					const freqMap = { 'daily': 'ทุกวัน', 'weekly': 'ทุกสัปดาห์', 'monthly': 'ทุกเดือน', 'yearly': 'ทุกปี' };
-					const actionType = id ? '✏️ แก้ไขรายการประจำ' : '🔄 เพิ่มรายการประจำ';
-					addActivityLog(
-						actionType,
-						`${name} (${formatCurrency(amount)} ${freqMap[frequency]})`,
-						'fa-clock-rotate-left',
-						'text-indigo-600'
-					);
+						const freqMap = { 'daily': 'ทุกวัน', 'weekly': 'ทุกสัปดาห์', 'monthly': 'ทุกเดือน', 'yearly': 'ทุกปี' };
+						const actionType = id ? '✏️ แก้ไขรายการประจำ' : '🔄 เพิ่มรายการประจำ';
+						
+						// [แก้ไขใหม่] เพิ่มวันที่เริ่ม/จ่ายถัดไป
+						const startDateObj = new Date(startDate);
+						const formattedStartDate = startDateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+
+						addActivityLog(
+							actionType,
+							`${name} (${formatCurrency(amount)} ${freqMap[frequency]}) | 📅 วันที่ถัดไป: ${formattedStartDate}`,
+							'fa-clock-rotate-left',
+							'text-indigo-600'
+						);
 
 					if (id) {
 						const idx = state.recurringRules.findIndex(r => r.id === id);
@@ -3450,12 +3490,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
 
 				// ✅ ADD ACTIVITY LOG
-				addActivityLog(
-					editIdx !== undefined ? '✏️ แก้ไขแจ้งเตือน' : '🔔 เพิ่มแจ้งเตือน',
-					msg,
-					'fa-bell',
-					'text-purple-600'
-				);
+					const dateObj = new Date(date);
+					const formattedNotifyDate = dateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+					
+					addActivityLog(
+						editIdx !== undefined ? '✏️ แก้ไขแจ้งเตือน' : '🔔 เพิ่มแจ้งเตือน',
+						`${msg} | 📅 วันที่เตือน: ${formattedNotifyDate}`,
+						'fa-bell',
+						'text-purple-600'
+					);
 
 				resetCustomNotifyForm();
 				renderCustomNotifyList();
@@ -3769,12 +3812,15 @@ document.addEventListener('DOMContentLoaded', () => {
 						await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
 
 						// ✅ ADD ACTIVITY LOG
-						addActivityLog(
-							'🗑️ ลบแจ้งเตือน',
-							n.message,
-							'fa-bell',
-							'text-red-600'
-						);
+							const notifyDateObj = new Date(n.date);
+							const formattedNotifyDate = notifyDateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+							
+							addActivityLog(
+								'🗑️ ลบแจ้งเตือน',
+								`${n.message} | 📅 วันที่เตือน: ${formattedNotifyDate}`,
+								'fa-bell',
+								'text-red-600'
+							);
 
 						renderCustomNotifyList();
 					}
@@ -6396,6 +6442,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (toggleDarkModeBtn) {
             toggleDarkModeBtn.checked = state.isDarkMode;
         }
+		
+		// +++ 4.5 ตั้งค่า Toggle เสียงพูด +++
+        const toggleVoiceBtn = getEl('toggle-smart-voice');
+        if (toggleVoiceBtn) {
+            toggleVoiceBtn.checked = state.isVoiceEnabled;
+        }
 
         // 5. ตั้งค่า Auto Confirm Password
         const toggleAutoConfirmBtn = getEl('toggle-auto-confirm-password');
@@ -6460,6 +6512,13 @@ document.addEventListener('DOMContentLoaded', () => {
 					for (const cmd of allCommands) {
 						await dbDelete(STORE_VOICE_COMMANDS, cmd.id); // ✅ ใช้ dbDelete เพื่อลบ Cloud
 					}
+					// ✅ Activity Log
+					addActivityLog(
+						'🧹 ล้างคำสั่งเสียงทั้งหมด',
+						`ลบ ${allCommands.length} รายการ`,
+						'fa-broom',
+						'text-orange-600'
+					);
 					renderVoiceCommandsList();
 					showToast('ล้างคำสั่งทั้งหมดแล้ว', 'success');
 				}
@@ -6749,6 +6808,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					});
 					if (confirm.isConfirmed) {
 						await dbDelete(STORE_VOICE_COMMANDS, id);
+						addActivityLog(
+							'🗑️ ลบคำสั่งเสียง',
+							`"${cmd.command}"`,
+							'fa-trash',
+							'text-red-600'
+						);
 						renderVoiceCommandsList();
 						showToast('ลบคำสั่งแล้ว', 'success');
 					}
@@ -7976,24 +8041,33 @@ document.addEventListener('DOMContentLoaded', () => {
 			await dbPut(STORE_TRANSACTIONS, transaction);
 
 			// ✅ ADD ACTIVITY LOG
-			const typeLabel = transaction.type === 'income' ? 'รายรับ' : (transaction.type === 'expense' ? 'รายจ่าย' : 'โอนย้าย');
-			if (txId) {
-				const oldTx = state.transactions.find(t => t.id === txId);
-				addActivityLog(
-					'✏️ แก้ไขรายการ',
-					`${oldTx.name} → ${transaction.name} (${formatCurrency(transaction.amount)} ${typeLabel})`,
-					'fa-pencil',
-					'text-blue-600'
-				);
-			} else {
-				addActivityLog(
-					'➕ เพิ่มรายการ',
-					`${transaction.name} ${formatCurrency(transaction.amount)} (${typeLabel})${transaction.desc ? ' – ' + transaction.desc : ''}`,
-					'fa-plus-circle',
-					'text-green-600',
-					{ hasReceipt: !!transaction.receiptBase64 }   // ส่งค่า true/false
-				);
-			}
+				const typeLabel = transaction.type === 'income' ? 'รายรับ' : (transaction.type === 'expense' ? 'รายจ่าย' : 'โอนย้าย');
+				
+				// [แก้ไขใหม่] ตรวจสอบว่าเป็นรายการล่วงหน้าไหม และจัดรูปแบบวันที่
+				const txDateObj = new Date(transaction.date);
+				const isFuture = txDateObj > new Date();
+				const formattedTxDate = txDateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+				const dateInfoText = isFuture ? ` | 📅 วันที่ล่วงหน้า: ${formattedTxDate}` : ` | 📅 วันที่: ${formattedTxDate}`;
+
+				if (txId) {
+					const oldTx = state.transactions.find(t => t.id === txId);
+					const actionTitle = isFuture ? '📝 แก้ไขรายการล่วงหน้า' : '✏️ แก้ไขรายการ';
+					addActivityLog(
+						actionTitle,
+						`${oldTx.name} → ${transaction.name} (${formatCurrency(transaction.amount)} ${typeLabel})${dateInfoText}`,
+						'fa-pencil',
+						'text-blue-600'
+					);
+				} else {
+					const actionTitle = isFuture ? '📅 เพิ่มรายการล่วงหน้า' : '➕ เพิ่มรายการ';
+					addActivityLog(
+						actionTitle,
+						`${transaction.name} ${formatCurrency(transaction.amount)} (${typeLabel})${transaction.desc ? ' – ' + transaction.desc : ''}${dateInfoText}`,
+						isFuture ? 'fa-clock' : 'fa-plus-circle',
+						isFuture ? 'text-yellow-600' : 'text-green-600',
+						{ hasReceipt: !!transaction.receiptBase64 } 
+					);
+				}
 
 			// เช็ค draft
 			const hiddenDraftInput = document.getElementById('hidden-draft-id');
@@ -8349,12 +8423,15 @@ document.addEventListener('DOMContentLoaded', () => {
 					setLastUndoAction({ type: 'tx-delete', data: JSON.parse(JSON.stringify(oldTx)) });
 
 					// ✅ ADD ACTIVITY LOG
-					addActivityLog(
-						'🗑️ ลบรายการ',
-						`${oldTx.name} ${formatCurrency(oldTx.amount)} (${oldTx.type === 'income' ? 'รายรับ' : oldTx.type === 'expense' ? 'รายจ่าย' : 'โอนย้าย'})`,
-						'fa-trash',
-						'text-red-600'
-					);
+						const oldTxDateObj = new Date(oldTx.date);
+						const formattedOldTxDate = oldTxDateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+						
+						addActivityLog(
+							'🗑️ ลบรายการ',
+							`${oldTx.name} ${formatCurrency(oldTx.amount)} (${oldTx.type === 'income' ? 'รายรับ' : oldTx.type === 'expense' ? 'รายจ่าย' : 'โอนย้าย'}) | 📅 วันที่: ${formattedOldTxDate}`,
+							'fa-trash',
+							'text-red-600'
+						);
 
 					if (currentPage === 'home') renderAll();
 					if (currentPage === 'list') renderListPage();
@@ -8904,6 +8981,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         await dbPut(STORE_CONFIG, { key: 'password', value: hashedNewPassword });
                         state.password = hashedNewPassword;
                         Swal.fire('สำเร็จ!', 'เปลี่ยนรหัสผ่านเรียบร้อย', 'success');
+						addActivityLog(
+							'🔑 เปลี่ยนรหัสผ่าน',
+							'เปลี่ยนรหัสผ่านใหม่',
+							'fa-key',
+							'text-blue-600'
+						);
                         resetAutoLockTimer(); 
                     }
                 }
@@ -8926,6 +9009,12 @@ document.addEventListener('DOMContentLoaded', () => {
                  
                  state.password = null;
                         Swal.fire('สำเร็จ!', 'ลบรหัสผ่านเรียบร้อย', 'success');
+						addActivityLog(
+							'🔓 ลบรหัสผ่าน',
+							'ปิดการใช้รหัสผ่าน',
+							'fa-unlock',
+							'text-red-600'
+						);
                         resetAutoLockTimer(); 
                     }
                 });
@@ -8961,6 +9050,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     await dbPut(STORE_CONFIG, { key: 'password', value: hashedNewPassword });
                     state.password = hashedNewPassword;
                     Swal.fire('สำเร็จ!', 'ตั้งค่ารหัสผ่านเรียบร้อย', 'success');
+					addActivityLog(
+						'🔐 ตั้งรหัสผ่าน',
+						'ตั้งรหัสผ่านใหม่',
+						'fa-key',
+						'text-green-600'
+					);
                     resetAutoLockTimer(); 
                 }
             }
@@ -9107,6 +9202,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					setTimeout(() => URL.revokeObjectURL(url), 100);
 					
 					Swal.fire('สำเร็จ', `ดาวน์โหลดไฟล์เรียบร้อย`, 'success');
+					addActivityLog(
+						'📦 สำรองข้อมูล (JSON)',
+						`ดาวน์โหลดไฟล์: ${exportFileDefaultName}`,
+						'fa-file-code',
+						'text-indigo-600'
+					);
 				} catch (err) {
 					Swal.fire('ผิดพลาด', err.message, 'error');
 				}
@@ -9282,6 +9383,12 @@ document.addEventListener('DOMContentLoaded', () => {
 								confirmButtonText: 'ตกลง'
 							});
 						}, 500);
+						addActivityLog(
+							'📊 ส่งออก Excel',
+							`ดาวน์โหลดไฟล์: ${filename}`,
+							'fa-file-excel',
+							'text-green-600'
+						);
 
 					} catch (innerErr) {
 						console.error(innerErr);
@@ -9326,6 +9433,12 @@ document.addEventListener('DOMContentLoaded', () => {
 							totalCount += items.length;
 						}
 					}
+					addActivityLog(
+						'☁️ ซิงค์ข้อมูลขึ้น Cloud',
+						`ส่ง ${totalCount} รายการ`,
+						'fa-cloud-arrow-up',
+						'text-sky-600'
+					);
 					Swal.fire('สำเร็จ!', `ส่งข้อมูล ${totalCount} รายการ ขึ้น Cloud เรียบร้อยแล้ว`, 'success');
 				} catch (err) {
 					Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
@@ -11769,18 +11882,88 @@ document.addEventListener('DOMContentLoaded', () => {
 							<p class="text-sm text-gray-600 dark:text-gray-400">อยู่เหนือปุ่ม <span class="bg-purple-100 px-2 py-0.5 rounded">กลับด้านบน</span> เล็กน้อย มองเห็นเป็นวงกลมสีฟ้าสดใส พร้อมไอคอนไมค์</p>
 						</div>
 						
-						<div>
-							<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🗣️ คำสั่งตัวอย่างที่รองรับ:</p>
-							<div class="grid grid-cols-2 gap-2 text-xs">
-								<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700">🔹 "เปิดปฏิทิน"</div>
-								<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700">🔹 "ค้นหาค่าน้ำ"</div>
-								<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700">🔹 "จดด่วน 500"</div>
-								<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700">🔹 "บันทึก" (ในฟอร์ม)</div>
-								<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700">🔹 "ยกเลิก"</div>
-								<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700">🔹 "หน้าแรก"</div>
+						<div class="max-h-96 overflow-y-auto pr-2 space-y-4">
+							<!-- หมวดการนำทาง -->
+							<div>
+								<p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center"><i class="fa-solid fa-compass text-blue-500 mr-2"></i> การนำทาง</p>
+								<div class="grid grid-cols-2 gap-2 text-xs">
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700">🔹 "หน้าแรก"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "เปิดบัญชี"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ปฏิทิน"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ตั้งค่า"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "รายการ"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "คู่มือ"</div>
+								</div>
+							</div>
+
+							<!-- หมวดการตั้งค่าด่วน -->
+							<div>
+								<p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center"><i class="fa-solid fa-sliders text-purple-500 mr-2"></i> การตั้งค่าด่วน</p>
+								<div class="grid grid-cols-2 gap-2 text-xs">
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "โหมดมืด"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "โหมดสว่าง"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ซ่อนยอดเงิน"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "แสดงยอดเงิน"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ล็อกแอป"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "เปลี่ยนรหัสผ่าน"</div>
+								</div>
+							</div>
+
+							<!-- หมวดจัดการข้อมูล -->
+							<div>
+								<p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center"><i class="fa-solid fa-database text-green-600 mr-2"></i> จัดการข้อมูล</p>
+								<div class="grid grid-cols-2 gap-2 text-xs">
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "สำรองข้อมูล"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ส่งออก Excel"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "นำเข้าข้อมูล"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "อัปเดตระบบ"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ล้างข้อมูลทั้งหมด"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "รีเซ็ตระบบ" (Hard Reset)</div>
+								</div>
+							</div>
+
+							<!-- หมวดย้อนกลับ/ทำซ้ำ -->
+							<div>
+								<p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center"><i class="fa-solid fa-rotate-left text-yellow-600 mr-2"></i> ย้อนกลับ/ทำซ้ำ</p>
+								<div class="grid grid-cols-2 gap-2 text-xs">
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ย้อนกลับ"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ทำซ้ำ"</div>
+								</div>
+							</div>
+
+							<!-- หมวดเพิ่มรายการ -->
+							<div>
+								<p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center"><i class="fa-solid fa-plus-circle text-green-600 mr-2"></i> เพิ่มรายการ</p>
+								<div class="grid grid-cols-2 gap-2 text-xs">
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "จ่ายค่ากาแฟ 60"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ได้เงินเดือน 15000"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "โอนเข้าบัญชีออมทรัพย์ 2000"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "จดด่วน 500"</div>
+								</div>
+							</div>
+
+							<!-- หมวดค้นหา/กรอง -->
+							<div>
+								<p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center"><i class="fa-solid fa-magnifying-glass text-indigo-500 mr-2"></i> ค้นหา/กรอง</p>
+								<div class="grid grid-cols-2 gap-2 text-xs">
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ค้นหาค่าน้ำ"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ดูรายจ่าย"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ดูรายรับ"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ดูเดือนนี้"</div>
+								</div>
+							</div>
+
+							<!-- หมวดฟังก์ชันพิเศษ (Budget, Recurring) -->
+							<div>
+								<p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center"><i class="fa-solid fa-clock-rotate-left text-orange-500 mr-2"></i> ฟังก์ชันพิเศษ</p>
+								<div class="grid grid-cols-2 gap-2 text-xs">
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "ตั้งค่างบประมาณ"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "รายการประจำ"</div>
+									<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border">🔹 "งบประมาณอาหาร"</div>
+								</div>
 							</div>
 						</div>
-						
+
 						<div class="flex justify-center mt-2">
 							<button onclick="Swal.close(); activateGlobalVoice();" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-full text-sm font-bold shadow-md transition">
 								<i class="fa-solid fa-microphone mr-1"></i> ทดลองพูด
@@ -14203,6 +14386,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				try {
 					await dbPut(STORE_VOICE_COMMANDS, command);
+					const actionType = idInput.value ? '✏️ แก้ไขคำสั่งเสียง' : '🎤 เพิ่มคำสั่งเสียง';
+					addActivityLog(
+						actionType,
+						`"${text}" → ${action}`,
+						'fa-microphone',
+						'text-blue-600'
+					);
 					closeVoiceCommandModal();
 					renderVoiceCommandsList(); // ต้องมีฟังก์ชันนี้อยู่แล้ว
 					showToast('บันทึกคำสั่งเรียบร้อย', 'success');
@@ -14602,72 +14792,82 @@ document.addEventListener('DOMContentLoaded', () => {
 			let isSpeaking = false;
 			let speakingText = '';
 
-			function speak(text, button) {  // <-- รับ parameter button เพิ่ม
-				if (localStorage.getItem('voiceEnabled') !== 'false' && 'speechSynthesis' in window) {
-					
-					const cleaned = text.trim().normalize();
-					
-					// ถ้ากำลังพูดอยู่
-					if (isSpeaking) {
-						if (speakingText === cleaned) {
-							// กดปุ่มเดิมซ้ำ → หยุด
-							window.speechSynthesis.cancel();
-							isSpeaking = false;
-							speakingText = '';
-							// ลบคลาสของปุ่มนี้ (ถ้ามี)
-							if (button) {
-								button.classList.remove('animate-pulse', 'scale-105', 'shadow-lg', 'bg-opacity-80');
-							}
-							return;
-						} else {
-							// กดปุ่มอื่น → หยุดของเก่า (เตรียมพูดใหม่)
-							window.speechSynthesis.cancel();
-							// isSpeaking จะถูกตั้งเป็น false ใน onend ของอันเก่า
-						}
-					}
-					
-					// พูดข้อความใหม่
-					const utterance = new SpeechSynthesisUtterance(cleaned);
-					utterance.lang = 'th-TH';
-					utterance.rate = 1.0;
-					utterance.pitch = 1.0;
-					
-					// เลือกเสียงภาษาไทย
-					const setThaiVoice = () => {
-						const voices = speechSynthesis.getVoices();
-						const thaiVoice = voices.find(v => v.lang.includes('th'));
-						if (thaiVoice) utterance.voice = thaiVoice;
-					};
-					if (speechSynthesis.getVoices().length > 0) {
-						setThaiVoice();
-					} else {
-						speechSynthesis.onvoiceschanged = setThaiVoice;
-					}
-					
-					// เมื่อเริ่มพูด
-					utterance.onstart = () => {
-						isSpeaking = true;
-						speakingText = cleaned;
-						// เพิ่มคลาสเคลื่อนไหวให้ปุ่มที่เพิ่งกด
+			// ฟังก์ชันสำหรับสั่งให้ระบบพูด (แก้ไขใหม่รองรับสวิตช์เปิด-ปิด)
+			function speak(text, button = null) {
+				// ✅ 1. เช็คการตั้งค่า: ถ้าปิดเสียงอยู่ (state.isVoiceEnabled = false) ให้หยุดการทำงานทันที
+				if (typeof state !== 'undefined' && state.isVoiceEnabled === false) return;
+				
+				// ✅ 2. เช็คว่า Browser รองรับระบบเสียงหรือไม่
+				if (!('speechSynthesis' in window)) return;
+
+				const cleaned = text.trim(); // ตัดช่องว่างหน้าหลัง
+
+				// --- ส่วน Logic เดิม (จัดการการพูดซ้ำ/หยุด) ---
+				if (typeof isSpeaking !== 'undefined' && isSpeaking) {
+					if (speakingText === cleaned) {
+						// กรณีพูดอยู่แล้วกดปุ่มเดิมซ้ำ → ให้หยุดพูด
+						window.speechSynthesis.cancel();
+						isSpeaking = false;
+						speakingText = '';
+						
+						// ลบ Effect ที่ปุ่ม
 						if (button) {
-							button.classList.add('animate-pulse', 'scale-105', 'shadow-lg', 'bg-opacity-80', 'transition-all', 'duration-300');
+							button.classList.remove('animate-pulse', 'scale-105', 'shadow-lg', 'bg-opacity-80');
 						}
-					};
-					
-					// เมื่อพูดจบหรือ error
-					utterance.onend = utterance.onerror = () => {
-						if (speakingText === cleaned) {
-							isSpeaking = false;
-							speakingText = '';
-							// ลบคลาสของปุ่มนี้
-							if (button) {
-								button.classList.remove('animate-pulse', 'scale-105', 'shadow-lg', 'bg-opacity-80');
-							}
-						}
-					};
-					
-					window.speechSynthesis.speak(utterance);
+						return;
+					} else {
+						// กรณีพูดเรื่องอื่นอยู่แล้วกดปุ่มใหม่ → หยุดอันเก่าเพื่อเตรียมพูดอันใหม่
+						window.speechSynthesis.cancel();
+						// หมายเหตุ: isSpeaking จะถูกจัดการต่อใน onend ของอันเก่าอัตโนมัติ
+					}
 				}
+
+				// --- เริ่มกระบวนการพูด ---
+				const utterance = new SpeechSynthesisUtterance(cleaned);
+				utterance.lang = 'th-TH';
+				utterance.rate = 1.0;
+				utterance.pitch = 1.0;
+
+				// เลือกเสียงภาษาไทย (พยายามหาเสียงไทยที่ดีที่สุด)
+				const setThaiVoice = () => {
+					const voices = speechSynthesis.getVoices();
+					// หาเสียงที่มีรหัส th หรือ TH
+					const thaiVoice = voices.find(v => v.lang.includes('th') || v.lang.includes('TH'));
+					if (thaiVoice) utterance.voice = thaiVoice;
+				};
+				
+				// ตรวจสอบว่ารายการเสียงโหลดมาหรือยัง
+				if (speechSynthesis.getVoices().length > 0) {
+					setThaiVoice();
+				} else {
+					speechSynthesis.onvoiceschanged = setThaiVoice;
+				}
+
+				// Event: เมื่อเริ่มพูด
+				utterance.onstart = () => {
+					isSpeaking = true;
+					speakingText = cleaned;
+					// เพิ่ม Effect ให้ปุ่มดูมีชีวิตชีวา
+					if (button) {
+						button.classList.add('animate-pulse', 'scale-105', 'shadow-lg', 'bg-opacity-80', 'transition-all', 'duration-300');
+					}
+				};
+
+				// Event: เมื่อพูดจบ หรือเกิด Error
+				utterance.onend = utterance.onerror = () => {
+					// เช็คว่าจบประโยคที่กำลังพูดอยู่จริงไหม (กัน case แย่งกันพูด)
+					if (speakingText === cleaned) {
+						isSpeaking = false;
+						speakingText = '';
+						// ลบ Effect ออกจากปุ่ม
+						if (button) {
+							button.classList.remove('animate-pulse', 'scale-105', 'shadow-lg', 'bg-opacity-80');
+						}
+					}
+				};
+
+				// สั่งให้พูด
+				window.speechSynthesis.speak(utterance);
 			}
 			
 			window.speak = speak;
