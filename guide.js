@@ -453,29 +453,26 @@ window.guideHTML = `
 					</div>
 					<h2 class="text-3xl font-bold text-white">ปฏิทินการเงิน</h2>
 					<button class="speak-btn absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors" 
-						data-speak="หน้าปฏิทินการเงินแสดงภาพรวมของธุรกรรมในแต่ละวัน คุณสามารถเลือกแสดงวันหยุด วันพระ และยอดเงินรายวันได้ด้วยสวิตช์ด้านบน แต่ละวันที่มีรายการจะแสดงตัวเลข + (รายรับ) หรือ - (รายจ่าย) กำกับไว้ หากคลิกที่วันใด ระบบจะแสดงสรุปรายการของวันนั้นและมีปุ่มให้เพิ่มรายการหรือแจ้งเตือนพิเศษ">
+						data-speak="หน้าปฏิทินการเงินแสดงภาพรวมของธุรกรรมในแต่ละวัน คุณสามารถเลือกแสดงยอดเงินรายวัน หรือกิจกรรมที่นำเข้าได้ด้วยสวิตช์ด้านบน แต่ละวันที่มีรายการจะแสดงตัวเลข + (รายรับ) หรือ - (รายจ่าย) กำกับไว้ หากคลิกที่วันใด ระบบจะแสดงสรุปรายการของวันนั้นและมีปุ่มให้เพิ่มรายการหรือแจ้งเตือนพิเศษ">
 						<i class="fa-solid fa-volume-high text-xl"></i>
 					</button>
 				</div>
 				<div class="p-8 space-y-6">
-					<!-- ตัวเลือกการแสดงผล (สวิตช์ทำงานจริง) -->
+					<!-- ตัวเลือกการแสดงผล -->
 					<div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
-						<h3 class="font-bold text-gray-700 dark:text-gray-300 mb-3"><i class="fa-solid fa-layer-group mr-2"></i>ตัวเลือกการแสดงผล</h3>
+						<h3 class="font-bold text-gray-700 dark:text-gray-300 mb-3"><i class="fa-solid fa-layer-group mr-2"></i>ตัวเลือกการแสดงปฏิทิน</h3>
 						<div class="flex flex-wrap gap-4">
-							<label class="inline-flex items-center cursor-pointer">
-								<input type="checkbox" id="demo-cal-toggle-holiday" class="sr-only peer" checked>
-								<div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
-								<span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">วันหยุด</span>
-							</label>
-							<label class="inline-flex items-center cursor-pointer">
-								<input type="checkbox" id="demo-cal-toggle-buddhist" class="sr-only peer" checked>
-								<div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
-								<span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">วันพระ</span>
-							</label>
+							<!-- ยอดเงิน -->
 							<label class="inline-flex items-center cursor-pointer">
 								<input type="checkbox" id="demo-cal-toggle-money" class="sr-only peer" checked>
-								<div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-								<span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">ยอดเงิน</span>
+								<div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+								<span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">ปฏิทินการเงิน</span>
+							</label>
+							<!-- กิจกรรมที่นำเข้า -->
+							<label class="inline-flex items-center cursor-pointer">
+								<input type="checkbox" id="demo-cal-toggle-imported" class="sr-only peer" checked>
+								<div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+								<span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">ปฏิทินกิจกรรมที่นำเข้า</span>
 							</label>
 						</div>
 					</div>
@@ -503,10 +500,8 @@ window.guideHTML = `
 									<tr>
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">1</td>
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">2</td>
-										<td data-holiday="true" data-buddhist="true" class="p-2 text-center border border-gray-100 dark:border-gray-700 bg-red-100 dark:bg-red-900/30">
+										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">
 											<span class="font-medium">3</span>
-											<div class="holiday-label text-[10px] text-red-600 dark:text-red-400 font-bold">วันมาฆบูชา</div>
-											<div class="buddhist-label text-[10px] text-yellow-700 dark:text-yellow-400">🙏 วันพระ</div>
 										</td>
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">4</td>
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">5</td>
@@ -517,9 +512,8 @@ window.guideHTML = `
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">8</td>
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">9</td>
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">10</td>
-										<td data-buddhist="true" class="p-2 text-center border border-gray-100 dark:border-gray-700 bg-yellow-100 dark:bg-yellow-900/30">
+										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">
 											<span class="font-medium">11</span>
-											<div class="buddhist-label text-[10px] text-yellow-700 dark:text-yellow-400">🙏 วันพระ</div>
 										</td>
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">12</td>
 										<td class="p-2 text-center border border-gray-100 dark:border-gray-700">13</td>
@@ -572,10 +566,9 @@ window.guideHTML = `
 							</table>
 						</div>
 						<div class="p-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 flex flex-wrap gap-4 justify-center">
-							<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> วันหยุด</span>
-							<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-yellow-400"></span> วันพระ</span>
 							<span class="flex items-center gap-1"><span class="text-green-600">+</span> รายรับ</span>
 							<span class="flex items-center gap-1"><span class="text-red-600">-</span> รายจ่าย</span>
+							<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-600"></span> กิจกรรมที่นำเข้า</span>
 						</div>
 					</div>
 

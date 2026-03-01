@@ -941,6 +941,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isTransitioning = false; 
     let state = {
 		biometricId: null,
+		calShowMoney: true,
+        calShowImported: true,
         transactions: [],
         categories: {
             income: [],
@@ -1271,8 +1273,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
             
             // [เดิม] 9. โหลด Config ย่อยอื่นๆ
-            const showBalanceConfig = await dbGet(STORE_CONFIG, 'showBalanceCard');
-            state.showBalanceCard = showBalanceConfig ? showBalanceConfig.value : false;
+            const calMoneyConfig = await dbGet(STORE_CONFIG, 'calShowMoney');
+            state.calShowMoney = calMoneyConfig !== undefined ? calMoneyConfig.value : true;
+
+            const calImportedConfig = await dbGet(STORE_CONFIG, 'calShowImported');
+            state.calShowImported = calImportedConfig !== undefined ? calImportedConfig.value : true;
 
             const autoLockConfig = await dbGet(STORE_CONFIG, AUTOLOCK_CONFIG_KEY);
             state.autoLockTimeout = autoLockConfig ? autoLockConfig.value : 0;
@@ -4038,17 +4043,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			});
 		}
-		// --- สั่งให้สวิตช์ทำงานทันที ---
-		const calSwitches = ['cal-toggle-holiday', 'cal-toggle-buddhist', 'cal-toggle-money'];
-		calSwitches.forEach(id => {
-			const el = document.getElementById(id);
-			if (el) {
-				el.addEventListener('change', () => {
-					// รีโหลดปฏิทินทันทีที่กดสวิตช์
-					renderCalendarView(); 
-				});
-			}
-		});
 		
 		// --- [NEW] Advanced Filter Event Listeners ---
 		const advStart = document.getElementById('adv-filter-start');
@@ -4193,17 +4187,38 @@ document.addEventListener('DOMContentLoaded', () => {
 				});
 			}
 			
-			// ใน setupEventListeners()
+			// ==========================================
+			// ระบบจำสถานะสวิตช์หน้าปฏิทิน (ยอดเงิน & กิจกรรม)
+			// ==========================================
 			const moneyToggle = document.getElementById('cal-toggle-money');
 			const importedToggle = document.getElementById('cal-toggle-imported');
 
+			// ตรวจสอบและตั้งค่าเริ่มต้นให้กับปุ่มสวิตช์
 			if (moneyToggle) {
-				moneyToggle.addEventListener('change', renderCalendarView);
+				moneyToggle.checked = state.calShowMoney;
+				moneyToggle.addEventListener('change', async (e) => {
+					state.calShowMoney = e.target.checked;
+					try {
+						await dbPut(STORE_CONFIG, { key: 'calShowMoney', value: state.calShowMoney });
+					} catch (err) {
+						console.error("Failed to save calendar money config:", err);
+					}
+					renderCalendarView();
+				});
 			}
+
 			if (importedToggle) {
-				importedToggle.addEventListener('change', renderCalendarView);
+				importedToggle.checked = state.calShowImported;
+				importedToggle.addEventListener('change', async (e) => {
+					state.calShowImported = e.target.checked;
+					try {
+						await dbPut(STORE_CONFIG, { key: 'calShowImported', value: state.calShowImported });
+					} catch (err) {
+						console.error("Failed to save calendar imported config:", err);
+					}
+					renderCalendarView();
+				});
 			}
-	
     }
 	
 	function applyMobileMenuStyle() {
@@ -15313,7 +15328,21 @@ document.addEventListener('DOMContentLoaded', () => {
 				state.icsImports = await dbGetAll(STORE_ICS_IMPORTS);
 			}
 			
+			// ✅ เพิ่มตัวแปรเก็บเวลาไว้ด้านบนสุดของฟังก์ชัน (เพื่อใช้เป็นตัวล็อก)
+			let lastGroupNotifyTime = 0;
+
 			async function toggleGroupNotify(groupId, isChecked) {
+				// ==========================================
+				// 🛑 ระบบป้องกันการแจ้งเตือนเบิ้ล (Debounce)
+				// ==========================================
+				const now = Date.now();
+				// ถ้ามีการเรียกฟังก์ชันซ้ำในระยะเวลาไม่ถึง 0.5 วินาที (500 มิลลิวินาที) ให้ยกเลิกคำสั่งที่เบิ้ลมาทิ้งไป
+				if (now - lastGroupNotifyTime < 500) {
+					return; 
+				}
+				lastGroupNotifyTime = now; // อัปเดตเวลาล่าสุดที่กดสวิตช์
+				// ==========================================
+
 				// ดึงเหตุการณ์ทั้งหมดในกลุ่ม
 				const eventsToUpdate = state.importedEvents.filter(ev => ev.importId === groupId);
 				for (const ev of eventsToUpdate) {
@@ -15332,10 +15361,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				// รีเฟรชปฏิทินเพื่อให้แสดงผลตรงตามการเปลี่ยนแปลง
 				renderCalendarView();
 				
-				// ✅ บันทึก Activity Log
+				// ค้นหาชื่อไฟล์ .ics จากฐานข้อมูลเพื่อนำมาแสดง
+				const group = state.icsImports.find(g => g.id === groupId);
+				const groupName = group && group.fileName ? group.fileName : 'ไม่ทราบชื่อไฟล์';
+				
+				// ✅ บันทึก Activity Log (ตอนนี้จะเตือนแค่ 1 ครั้งแน่นอน)
 				addActivityLog(
 					isChecked ? '🔔 เปิดแจ้งเตือนกลุ่ม' : '🔕 ปิดแจ้งเตือนกลุ่ม',
-					`กลุ่ม ${groupId} (${eventsToUpdate.length} รายการ)`,
+					`กลุ่มกิจกรรม: "${groupName}" (${eventsToUpdate.length} รายการ)`,
 					'fa-bell',
 					isChecked ? 'text-purple-600' : 'text-gray-500'
 				);
