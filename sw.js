@@ -27,6 +27,7 @@ const ASSETS_TO_CACHE = [
   `./libs/panzoom.min.js?v=${APP_VERSION}`,
   `./libs/xlsx.full.min.js?v=${APP_VERSION}`,
   `./libs/tesseract.min.js?v=${APP_VERSION}`,
+  `./libs/ical.min.js?v=${APP_VERSION}`,
   './images/chart-bar-sample.png',
   './images/chart-doughnut-sample.png',
   './images/chart-pie-sample.png',

@@ -920,7 +920,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let myChart;
     let myListPageBarChart;
     let myExpenseByNameChart; 
-    let myCalendar = null;
+    //let myCalendar = null;
+	let moneyCalendar = null;      // สำหรับปฏิทินธุรกรรม
+	let importedCalendar = null;   // สำหรับปฏิทินกิจกรรม
+	let isSyncingCalendars = false;
     let lastUndoAction = null;
     let lastRedoAction = null;
     
@@ -1985,42 +1988,48 @@ document.addEventListener('DOMContentLoaded', () => {
 			const body = document.body;
 			const getEl = (id) => document.getElementById(id);
 			const toggleDarkModeBtn = getEl('toggle-dark-mode');
-			
+
 			if (state.isDarkMode) {
 				body.classList.add('dark');
 				Swal.fire.defaults = {
-					customClass: { 
-						popup: 'swal2-popup', 
+					customClass: {
+						popup: 'swal2-popup',
 						confirmButton: 'bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-xl shadow-lg text-lg',
 						cancelButton: 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-xl text-lg'
-					}, 
-					background: '#1a1a1a', 
+					},
+					background: '#1a1a1a',
 					color: '#e5e7eb',
 					confirmButtonColor: '#a78bfa',
 					cancelButtonColor: '#374151',
 				};
-
 			} else {
 				body.classList.remove('dark');
-				Swal.fire.defaults = { 
-					customClass: { popup: '' }, 
-					background: '#fff', 
+				Swal.fire.defaults = {
+					customClass: { popup: '' },
+					background: '#fff',
 					color: '#545454',
 					confirmButtonColor: '#3085d6',
 					cancelButtonColor: '#d33',
 				};
 			}
 
-			if(toggleDarkModeBtn) {
+			if (toggleDarkModeBtn) {
 				toggleDarkModeBtn.checked = state.isDarkMode;
 			}
 
+			// ทำลายกราฟและปฏิทินเก่าเพื่อให้สร้างใหม่ด้วยธีมใหม่
 			if (myChart) { myChart.destroy(); myChart = null; }
 			if (myExpenseByNameChart) { myExpenseByNameChart.destroy(); myExpenseByNameChart = null; }
 			if (myListPageBarChart) { myListPageBarChart.destroy(); myListPageBarChart = null; }
-			if (myCalendar) { 
-				myCalendar.destroy(); 
-				myCalendar = null;
+
+			// ✅ แก้ไขตรงนี้: ใช้ตัวแปรใหม่
+			if (moneyCalendar) {
+				moneyCalendar.destroy();
+				moneyCalendar = null;
+			}
+			if (importedCalendar) {
+				importedCalendar.destroy();
+				importedCalendar = null;
 			}
 		}
 
@@ -2830,22 +2839,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         getEl('btn-undo').addEventListener('click', handleUndo);
         getEl('btn-redo').addEventListener('click', handleRedo);
-        getEl('cal-prev-btn').addEventListener('click', () => {
-            if (myCalendar) myCalendar.prev(); 
-        });
-        getEl('cal-next-btn').addEventListener('click', () => {
-            if (myCalendar) myCalendar.next(); 
-        });
-        getEl('cal-year-input').addEventListener('change', (e) => {
-            if (myCalendar) {
-                const newYear = parseInt(e.target.value);
-                if (!isNaN(newYear)) {
-                    const currentDate = myCalendar.getDate(); 
-                    const newDate = new Date(newYear, currentDate.getMonth(), 1);
-                    myCalendar.gotoDate(newDate);
-                }
-            }
-        });
+        // แทนที่ของเดิมด้วยโค้ดใหม่
+		getEl('cal-prev-btn').addEventListener('click', () => {
+			if (moneyCalendar && !document.getElementById('calendar-money-container').classList.contains('hidden')) {
+				moneyCalendar.prev();
+			}
+			if (importedCalendar && !document.getElementById('calendar-imported-container').classList.contains('hidden')) {
+				importedCalendar.prev();
+			}
+		});
+
+		getEl('cal-next-btn').addEventListener('click', () => {
+			if (moneyCalendar && !document.getElementById('calendar-money-container').classList.contains('hidden')) {
+				moneyCalendar.next();
+			}
+			if (importedCalendar && !document.getElementById('calendar-imported-container').classList.contains('hidden')) {
+				importedCalendar.next();
+			}
+		});
+
+		getEl('cal-year-input').addEventListener('change', (e) => {
+			const newYear = parseInt(e.target.value);
+			if (isNaN(newYear)) return;
+			const targetDate = new Date(newYear, 0, 1); // 1 มกราคม ของปีนั้น
+			if (moneyCalendar && !document.getElementById('calendar-money-container').classList.contains('hidden')) {
+				moneyCalendar.gotoDate(targetDate);
+			}
+			if (importedCalendar && !document.getElementById('calendar-imported-container').classList.contains('hidden')) {
+				importedCalendar.gotoDate(targetDate);
+			}
+		});
 		// --- [โค้ดใหม่: รองรับทั้งคลิกปกติ และ จิ้มแช่ (Long Press)] ---
         const accContainer = getEl('all-accounts-summary');
         let pressTimer;
@@ -4144,6 +4167,9 @@ document.addEventListener('DOMContentLoaded', () => {
 						cancelButtonText: 'ยกเลิก'
 					});
 					if (confirm.isConfirmed) {
+						// เก็บจำนวนก่อนลบ
+						const eventCount = state.importedEvents.length;
+						const groupCount = state.icsImports.length;
 						// ลบทั้งหมด
 						for (const ev of state.importedEvents) {
 							await dbDelete(STORE_IMPORTED_EVENTS, ev.id);
@@ -4153,6 +4179,13 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 						state.importedEvents = [];
 						state.icsImports = [];
+						// ✅ เพิ่ม Activity Log
+						addActivityLog(
+							'⚠️ ลบกิจกรรมทั้งหมด',
+							`ลบ ${eventCount} รายการ จาก ${groupCount} กลุ่ม`,
+							'fa-calendar-xmark',
+							'text-red-600'
+						);
 						closeImportedEventsModal();
 						renderCalendarView();
 						showToast('ลบกิจกรรมทั้งหมดแล้ว', 'success');
@@ -4162,11 +4195,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			// ใน setupEventListeners()
 			const moneyToggle = document.getElementById('cal-toggle-money');
+			const importedToggle = document.getElementById('cal-toggle-imported');
+
 			if (moneyToggle) {
 				moneyToggle.addEventListener('change', renderCalendarView);
 			}
-
-			const importedToggle = document.getElementById('cal-toggle-imported');
 			if (importedToggle) {
 				importedToggle.addEventListener('change', renderCalendarView);
 			}
@@ -5658,32 +5691,113 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	async function renderCalendarView() {
 		try {
-			const calendarEl = document.getElementById('calendar-container');
+			const moneyContainer = document.getElementById('calendar-money');
+			const importedContainer = document.getElementById('calendar-imported');
+			const moneyWrapper = document.getElementById('calendar-money-container');
+			const importedWrapper = document.getElementById('calendar-imported-container');
 			const yearInput = document.getElementById('cal-year-input');
-			if (!calendarEl || !yearInput) return;
 
-			let currentYearVal = parseInt(yearInput.value);
-			if (isNaN(currentYearVal)) {
-				currentYearVal = new Date(state.calendarCurrentDate || new Date()).getFullYear();
-			}
+			if (!moneyContainer || !importedContainer || !yearInput) return;
 
-			// *** ตรวจสอบสถานะสวิตช์ ***
+			const showMoney = document.getElementById('cal-toggle-money')?.checked ?? true;
 			const showImported = document.getElementById('cal-toggle-imported')?.checked ?? true;
 
-			const calendarEvents = [];
+			if (moneyWrapper) moneyWrapper.style.display = showMoney ? 'block' : 'none';
+			if (importedWrapper) importedWrapper.style.display = showImported ? 'block' : 'none';
 
-			// --- เพิ่มกิจกรรมที่นำเข้า (ถ้าเปิดสวิตช์) ---
-			if (showImported && state.importedEvents) {
-				// สร้าง map ของกลุ่มที่เปิดใช้งาน (importId -> isVisible)
-				const visibleGroups = new Map();
-				state.icsImports.forEach(grp => {
-					visibleGroups.set(grp.id, grp.isVisible !== false);
+			let currentYear = new Date(state.calendarCurrentDate || new Date()).getFullYear();
+			yearInput.value = currentYear;
+
+			// ---------- ปฏิทินธุรกรรม (moneyCalendar) ----------
+			if (showMoney) {
+				const moneyEvents = [];
+				const dailyTotals = {};
+				state.transactions.forEach(tx => {
+					const dateStr = tx.date.slice(0, 10);
+					if (!dailyTotals[dateStr]) dailyTotals[dateStr] = { income: 0, expense: 0 };
+					if (tx.type === 'income') dailyTotals[dateStr].income += tx.amount;
+					else if (tx.type === 'expense') dailyTotals[dateStr].expense += tx.amount;
 				});
 
+				Object.keys(dailyTotals).forEach(date => {
+					const totals = dailyTotals[date];
+					const isFuture = date > new Date().toISOString().slice(0, 10);
+					if (totals.income > 0) {
+						moneyEvents.push({
+							id: date + '-inc',
+							title: '+' + formatCurrency(totals.income).replace(/[^\d.,-]/g, ''),
+							start: date,
+							allDay: true,
+							color: '#22c55e',
+							textColor: '#ffffff',
+							classNames: ['money-event']
+						});
+					}
+					if (totals.expense > 0) {
+						moneyEvents.push({
+							id: date + '-exp',
+							title: '-' + formatCurrency(totals.expense).replace(/[^\d.,-]/g, ''),
+							start: date,
+							allDay: true,
+							color: isFuture ? '#f59e0b' : '#ef4444',
+							textColor: '#ffffff',
+							classNames: ['money-event']
+						});
+					}
+				});
+
+				if (moneyCalendar) moneyCalendar.destroy();
+
+				moneyCalendar = new FullCalendar.Calendar(moneyContainer, {
+					initialView: 'dayGridMonth',
+					initialDate: state.calendarCurrentDate || new Date().toISOString().slice(0, 10),
+					locale: 'th',
+					contentHeight: 'auto',
+					buttonText: { today: 'วันนี้' },
+					headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+					showNonCurrentDates: false,
+					fixedWeekCount: false,
+					events: moneyEvents,
+					eventOrder: "start,-duration,allDay,title",
+					dateClick: function(info) { showDailyDetails(info.dateStr); },
+					eventClick: function(info) { showDailyDetails(info.event.startStr.slice(0, 10)); },
+					datesSet: function(info) {
+						// ✅ ป้องกัน loop ด้วย flag
+						if (isSyncingCalendars) return;
+						isSyncingCalendars = true;
+
+						const currentStart = info.view.currentStart;
+						const offset = currentStart.getTimezoneOffset();
+						const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
+						state.calendarCurrentDate = localDate.toISOString().slice(0, 10);
+						yearInput.value = currentStart.getFullYear();
+
+						// ซิงค์ปฏิทินกิจกรรม (ถ้ากำลังแสดง)
+						if (importedCalendar && showImported) {
+							importedCalendar.gotoDate(localDate);
+						}
+
+						isSyncingCalendars = false;
+					}
+				});
+				moneyCalendar.render();
+			} else {
+				if (moneyCalendar) {
+					moneyCalendar.destroy();
+					moneyCalendar = null;
+				}
+			}
+
+			// ---------- ปฏิทินกิจกรรม (importedCalendar) ----------
+			if (showImported) {
+				const importedEvents = [];
+
+				const visibleGroups = new Map();
+				state.icsImports.forEach(grp => visibleGroups.set(grp.id, grp.isVisible !== false));
+
 				state.importedEvents.forEach(ev => {
-					// ตรวจสอบว่ากลุ่มของ event นี้เปิดอยู่หรือไม่
 					if (visibleGroups.get(ev.importId) !== false) {
-						calendarEvents.push({
+						importedEvents.push({
 							id: ev.id,
 							title: ev.title,
 							start: ev.start,
@@ -5695,82 +5809,90 @@ document.addEventListener('DOMContentLoaded', () => {
 						});
 					}
 				});
-			}
 
-			// --- ถ้ามีเหตุการณ์อื่น ๆ เช่น รายการธุรกรรม (ยอดเงิน) ก็คงไว้ตามเดิม ---
-			const showMoney = document.getElementById('cal-toggle-money')?.checked ?? true;
-			if (showMoney && state.transactions) {
-				const dailyTotals = {};
-				state.transactions.forEach(tx => {
-					const dateStr = tx.date.slice(0, 10); // เอาเฉพาะวันที่ YYYY-MM-DD
-					if (!dailyTotals[dateStr]) dailyTotals[dateStr] = { income: 0, expense: 0 };
-					if (tx.type === 'income') dailyTotals[dateStr].income += tx.amount;
-					else if (tx.type === 'expense') dailyTotals[dateStr].expense += tx.amount;
-				});
+				if (importedCalendar) importedCalendar.destroy();
 
-				Object.keys(dailyTotals).forEach(date => {
-					const totals = dailyTotals[date];
-					const isFuture = date > new Date().toISOString().slice(0, 10);
-					if (totals.income > 0) {
-						calendarEvents.push({
-							id: date + '-inc',
-							title: '+' + formatCurrency(totals.income).replace(/[^\d.,-]/g, ''),
-							start: date,
-							allDay: true,
-							color: '#22c55e',
-							textColor: '#ffffff',
-							classNames: ['money-event']
-						});
-					}
-					if (totals.expense > 0) {
-						calendarEvents.push({
-							id: date + '-exp',
-							title: '-' + formatCurrency(totals.expense).replace(/[^\d.,-]/g, ''),
-							start: date,
-							allDay: true,
-							color: isFuture ? '#f59e0b' : '#ef4444',
-							textColor: '#ffffff',
-							classNames: ['money-event']
-						});
-					}
-				});
-			}
+				importedCalendar = new FullCalendar.Calendar(importedContainer, {
+					initialView: 'dayGridMonth',
+					initialDate: state.calendarCurrentDate || new Date().toISOString().slice(0, 10),
+					locale: 'th',
+					contentHeight: 'auto',
+					buttonText: { today: 'วันนี้' },
+					headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+					showNonCurrentDates: false,
+					fixedWeekCount: false,
+					events: importedEvents,
+					eventOrder: "start,-duration,allDay,title",
+					dateClick: function(info) { showImportedDailyDetails(info.dateStr); },
+					eventClick: function(info) { showImportedDailyDetails(info.event.startStr.slice(0, 10)); },
+					datesSet: function(info) {
+						// ✅ ป้องกัน loop ด้วย flag
+						if (isSyncingCalendars) return;
+						isSyncingCalendars = true;
 
-			// สร้าง FullCalendar ใหม่
-			if (typeof myCalendar !== 'undefined' && myCalendar) myCalendar.destroy();
-
-			const initialDate = state.calendarCurrentDate || new Date().toISOString().slice(0, 10);
-			yearInput.value = new Date(initialDate).getFullYear();
-
-			myCalendar = new FullCalendar.Calendar(calendarEl, {
-				initialView: 'dayGridMonth',
-				initialDate: initialDate,
-				locale: 'th',
-				contentHeight: 'auto',
-				buttonText: { today: 'วันนี้' },
-				headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-				showNonCurrentDates: false,
-				fixedWeekCount: false,
-				events: calendarEvents,
-				eventOrder: "start,-duration,allDay,title",
-				dateClick: function(info) { showDailyDetails(info.dateStr); },
-				eventClick: function(info) { showDailyDetails(info.event.startStr.slice(0, 10)); },
-				datesSet: function(info) {
-					const currentStart = info.view.currentStart;
-					const offset = currentStart.getTimezoneOffset();
-					const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
-					state.calendarCurrentDate = localDate.toISOString().slice(0, 10);
-					if (parseInt(yearInput.value) !== currentStart.getFullYear()) {
+						const currentStart = info.view.currentStart;
+						const offset = currentStart.getTimezoneOffset();
+						const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
+						state.calendarCurrentDate = localDate.toISOString().slice(0, 10);
 						yearInput.value = currentStart.getFullYear();
-						// ไม่ต้องโหลดซ้ำเพราะ events ถูกกำหนดไว้แล้ว
+
+						// ซิงค์ปฏิทินธุรกรรม (ถ้ากำลังแสดง)
+						if (moneyCalendar && showMoney) {
+							moneyCalendar.gotoDate(localDate);
+						}
+
+						isSyncingCalendars = false;
 					}
+				});
+				importedCalendar.render();
+			} else {
+				if (importedCalendar) {
+					importedCalendar.destroy();
+					importedCalendar = null;
 				}
-			});
-			myCalendar.render();
+			}
 
 		} catch (err) {
 			console.error('Error rendering calendar:', err);
 		}
+	}
+	
+	async function showImportedDailyDetails(dateStr) {
+		const dailyImported = state.importedEvents.filter(ev => ev.start.startsWith(dateStr));
+
+		if (dailyImported.length === 0) {
+			Swal.fire({
+				icon: 'info',
+				title: 'ไม่มีกิจกรรม',
+				text: 'วันนี้ไม่มีกิจกรรมที่นำเข้า',
+				confirmButtonText: 'ตกลง'
+			});
+			return;
+		}
+
+		let html = '<ul class="space-y-2 max-h-96 overflow-y-auto">';
+		dailyImported.forEach(ev => {
+			html += `
+				<li class="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-800">
+					<i class="fa-regular fa-calendar-check text-purple-600 mt-1"></i>
+					<div>
+						<div class="font-bold text-gray-800 dark:text-gray-200">${escapeHTML(ev.title)}</div>
+						<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">🕒 ${ev.allDay ? 'ทั้งวัน' : ev.start}</div>
+					</div>
+				</li>
+			`;
+		});
+		html += '</ul>';
+
+		await Swal.fire({
+			title: `📅 กิจกรรมวันที่ ${new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+			html: html,
+			icon: 'info',
+			confirmButtonText: 'ปิด',
+			customClass: { popup: state.isDarkMode ? 'swal2-popup' : '' },
+			background: state.isDarkMode ? '#1a1a1a' : '#fff',
+			color: state.isDarkMode ? '#e5e7eb' : '#545454'
+		});
 	}
 
 	// ============================================
@@ -5820,7 +5942,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		
 		// หา imported events ในวันนี้
-		const dailyImported = state.importedEvents.filter(ev => ev.start === dateStr);
+		const dailyImported = state.importedEvents.filter(ev => ev.start.startsWith(dateStr));
 
 		let importedHtml = '';
 		if (dailyImported.length > 0) {
@@ -10002,6 +10124,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     }[m];
                 });
             }
+			
+			function formatICSDate(dtstart) {
+				// dtstart คือ ICAL.Time object
+				const isAllDay = !dtstart.toICALString().includes('T');
+				
+				if (isAllDay) {
+					// all-day: ใช้ปี เดือน วันโดยตรง ไม่ผ่าน time zone
+					const year = dtstart.year;
+					const month = dtstart.month;
+					const day = dtstart.day;
+					return {
+						start: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+						allDay: true
+					};
+				} else {
+					// มีเวลา: ใช้ toJSDate() แล้วจัดรูปแบบตาม local time
+					const date = dtstart.toJSDate();
+					const year = date.getFullYear();
+					const month = String(date.getMonth() + 1).padStart(2, '0');
+					const day = String(date.getDate()).padStart(2, '0');
+					const hour = String(date.getHours()).padStart(2, '0');
+					const minute = String(date.getMinutes()).padStart(2, '0');
+					return {
+						start: `${year}-${month}-${day}T${hour}:${minute}`,
+						allDay: false
+					};
+				}
+			}
 
             function formatTxDetails(tx) {
                 if (!tx) return '<span>[ข้อมูลเสียหาย]</span>';
@@ -14834,7 +14984,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			async function importICS(file) {
 				const reader = new FileReader();
-
 				reader.onload = async (e) => {
 					try {
 						const icsData = e.target.result;
@@ -14847,24 +14996,29 @@ document.addEventListener('DOMContentLoaded', () => {
 							return;
 						}
 
-						// --- ชุดสีสำเร็จรูป (เลือกสีที่สดใสและแตกต่างกัน) ---
-						const colorPalette = [
-							'#FF5733', // ส้ม
-							'#33FF57', // เขียว
-							'#3357FF', // น้ำเงิน
-							'#FF33F1', // ชมพู
-							'#F1FF33', // เหลือง
-							'#33FFF5', // ฟ้า
-							'#FF8C33', // ส้มอ่อน
-							'#8C33FF', // ม่วง
-							'#FF3366', // แดงชมพู
-							'#33FF99', // เขียวมินต์
-							'#6633FF', // ม่วงเข้ม
-							'#FF9933', // ส้มเหลือง
-							'#00CC99', // เขียวน้ำทะเล
-							'#CC00CC', // ม่วงอมชมพู
-							'#FFCC00'  // ทอง
+						// --- ชุดสีสำหรับกลุ่ม (เหมือนเดิม) ---
+						const groupColors = [
+							'#FF5733', '#33FF57', '#3357FF', '#FF33F1', '#F1FF33',
+							'#33FFF5', '#FF8C33', '#8C33FF', '#FF3366', '#33FF99',
+							'#6633FF', '#FF9933', '#00CC99', '#CC00CC', '#FFCC00'
 						];
+
+						// ******************************
+						// [1] ตรวจสอบสีที่ใช้ไปแล้ว
+						// ******************************
+						// ดึงสีที่ใช้ไปแล้วจาก groups ที่มีอยู่
+						const usedColors = state.icsImports
+							.map(g => g.color)
+							.filter(c => c !== undefined); // กรองเอาเฉพาะที่มีสี
+
+						// หาสีที่ยังไม่ถูกใช้
+						let availableColors = groupColors.filter(c => !usedColors.includes(c));
+
+						// เลือกสีสำหรับกลุ่มนี้
+						const groupColor = availableColors.length > 0 
+							? availableColors[Math.floor(Math.random() * availableColors.length)]
+							: groupColors[Math.floor(Math.random() * groupColors.length)];
+						// ******************************
 
 						// --- สร้างกลุ่ม (import group) ---
 						const groupId = `import_${Date.now()}`;
@@ -14873,32 +15027,27 @@ document.addEventListener('DOMContentLoaded', () => {
 							fileName: file.name,
 							importedAt: new Date().toISOString(),
 							eventCount: vevents.length,
-							isVisible: true
+							isVisible: true,
+							color: groupColor   // [2] เก็บสีของกลุ่มไว้ด้วย
 						};
 
-						// --- แปลงแต่ละ event เป็นฟอร์แมตที่เราจะเก็บ ---
+						// --- แปลงแต่ละ event ---
 						const eventsToAdd = [];
 						vevents.forEach((vevent, idx) => {
 							const summary = vevent.getFirstPropertyValue('summary') || 'ไม่มีชื่อ';
 							const dtstart = vevent.getFirstPropertyValue('dtstart');
 							if (!dtstart) return;
 
-							const startDate = dtstart.toJSDate();
-							const isAllDay = !dtstart.toICALString().includes('T');
-							const startStr = isAllDay
-								? startDate.toISOString().split('T')[0]               // YYYY-MM-DD
-								: startDate.toISOString().slice(0, 16).replace('T', ' '); // YYYY-MM-DD HH:mm
-
-							// *** เลือกสีจาก palette โดยวนตาม index ***
-							const eventColor = colorPalette[idx % colorPalette.length];
+							// ใช้ฟังก์ชันใหม่
+							const { start, allDay } = formatICSDate(dtstart);
 
 							eventsToAdd.push({
 								id: `${groupId}_${idx}`,
 								title: summary,
-								start: startStr,
-								allDay: isAllDay,
-								color: eventColor,                 // กำหนดสี
-								textColor: '#ffffff',                // ตัวหนังสือสีขาว (มองเห็นชัด)
+								start: start,
+								allDay: allDay,
+								color: groupColor,
+								textColor: '#ffffff',
 								importId: groupId,
 								source: 'ics_import'
 							});
@@ -14918,6 +15067,13 @@ document.addEventListener('DOMContentLoaded', () => {
 						renderCalendarView();
 						closeImportedEventsModal();
 						openImportedEventsModal();
+						
+						addActivityLog(
+							'📂 นำเข้ากิจกรรม ICS',
+							`นำเข้า ${eventsToAdd.length} รายการจาก "${file.name}"`,
+							'fa-file-import',
+							'text-purple-600'
+						);
 
 						showToast(`นำเข้า ${eventsToAdd.length} รายการจากไฟล์ ${file.name} สำเร็จ`, 'success');
 					} catch (err) {
@@ -14925,7 +15081,6 @@ document.addEventListener('DOMContentLoaded', () => {
 						showToast('ไม่สามารถอ่านไฟล์ ICS ได้ (ไฟล์อาจเสียหาย)', 'error');
 					}
 				};
-
 				reader.readAsText(file);
 			}
 			
@@ -14938,7 +15093,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				state.icsImports = await dbGetAll(STORE_ICS_IMPORTS) || [];
 				state.importedEvents = await dbGetAll(STORE_IMPORTED_EVENTS) || [];
 
-				// สร้าง HTML
 				if (state.icsImports.length === 0) {
 					groupsDiv.innerHTML = '<p class="text-center text-gray-400 py-8 border-2 border-dashed border-gray-200 rounded-xl">ยังไม่มีกิจกรรมที่นำเข้า</p>';
 				} else {
@@ -14949,16 +15103,22 @@ document.addEventListener('DOMContentLoaded', () => {
 					sortedGroups.forEach(group => {
 						const eventsInGroup = state.importedEvents.filter(ev => ev.importId === group.id);
 						const visible = group.isVisible !== false;
+						// ใช้สีจาก group.color ถ้ามี ถ้าไม่มีให้ใช้สี default
+						const groupColor = group.color || '#8b5cf6';
 
 						html += `
 							<div class="group-item bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600 mb-3" data-group-id="${group.id}">
 								<div class="flex items-center justify-between">
 									<div class="flex items-center gap-3">
-										<!-- สวิตช์เปิด/ปิดกลุ่ม (ใช้ checkbox แบบ custom) -->
+										<!-- แถบสี (สี่เหลี่ยม) ใช้ style background-color -->
+										<div class="w-6 h-6 rounded-full" style="background-color: ${groupColor}; border: 2px solid rgba(255,255,255,0.3);"></div>
+										
+										<!-- สวิตช์เปิด/ปิดกลุ่ม -->
 										<label class="relative inline-flex items-center cursor-pointer">
 											<input type="checkbox" class="sr-only peer group-visibility-toggle" data-group="${group.id}" ${visible ? 'checked' : ''}>
 											<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
 										</label>
+
 										<div>
 											<span class="font-bold text-gray-800 dark:text-gray-200">${escapeHTML(group.fileName)}</span>
 											<span class="text-xs text-gray-500 dark:text-gray-400 block">นำเข้าเมื่อ ${new Date(group.importedAt).toLocaleDateString('th-TH')} • ${eventsInGroup.length} รายการ</span>
@@ -14971,7 +15131,7 @@ document.addEventListener('DOMContentLoaded', () => {
 									</div>
 								</div>
 
-								<!-- รายการย่อย (ยุบได้) -->
+								<!-- รายการย่อย (คงเดิม) -->
 								<div class="mt-3 ml-14 space-y-1 max-h-40 overflow-y-auto">
 									${eventsInGroup.map(ev => `
 										<div class="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-700 text-sm">
@@ -15076,6 +15236,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				openImportedEventsModal();
 				renderCalendarView();
 				showToast('ลบกลุ่มและกิจกรรมเรียบร้อย', 'success');
+				const group = state.icsImports.find(g => g.id === groupId);
+				const groupName = group?.fileName || 'ไม่ทราบชื่อ';
+
+				addActivityLog(
+					'🗑️ ลบกลุ่มกิจกรรม',
+					`ลบกลุ่ม "${groupName}" (${eventsToDelete.length} รายการ)`,
+					'fa-trash',
+					'text-red-600'
+				);
 			}
 
 			async function deleteSingleEvent(eventId) {
@@ -15103,6 +15272,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				openImportedEventsModal();
 				renderCalendarView();
 				showToast('ลบรายการแล้ว', 'success');
+				addActivityLog(
+					'🗑️ ลบกิจกรรม',
+					`"${event.title}"`,
+					'fa-calendar-times',
+					'text-red-600'
+				);
 			}
 			
 			// ทำให้ฟังก์ชันเป็น global
