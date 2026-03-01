@@ -439,3 +439,42 @@ body.dark #notification-popover {
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
 }
+
+.event-notify-toggle {
+    display: inline-block !important;
+}
+label:has(.event-notify-toggle) {
+    display: inline-flex !important;
+}
+
+/* บังคับให้ toggle switch แสดงผล */
+.event-notify-toggle + div {
+    display: inline-block !important;
+    width: 2rem !important;
+    height: 1rem !important;
+    background-color: #e5e7eb !important;
+    border-radius: 9999px !important;
+    position: relative !important;
+    transition: background-color 0.2s !important;
+}
+.event-notify-toggle:checked + div {
+    background-color: #7e22ce !important;
+}
+.event-notify-toggle + div::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 2px !important;
+    left: 2px !important;
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+    background-color: white !important;
+    border-radius: 9999px !important;
+    transition: transform 0.2s !important;
+}
+.event-notify-toggle:checked + div::after {
+    transform: translateX(1rem) !important;
+}
+
+label:has(.event-notify-toggle) {
+    display: inline-flex !important;
+}

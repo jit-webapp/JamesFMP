@@ -1087,28 +1087,28 @@ document.addEventListener('DOMContentLoaded', () => {
 		const ua = navigator.userAgent;
 		// iOS
 		if (/iPhone|iPad|iPod/i.test(ua)) {
-			return { type: 'ios', icon: 'fa-apple', label: 'iPhone/iPad' };
+			return { type: 'ios', icon: 'fab fa-apple', label: 'iPhone/iPad' };
 		}
 		// Android
 		else if (/Android/i.test(ua)) {
-			// แยกยี่ห้อต่าง ๆ (เรียงลำดับตามความเฉพาะเจาะจง)
-			if (/SM-|Samsung/i.test(ua)) return { type: 'samsung', icon: 'fa-mobile-screen', label: 'Samsung' };
-			if (/Xiaomi|Redmi|Mi\s/i.test(ua)) return { type: 'xiaomi', icon: 'fa-mobile-screen', label: 'Xiaomi' };
-			if (/OPPO|CPH\d{4}/i.test(ua)) return { type: 'oppo', icon: 'fa-mobile-screen', label: 'OPPO' };
-			if (/Vivo|VIVO/i.test(ua)) return { type: 'vivo', icon: 'fa-mobile-screen', label: 'Vivo' };
-			if (/HUAWEI|Huawei|HUAWEI/i.test(ua)) return { type: 'huawei', icon: 'fa-mobile-screen', label: 'Huawei' };
-			if (/Pixel|Google\sPixel/i.test(ua)) return { type: 'pixel', icon: 'fa-mobile-screen', label: 'Google Pixel' };
-			if (/OnePlus/i.test(ua)) return { type: 'oneplus', icon: 'fa-mobile-screen', label: 'OnePlus' };
-			if (/Nokia/i.test(ua)) return { type: 'nokia', icon: 'fa-mobile-screen', label: 'Nokia' };
-			// ถ้าไม่ตรงยี่ห้อใด ๆ ให้คืนค่าเป็น Android ทั่วไป
-			return { type: 'android', icon: 'fa-mobile-screen', label: 'Android' };
+			// แยกยี่ห้อ
+			if (/SM-|Samsung/i.test(ua)) return { type: 'samsung', icon: 'fas fa-mobile-screen', label: 'Samsung' };
+			if (/Xiaomi|Redmi|Mi\s/i.test(ua)) return { type: 'xiaomi', icon: 'fas fa-mobile-screen', label: 'Xiaomi' };
+			if (/OPPO|CPH\d{4}/i.test(ua)) return { type: 'oppo', icon: 'fas fa-mobile-screen', label: 'OPPO' };
+			if (/Vivo|VIVO/i.test(ua)) return { type: 'vivo', icon: 'fas fa-mobile-screen', label: 'Vivo' };
+			if (/HUAWEI|Huawei|HUAWEI/i.test(ua)) return { type: 'huawei', icon: 'fas fa-mobile-screen', label: 'Huawei' };
+			if (/Pixel|Google\sPixel/i.test(ua)) return { type: 'pixel', icon: 'fas fa-mobile-screen', label: 'Google Pixel' };
+			if (/OnePlus/i.test(ua)) return { type: 'oneplus', icon: 'fas fa-mobile-screen', label: 'OnePlus' };
+			if (/Nokia/i.test(ua)) return { type: 'nokia', icon: 'fas fa-mobile-screen', label: 'Nokia' };
+			// Android ทั่วไป
+			return { type: 'android', icon: 'fas fa-mobile-screen', label: 'Android' };
 		}
 		// Desktop
 		else if (/Windows|Mac|Linux/i.test(ua)) {
-			return { type: 'desktop', icon: 'fa-computer', label: 'คอมพิวเตอร์' };
+			return { type: 'desktop', icon: 'fas fa-computer', label: 'คอมพิวเตอร์' };
 		}
 		// ไม่ทราบ
-		return { type: 'unknown', icon: 'fa-question-circle', label: 'ไม่ทราบ' };
+		return { type: 'unknown', icon: 'fas fa-question-circle', label: 'ไม่ทราบ' };
 	}
 
     async function loadStateFromDB() {
@@ -2401,7 +2401,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				// ใช้ hasReceipt แทนการตรวจสอบจากข้อความ
 				const hasReceipt = log.hasReceipt === true;
 				const receiptIcon = hasReceipt ? '<i class="fa-solid fa-image text-purple-500 text-xs ml-1" title="มีรูปแนบ"></i>' : '';
-				const deviceIcon = log.device?.icon ? `<i class="fa-solid ${log.device.icon} text-gray-400 text-xs ml-1" title="${log.device.label}"></i>` : '';
+				const deviceIcon = log.device?.icon ? `<i class="${log.device.icon} text-gray-400 text-xs ml-1" title="${log.device.label}"></i>` : '';
 				html += `
 					<div class="notification-item flex items-start gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition cursor-pointer" data-id="${log.id}">
 						<div class="${log.color || 'text-gray-500 dark:text-gray-400'} mt-1">
@@ -3599,7 +3599,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				// ใช้ hasReceipt แทนการตรวจสอบจากข้อความ
 				const hasReceipt = log.hasReceipt === true;
 				const receiptIcon = hasReceipt ? '<i class="fa-solid fa-image text-purple-500 text-xs ml-1" title="มีรูปแนบ"></i>' : '';
-				const deviceIcon = log.device?.icon ? `<i class="fa-solid ${log.device.icon} text-gray-400 text-xs ml-1" title="${log.device.label}"></i>` : '';
+				const deviceIcon = log.device?.icon ? `<i class="${log.device.icon} text-gray-400 text-xs ml-1" title="${log.device.label}"></i>` : '';
 				html += `
 					<div class="flex items-start gap-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-sm mb-2 transition-colors ${readClass}">
 						<div class="${log.color || 'text-gray-500 dark:text-gray-400'} mt-0.5 text-lg">
@@ -12499,6 +12499,23 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 					}
 				});
+				
+				// ตรวจสอบ imported events ที่เปิดแจ้งเตือน
+				state.importedEvents.forEach(ev => {
+					if (!ev.notify) return;
+					if (state.ignoredNotifications.includes(ev.id)) return;
+
+					const eventDateStr = ev.start.slice(0, 10); // ตัดเวลาออก
+					if (eventDateStr === todayStr) {
+						alerts.push({
+							id: ev.id,
+							title: '📅 กิจกรรมที่นำเข้า',
+							message: ev.title,
+							icon: 'fa-calendar-day',
+							color: 'text-purple-600'
+						});
+					}
+				});
 
 				if (alerts.length > 0) {
 					alerts.forEach(alertItem => {
@@ -15049,7 +15066,8 @@ document.addEventListener('DOMContentLoaded', () => {
 								color: groupColor,
 								textColor: '#ffffff',
 								importId: groupId,
-								source: 'ics_import'
+								source: 'ics_import',
+								notify: false
 							});
 						});
 
@@ -15084,12 +15102,39 @@ document.addEventListener('DOMContentLoaded', () => {
 				reader.readAsText(file);
 			}
 			
+			// ============================================
+			// ฟังก์ชันช่วยเพิ่มฟิลด์ notify ให้กับ imported events เก่า
+			// ============================================
+			window.migrateImportedEvents = async function() {
+				try {
+					// ใช้ dbGetAll ที่มีอยู่แล้วภายในฟังก์ชันนี้
+					const events = await dbGetAll(STORE_IMPORTED_EVENTS);
+					let updated = 0;
+					for (const ev of events) {
+						if (ev.notify === undefined) {
+							ev.notify = false;
+							await dbPut(STORE_IMPORTED_EVENTS, ev);
+							updated++;
+						}
+					}
+					console.log(`✅ อัปเดต ${updated} รายการ เรียบร้อย`);
+					alert(`อัปเดต ${updated} รายการ เรียบร้อย\nกรุณาปิด Modal แล้วเปิดใหม่`);
+					return updated;
+				} catch (err) {
+					console.error('Migrate error:', err);
+					alert('เกิดข้อผิดพลาด: ' + err.message);
+				}
+			};
+			
+			// ============================================
+			// เปิด Modal จัดการกิจกรรมที่นำเข้า (แก้ไขแล้ว)
+			// ============================================
 			async function openImportedEventsModal() {
 				const modal = document.getElementById('imported-events-modal');
 				const groupsDiv = document.getElementById('imported-groups-list');
 				if (!modal || !groupsDiv) return;
 
-				// โหลดข้อมูลล่าสุด
+				// โหลดข้อมูลล่าสุดจาก IndexedDB
 				state.icsImports = await dbGetAll(STORE_ICS_IMPORTS) || [];
 				state.importedEvents = await dbGetAll(STORE_IMPORTED_EVENTS) || [];
 
@@ -15103,61 +15148,111 @@ document.addEventListener('DOMContentLoaded', () => {
 					sortedGroups.forEach(group => {
 						const eventsInGroup = state.importedEvents.filter(ev => ev.importId === group.id);
 						const visible = group.isVisible !== false;
-						// ใช้สีจาก group.color ถ้ามี ถ้าไม่มีให้ใช้สี default
 						const groupColor = group.color || '#8b5cf6';
+						
+						// ===== คำนวณว่าทุกกิจกรรมในกลุ่มนี้เปิดแจ้งเตือนอยู่หรือไม่ =====
+						const allNotify = eventsInGroup.every(ev => ev.notify === true);
 
 						html += `
-							<div class="group-item bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600 mb-3" data-group-id="${group.id}">
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-3">
-										<!-- แถบสี (สี่เหลี่ยม) ใช้ style background-color -->
-										<div class="w-6 h-6 rounded-full" style="background-color: ${groupColor}; border: 2px solid rgba(255,255,255,0.3);"></div>
-										
-										<!-- สวิตช์เปิด/ปิดกลุ่ม -->
-										<label class="relative inline-flex items-center cursor-pointer">
-											<input type="checkbox" class="sr-only peer group-visibility-toggle" data-group="${group.id}" ${visible ? 'checked' : ''}>
+						<div class="group-item bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600 mb-3" data-group-id="${group.id}">
+							<!-- บรรทัดแรก: แถบสี + visibility + ชื่อไฟล์ (อยู่ซ้าย) -->
+							<div class="flex items-center justify-between">
+								<div class="flex items-center gap-3">
+									<!-- แถบสีกลุ่ม -->
+									<div class="w-6 h-6 rounded-full" style="background-color: ${groupColor}; border: 2px solid rgba(255,255,255,0.3);"></div>
+
+									<!-- สวิตช์แสดง/ซ่อนกลุ่ม (visibility) -->
+									<label class="relative inline-flex items-center cursor-pointer">
+										<input type="checkbox" class="sr-only peer group-visibility-toggle" data-group="${group.id}" ${visible ? 'checked' : ''}>
+										<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+									</label>
+
+									<div>
+										<span class="font-bold text-gray-800 dark:text-gray-200">${escapeHTML(group.fileName)}</span>
+										<span class="text-xs text-gray-500 dark:text-gray-400 block">นำเข้าเมื่อ ${new Date(group.importedAt).toLocaleDateString('th-TH')} • ${eventsInGroup.length} รายการ</span>
+									</div>
+								</div>
+
+								<!-- กลุ่มขวา: สวิตช์แจ้งเตือน + ปุ่มลบ -->
+								<div class="flex items-center gap-3">
+									<!-- สวิตช์แจ้งเตือนทั้งกลุ่ม พร้อมข้อความ "แจ้งเตือน" -->
+									<div class="flex items-center gap-1">
+										<span class="text-sm text-gray-600 dark:text-gray-300">แจ้งเตือน</span>
+										<label class="relative inline-flex items-center cursor-pointer" title="เปิด/ปิดการแจ้งเตือนทั้งหมดในกลุ่มนี้">
+											<input type="checkbox" class="sr-only peer group-notify-toggle" data-group="${group.id}" ${allNotify ? 'checked' : ''}>
 											<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
 										</label>
-
-										<div>
-											<span class="font-bold text-gray-800 dark:text-gray-200">${escapeHTML(group.fileName)}</span>
-											<span class="text-xs text-gray-500 dark:text-gray-400 block">นำเข้าเมื่อ ${new Date(group.importedAt).toLocaleDateString('th-TH')} • ${eventsInGroup.length} รายการ</span>
-										</div>
 									</div>
-									<div class="flex gap-1">
-										<button class="text-red-500 hover:text-red-700 delete-group-btn p-2" data-group="${group.id}" title="ลบกลุ่มนี้">
-											<i class="fa-solid fa-trash"></i>
-										</button>
-									</div>
-								</div>
 
-								<!-- รายการย่อย (คงเดิม) -->
-								<div class="mt-3 ml-14 space-y-1 max-h-40 overflow-y-auto">
-									${eventsInGroup.map(ev => `
-										<div class="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-700 text-sm">
-											<span class="text-gray-700 dark:text-gray-300">📌 ${escapeHTML(ev.title)} <span class="text-gray-400 text-xs">(${ev.start})</span></span>
-											<button class="text-red-400 hover:text-red-600 delete-event-btn" data-event="${ev.id}" title="ลบรายการนี้">
-												<i class="fa-solid fa-times-circle"></i>
-											</button>
-										</div>
-									`).join('')}
+									<!-- ปุ่มลบกลุ่ม -->
+									<button class="text-red-500 hover:text-red-700 delete-group-btn p-2" data-group="${group.id}" title="ลบกลุ่มนี้">
+										<i class="fa-solid fa-trash"></i>
+									</button>
 								</div>
 							</div>
+
+							<!-- รายการย่อย (คงเดิม) -->
+							<div class="mt-3 ml-14 space-y-1 max-h-40 overflow-y-auto">
+								${eventsInGroup.map(ev => `
+									<div class="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-700 text-sm">
+										<div class="flex items-center gap-2 flex-1">
+											<span class="text-gray-700 dark:text-gray-300 truncate">📌 ${escapeHTML(ev.title)} <span class="text-gray-400 text-xs">(${ev.start})</span></span>
+											<!-- toggle แจ้งเตือนรายการ -->
+											<label class="relative inline-flex items-center cursor-pointer ml-auto">
+												<input type="checkbox" class="sr-only peer event-notify-toggle" data-event="${ev.id}" ${ev.notify ? 'checked' : ''}>
+												<div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+											</label>
+										</div>
+										<button class="text-red-400 hover:text-red-600 delete-event-btn" data-event="${ev.id}" title="ลบรายการนี้">
+											<i class="fa-solid fa-times-circle"></i>
+										</button>
+									</div>
+								`).join('')}
+							</div>
+						</div>
 						`;
 					});
 					groupsDiv.innerHTML = html;
 
-					// ใช้ event delegation ที่ groupsDiv
+					// ===== Event delegation สำหรับสวิตช์ทั้งหมด =====
 					groupsDiv.addEventListener('change', async (e) => {
 						const target = e.target;
+
+						// สวิตช์แสดง/ซ่อนกลุ่ม (เดิม)
 						if (target.matches('.group-visibility-toggle')) {
 							const groupId = target.dataset.group;
 							const isChecked = target.checked;
 							await toggleGroupVisibility(groupId, isChecked);
 						}
+						// ===== NEW: สวิตช์แจ้งเตือนกลุ่ม =====
+						else if (target.matches('.group-notify-toggle')) {
+							const groupId = target.dataset.group;
+							const isChecked = target.checked;
+							await toggleGroupNotify(groupId, isChecked);
+						}
+						// สวิตช์แจ้งเตือนรายการ (เดิม)
+						else if (target.matches('.event-notify-toggle')) {
+							const eventId = target.dataset.event;
+							const isChecked = target.checked;
+							const event = state.importedEvents.find(ev => ev.id === eventId);
+							if (event) {
+								event.notify = isChecked;
+								await dbPut(STORE_IMPORTED_EVENTS, event);
+
+								// อัปเดตสถานะ master toggle ของกลุ่ม
+								const groupDiv = target.closest('.group-item');
+								if (groupDiv) {
+									const groupId = groupDiv.dataset.groupId;
+									const allEvents = state.importedEvents.filter(ev => ev.importId === groupId);
+									const allNotify = allEvents.every(ev => ev.notify);
+									const masterToggle = groupDiv.querySelector('.group-notify-toggle');
+									if (masterToggle) masterToggle.checked = allNotify;
+								}
+							}
+						}
 					});
 
-					// --- ผูก event สำหรับปุ่มลบกลุ่ม ---
+					// ปุ่มลบกลุ่ม (เดิม)
 					groupsDiv.querySelectorAll('.delete-group-btn').forEach(btn => {
 						btn.addEventListener('click', async (e) => {
 							e.stopPropagation();
@@ -15173,16 +15268,17 @@ document.addEventListener('DOMContentLoaded', () => {
 								cancelButtonText: 'ยกเลิก'
 							});
 							if (confirm.isConfirmed) {
-								await deleteGroup(groupId);
+								await deleteGroup(groupId); // deleteGroup จะลบทั้งกลุ่มและรีเฟรช modal
 							}
 						});
 					});
 
-					// --- ผูก event สำหรับปุ่มลบทีละรายการ ---
+					// ปุ่มลบทีละรายการ (เดิม)
 					groupsDiv.querySelectorAll('.delete-event-btn').forEach(btn => {
 						btn.addEventListener('click', async (e) => {
 							e.stopPropagation();
 							const eventId = e.currentTarget.dataset.event;
+							const event = state.importedEvents.find(ev => ev.id === eventId);
 							const confirm = await Swal.fire({
 								title: 'ลบรายการนี้?',
 								text: 'คุณต้องการลบกิจกรรมนี้ใช่หรือไม่',
@@ -15193,13 +15289,12 @@ document.addEventListener('DOMContentLoaded', () => {
 								cancelButtonText: 'ยกเลิก'
 							});
 							if (confirm.isConfirmed) {
-								await deleteSingleEvent(eventId);
+								await deleteSingleEvent(eventId); // deleteSingleEvent จะลบและรีเฟรช modal
 							}
 						});
 					});
 				}
 
-				// แสดง modal
 				modal.classList.remove('hidden');
 			}
 
@@ -15216,6 +15311,34 @@ document.addEventListener('DOMContentLoaded', () => {
 				renderCalendarView();
 				// อัปเดต state
 				state.icsImports = await dbGetAll(STORE_ICS_IMPORTS);
+			}
+			
+			async function toggleGroupNotify(groupId, isChecked) {
+				// ดึงเหตุการณ์ทั้งหมดในกลุ่ม
+				const eventsToUpdate = state.importedEvents.filter(ev => ev.importId === groupId);
+				for (const ev of eventsToUpdate) {
+					ev.notify = isChecked;
+					await dbPut(STORE_IMPORTED_EVENTS, ev);  // บันทึกแต่ละรายการ
+				}
+				
+				// อัปเดต UI ของ checkbox ย่อยใน Modal
+				const groupDiv = document.querySelector(`.group-item[data-group-id="${groupId}"]`);
+				if (groupDiv) {
+					groupDiv.querySelectorAll('.event-notify-toggle').forEach(cb => {
+						cb.checked = isChecked;
+					});
+				}
+
+				// รีเฟรชปฏิทินเพื่อให้แสดงผลตรงตามการเปลี่ยนแปลง
+				renderCalendarView();
+				
+				// ✅ บันทึก Activity Log
+				addActivityLog(
+					isChecked ? '🔔 เปิดแจ้งเตือนกลุ่ม' : '🔕 ปิดแจ้งเตือนกลุ่ม',
+					`กลุ่ม ${groupId} (${eventsToUpdate.length} รายการ)`,
+					'fa-bell',
+					isChecked ? 'text-purple-600' : 'text-gray-500'
+				);
 			}
 
 			async function deleteGroup(groupId) {
