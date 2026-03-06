@@ -736,28 +736,36 @@
 
 					<div id="settings-notification-content" class="mt-4 transition-all">
 
-						<div class="space-y-4 mb-6">
-							<!-- สวิตช์ทั้ง 3 อัน (คงไว้) -->
-							<div class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300 text-lg">แจ้งเตือน "รายการล่วงหน้า" ถึงกำหนด</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="toggle-notify-scheduled" class="sr-only peer">
-									<div class="w-14 h-7 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+						<div class="flex flex-wrap items-center gap-x-5 gap-y-3 mb-6 bg-purple-50/30 dark:bg-gray-700/30 p-4 rounded-xl border border-purple-100 dark:border-gray-700">
+								<label class="inline-flex items-center cursor-pointer group">
+									<input type="checkbox" id="toggle-notify-scheduled" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
+									<span class="ml-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-600 transition-colors whitespace-nowrap">รายการล่วงหน้า</span>
 								</label>
-							</div>
-							<div class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300 text-lg">แจ้งเตือน "รายการประจำ" (Recurring)</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="toggle-notify-recurring" class="sr-only peer">
-									<div class="w-14 h-7 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+								
+								<label class="inline-flex items-center cursor-pointer group">
+									<input type="checkbox" id="toggle-notify-recurring" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
+									<span class="ml-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-600 transition-colors whitespace-nowrap">รายการประจำ</span>
 								</label>
-							</div>
-							<div class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300 text-lg">แจ้งเตือน "งบประมาณ" ใกล้หมด (>80%)</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="toggle-notify-budget" class="sr-only peer">
-									<div class="w-14 h-7 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-								</label>
+
+								<div class="flex items-center gap-x-4 border-l border-purple-200 dark:border-gray-600 pl-4">
+									<span class="text-sm font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">แจ้งเตือน "งบประมาณ" ใกล้หมด:</span>
+									
+									<div class="flex items-center gap-2">
+										<input type="checkbox" id="toggle-notify-budget-1" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded cursor-pointer transition">
+										<div class="flex items-center relative">
+											<input type="number" id="input-notify-budget-percent-1" value="50" min="1" max="100" class="w-14 py-0.5 px-1 text-center text-sm font-bold text-purple-700 dark:text-purple-400 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 focus:ring-1 focus:ring-purple-500 pr-4">
+											<span class="absolute right-1 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
+										</div>
+									</div>
+
+									<div class="flex items-center gap-2">
+										<input type="checkbox" id="toggle-notify-budget-2" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded cursor-pointer transition">
+										<div class="flex items-center relative">
+											<input type="number" id="input-notify-budget-percent-2" value="90" min="1" max="100" class="w-14 py-0.5 px-1 text-center text-sm font-bold text-purple-700 dark:text-purple-400 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 focus:ring-1 focus:ring-purple-500 pr-4">
+											<span class="absolute right-1 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
+										</div>
+									</div>
+								</div>
 							</div>
 						</div>
 

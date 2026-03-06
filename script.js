@@ -3742,14 +3742,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 await dbPut(STORE_CONFIG, { key: 'notification_settings', value: state.notifySettings });
             });
         }
-
-        const toggleBud = document.getElementById('toggle-notify-budget');
-        if (toggleBud) {
-            toggleBud.checked = state.notifySettings.budget;
-            toggleBud.addEventListener('change', async (e) => {
-                state.notifySettings.budget = e.target.checked;
+		// ==========================================
+        // [อัปเดต] บันทึกการตั้งค่าพร้อมแจ้งเตือนมุมจอ
+        // ==========================================
+        
+		// บันทึกงบประมาณระดับที่ 1
+        const toggleBud1 = document.getElementById('toggle-notify-budget-1');
+        const inputBudPct1 = document.getElementById('input-notify-budget-percent-1');
+        if (toggleBud1 && inputBudPct1) {
+            toggleBud1.checked = state.notifySettings.budget1_active ?? true;
+            inputBudPct1.value = state.notifySettings.budget1_percent ?? 50;
+            const save1 = async () => {
+                state.notifySettings.budget1_active = toggleBud1.checked;
+                state.notifySettings.budget1_percent = parseInt(inputBudPct1.value) || 50;
                 await dbPut(STORE_CONFIG, { key: 'notification_settings', value: state.notifySettings });
-            });
+                showToast(`ตั้งค่าเตือนงบ ${inputBudPct1.value}% เรียบร้อย`, 'success');
+            };
+            toggleBud1.addEventListener('change', save1);
+            inputBudPct1.addEventListener('change', save1);
+        }
+
+        // บันทึกงบประมาณระดับที่ 2
+        const toggleBud2 = document.getElementById('toggle-notify-budget-2');
+        const inputBudPct2 = document.getElementById('input-notify-budget-percent-2');
+        if (toggleBud2 && inputBudPct2) {
+            toggleBud2.checked = state.notifySettings.budget2_active ?? true;
+            inputBudPct2.value = state.notifySettings.budget2_percent ?? 90;
+            const save2 = async () => {
+                state.notifySettings.budget2_active = toggleBud2.checked;
+                state.notifySettings.budget2_percent = parseInt(inputBudPct2.value) || 90;
+                await dbPut(STORE_CONFIG, { key: 'notification_settings', value: state.notifySettings });
+                showToast(`ตั้งค่าเตือนงบ ${inputBudPct2.value}% เรียบร้อย`, 'success');
+            };
+            toggleBud2.addEventListener('change', save2);
+            inputBudPct2.addEventListener('change', save2);
         }
 
 		// ปุ่มรีเฟรชคลาวด์
@@ -13288,38 +13314,44 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				});
 
-				// ... (โค้ดส่วนตรวจสอบ Budget และ Custom Notify คงเดิม) ...
-                // คุณสามารถก๊อปปี้ส่วน Budget และ Custom Notify จากไฟล์เดิมมาต่อท้ายได้เลยครับ
-                // หรือใช้โค้ดเต็มด้านล่างนี้
-                
-				// 3. ตรวจสอบ "งบประมาณ" (Budget) ใกล้หมด (>80%)
-				if (state.notifySettings.budget && state.budgets) {
-					const currentMonth = todayStr.slice(0, 7);
-					const expenseByCat = {};
-					
-					state.transactions.forEach(tx => {
-						if (tx.type === 'expense' && tx.date.startsWith(currentMonth)) {
-							if (!expenseByCat[tx.category]) expenseByCat[tx.category] = 0;
-							expenseByCat[tx.category] += tx.amount;
-						}
-					});
+				// 3. ตรวจสอบ "งบประมาณ" (Budget) ตามที่ตั้งค่าไว้ 2 ระดับ
+				// ตรวจสอบงบประมาณ 2 ระดับ
+                if (state.budgets && state.notifySettings) {
+                    const currentMonth = todayStr.slice(0, 7);
+                    const expenseByCat = {};
+                    state.transactions.forEach(tx => {
+                        if (tx.type === 'expense' && tx.date.startsWith(currentMonth)) {
+                            expenseByCat[tx.category] = (expenseByCat[tx.category] || 0) + tx.amount;
+                        }
+                    });
 
-					state.budgets.forEach(bg => {
-						const used = expenseByCat[bg.category] || 0;
-						const percent = (used / bg.amount) * 100;
-						const alertId = `budget_${bg.category}_${currentMonth}`;
+                    // สร้างเกณฑ์เช็ค 2 ระดับ
+                    const checks = [];
+                    if (state.notifySettings.budget1_active) checks.push({ lvl: 1, pct: state.notifySettings.budget1_percent || 50, color: 'text-orange-500' });
+                    if (state.notifySettings.budget2_active) checks.push({ lvl: 2, pct: state.notifySettings.budget2_percent || 90, color: 'text-red-600' });
+                    checks.sort((a, b) => b.pct - a.pct); // เช็คตัวที่เปอร์เซ็นต์สูงกว่าก่อน
 
-						if (percent >= 80 && !state.ignoredNotifications.includes(alertId)) {
-							alerts.push({
-								id: alertId,
-								title: 'งบประมาณใกล้หมด!',
-								message: `หมวด ${bg.category} ใช้ไปแล้ว ${percent.toFixed(1)}% (${formatCurrency(used)}/${formatCurrency(bg.amount)})`,
-								icon: 'fa-triangle-exclamation',
-								color: 'text-red-600'
-							});
-						}
-					});
-				}
+                    state.budgets.forEach(bg => {
+                        const used = expenseByCat[bg.category] || 0;
+                        const currentPct = (used / bg.amount) * 100;
+
+                        for (let check of checks) {
+                            if (currentPct >= check.pct) {
+                                const alertId = `budget_l${check.lvl}_${bg.category}_${currentMonth}`;
+                                if (!state.ignoredNotifications.includes(alertId)) {
+                                    alerts.push({
+                                        id: alertId,
+                                        title: `งบประมาณหมวด ${bg.category}`,
+                                        message: `ขณะนี้ใช้ไปแล้ว ${currentPct.toFixed(0)}% ของงบที่ตั้งไว้ (${formatCurrency(used)}/${formatCurrency(bg.amount)})`,
+                                        icon: 'fa-bullhorn',
+                                        color: check.color
+                                    });
+                                }
+                                break; // เจอตัวสูงที่สุดแล้วหยุดเช็คตัวที่ต่ำกว่า
+                            }
+                        }
+                    });
+                }
 
 				// 4. ตรวจสอบ "การแจ้งเตือนพิเศษ" (Custom)
 				state.customNotifications.forEach(notif => {
