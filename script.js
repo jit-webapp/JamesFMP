@@ -1472,6 +1472,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (notiHistory) state.notificationHistory = notiHistory.value || [];
 		
 		updateNotificationBadge();
+		// [แก้ไขใหม่] วาดรายการแจ้งเตือนทันทีที่โหลดข้อมูลจากฐานข้อมูลเสร็จ
+		if (typeof renderCustomNotifyList === 'function') {
+			renderCustomNotifyList();
+		}
     }
 	
 		// ============================================
@@ -3748,69 +3752,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // 2. Custom Notification Save (ปุ่มบันทึกแจ้งเตือนพิเศษ)
-        // Listener สำหรับปุ่มบันทึก (ปรับปรุงใหม่)
-        const btnSaveCustom = document.getElementById('btn-save-custom-notify');
-		if (btnSaveCustom) {
-			btnSaveCustom.addEventListener('click', async () => {
-				const msg = document.getElementById('custom-notify-msg').value.trim();
-				const date = document.getElementById('custom-notify-date').value;
-				const days = document.getElementById('custom-notify-days').value;
-				const repeatEl = document.getElementById('custom-notify-repeat');
-				const repeat = repeatEl ? repeatEl.value : 'none';
-				const timeTypeEl = document.querySelector('input[name="notify-time-type"]:checked');
-				const timeType = timeTypeEl ? timeTypeEl.value : 'all1day';
-				let specificTime = null;
-
-				if (!msg || !date) {
-					Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกข้อความและวันที่', 'warning');
-					return;
-				}
-				if (timeType === 'specific') {
-					specificTime = document.getElementById('custom-notify-time').value;
-					if (!specificTime) {
-						Swal.fire('ข้อมูลไม่ครบ', 'กรุณาระบุเวลา', 'warning'); return;
-					}
-				}
-
-				const editIdx = btnSaveCustom.dataset.editIdx;
-				const notifyObj = {
-					message: msg,
-					date: date,
-					advanceDays: days || 0,
-					isAllDay: (timeType === 'all1day'),
-					time: (timeType === 'all1day') ? '00:00' : specificTime,
-					repeat: repeat
-				};
-
-				if (editIdx !== undefined) {
-					const idx = parseInt(editIdx);
-					state.customNotifications[idx] = { ...state.customNotifications[idx], ...notifyObj };
-					Swal.fire('แก้ไขสำเร็จ', 'อัปเดตข้อมูลเรียบร้อยแล้ว', 'success');
-				} else {
-					state.customNotifications.push({ id: 'custom_' + Date.now(), ...notifyObj });
-					Swal.fire('สำเร็จ', 'เพิ่มการแจ้งเตือนแล้ว', 'success');
-				}
-
-				await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
-
-				// ✅ ADD ACTIVITY LOG
-					const dateObj = new Date(date);
-					const formattedNotifyDate = dateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
-					
-					addActivityLog(
-						editIdx !== undefined ? '✏️ แก้ไขแจ้งเตือน' : '🔔 เพิ่มแจ้งเตือน',
-						`${msg} | 📅 วันที่เตือน: ${formattedNotifyDate}`,
-						'fa-bell',
-						'text-purple-600'
-					);
-
-				resetCustomNotifyForm();
-				renderCustomNotifyList();
-				renderCalendarView();
-			});
-		}
-		
 		// ปุ่มรีเฟรชคลาวด์
 		const refreshDesktop = document.getElementById('refresh-cloud-desktop');
 		const refreshMobile = document.getElementById('refresh-cloud-mobile');
@@ -3847,25 +3788,27 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 
-        // เรียก render รายการแจ้งเตือนพิเศษ เมื่อกดเข้าเมนู Settings (รองรับทั้ง PC และ มือถือ)
-		const navSettingsBtnForNotify = document.getElementById('nav-settings');
-		const navSettingsMobileBtnForNotify = document.getElementById('nav-settings-mobile'); // เพิ่มตัวแปรปุ่มมือถือ
+        // [อัปเดตใหม่] ดักจับการเข้าเมนู Settings ทุกรูปแบบ (รวมถึงเมนู Bottom Nav ในมือถือ)
+        const renderNotifyData = () => {
+            setTimeout(() => {
+                if(typeof renderCustomNotifyList === 'function') {
+                    renderCustomNotifyList();
+                }
+            }, 100); // หน่วงเวลาเล็กน้อยให้เปลี่ยนหน้าเสร็จก่อน
+        };
 
-		// ฟังก์ชันสั่งวาดหน้าจอ
-		const renderNotifyData = () => {
-			if(typeof renderCustomNotifyList === 'function') {
-				renderCustomNotifyList();
-			}
-		};
+        // 1. ดักจับปุ่มเมนูบน Desktop
+        const navSettingsBtnForNotify = document.getElementById('nav-settings');
+        if (navSettingsBtnForNotify) navSettingsBtnForNotify.addEventListener('click', renderNotifyData);
 
-		// ดักจับการคลิกเมนูจาก PC
-		if (navSettingsBtnForNotify) {
-			navSettingsBtnForNotify.addEventListener('click', renderNotifyData);
-		}
-		// ดักจับการคลิกเมนูจาก มือถือ (จุดที่หายไป)
-		if (navSettingsMobileBtnForNotify) {
-			navSettingsMobileBtnForNotify.addEventListener('click', renderNotifyData);
-		}
+        // 2. ดักจับปุ่มเมนู Hamburger (มุมบนซ้ายมือถือ)
+        const navSettingsMobileBtnForNotify = document.getElementById('nav-settings-mobile');
+        if (navSettingsMobileBtnForNotify) navSettingsMobileBtnForNotify.addEventListener('click', renderNotifyData);
+
+        // 3. [สำคัญ] ดักจับปุ่มเมนูด้านล่างสุดของมือถือ (Bottom Nav)
+        const bottomNavBtnSettings = document.querySelector('#bottom-nav button[data-page="settings"]');
+        if (bottomNavBtnSettings) bottomNavBtnSettings.addEventListener('click', renderNotifyData);
+		
 		
 		// ฟังก์ชันแสดงรายการประวัติ
 		function renderNotificationHistory() {
@@ -3978,95 +3921,204 @@ document.addEventListener('DOMContentLoaded', () => {
         // ส่วนจัดการการแจ้งเตือนพิเศษ (แก้ไขใหม่ให้รองรับ Edit)
         // ==========================================
 
-        // ฟังก์ชันล้างฟอร์มและรีเซ็ตปุ่มกลับเป็นโหมดปกติ
-        function resetCustomNotifyForm() {
-            document.getElementById('custom-notify-msg').value = '';
-            document.getElementById('custom-notify-date').value = '';
-            document.getElementById('custom-notify-days').value = '0';
-            document.getElementById('custom-notify-time').value = '';
-			document.getElementById('custom-notify-repeat').value = 'none'; // [เพิ่ม] รีเซ็ตค่าทำซ้ำ
+        // ==========================================
+        // ระบบแจ้งเตือนพิเศษ (Overhaul เป็น Modal แบบ Standalone)
+        // ==========================================
+        
+        // 1. จัดการแสดงช่องเวลาเมื่อเลือกแบบระบุเวลาใน Modal
+        document.querySelectorAll('input[name="modal-notify-time-type"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const wrapper = document.getElementById('modal-notify-time-input-wrapper');
+                if (wrapper) {
+                    if (e.target.value === 'specific') {
+                        wrapper.classList.remove('hidden');
+                    } else {
+                        wrapper.classList.add('hidden');
+                    }
+                }
+            });
+        });
+
+        // 2. ฟังก์ชันเปิด Modal
+        window.openCustomNotifyModal = function(dateStr = null, editIdx = null) {
+            const modal = document.getElementById('custom-notify-modal');
+            if (!modal) return;
             
-            // รีเซ็ต Radio กลับไปเป็น All Day
-            const radioAllDay = document.querySelector('input[name="notify-time-type"][value="allday"]');
-            if(radioAllDay) {
-                radioAllDay.checked = true;
-                radioAllDay.dispatchEvent(new Event('change')); // Trigger ให้ซ่อนช่องเวลา
-            }
-
-            // รีเซ็ตปุ่มบันทึกกลับเป็นสีม่วง (โหมดเพิ่ม)
-            const saveBtn = document.getElementById('btn-save-custom-notify');
-            if (saveBtn) {
-                saveBtn.innerHTML = 'บันทึกการแจ้งเตือน';
-                saveBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
-                saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                delete saveBtn.dataset.editIdx; // ลบตัวบ่งชี้การแก้ไข
-            }
-
-            // ซ่อนปุ่มยกเลิก
-            const cancelBtn = document.getElementById('btn-cancel-custom-notify');
-            if (cancelBtn) cancelBtn.remove();
-        }
-
-        // ฟังก์ชันสำหรับโหลดข้อมูลมาแก้ไข (เรียกเมื่อกดปุ่มดินสอ)
-        window.handleEditCustomNotify = (idx) => {
-            const item = state.customNotifications[idx];
-            if (!item) return;
-
-            // ดึงข้อมูลมาใส่ฟอร์ม
-            document.getElementById('custom-notify-msg').value = item.message;
-            document.getElementById('custom-notify-date').value = item.date;
-            document.getElementById('custom-notify-days').value = item.advanceDays || 0;
-			
-			// [เพิ่ม] โหลดค่าทำซ้ำมาใส่ Dropdown
-			document.getElementById('custom-notify-repeat').value = item.repeat || 'none';
-
-            // จัดการเวลา (ทั้งวัน vs ระบุเวลา)
-            if (item.isAllDay) {
-                const radio = document.querySelector('input[name="notify-time-type"][value="allday"]');
-                if(radio) {
-                    radio.checked = true;
-                    radio.dispatchEvent(new Event('change'));
-                }
+            // รีเซ็ตฟอร์ม
+            document.getElementById('custom-notify-idx').value = '';
+            document.getElementById('modal-custom-notify-msg').value = '';
+            document.getElementById('modal-custom-notify-days').value = '0';
+            document.getElementById('modal-custom-notify-time').value = '';
+            document.getElementById('modal-custom-notify-repeat').value = 'none';
+            
+            // ตั้งค่าวันที่ (ใช้ Local Date ไม่เพี้ยนตาม Timezone)
+            if (dateStr) {
+                document.getElementById('modal-custom-notify-date').value = dateStr;
             } else {
-                const radio = document.querySelector('input[name="notify-time-type"][value="specific"]');
-                if(radio) {
-                    radio.checked = true;
-                    radio.dispatchEvent(new Event('change'));
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                const d = String(now.getDate()).padStart(2, '0');
+                document.getElementById('modal-custom-notify-date').value = `${y}-${m}-${d}`;
+            }
+            
+            // คืนค่า Radio
+            const radioAllDay = document.querySelector('input[name="modal-notify-time-type"][value="all1day"]');
+            if (radioAllDay) {
+                radioAllDay.checked = true;
+                radioAllDay.dispatchEvent(new Event('change'));
+            }
+            
+            document.getElementById('custom-notify-modal-title').innerText = 'เพิ่มการแจ้งเตือนใหม่';
+
+            // กรณีแก้ไขข้อมูล
+            if (editIdx !== null && editIdx !== undefined) {
+                const item = state.customNotifications[editIdx];
+                if (item) {
+                    document.getElementById('custom-notify-idx').value = editIdx;
+                    document.getElementById('modal-custom-notify-msg').value = item.message;
+                    document.getElementById('modal-custom-notify-date').value = item.date;
+                    document.getElementById('modal-custom-notify-days').value = item.advanceDays || 0;
+                    document.getElementById('modal-custom-notify-repeat').value = item.repeat || 'none';
+                    
+                    if (!item.isAllDay) {
+                        const radioSpecific = document.querySelector('input[name="modal-notify-time-type"][value="specific"]');
+                        if (radioSpecific) {
+                            radioSpecific.checked = true;
+                            radioSpecific.dispatchEvent(new Event('change'));
+                        }
+                        document.getElementById('modal-custom-notify-time').value = item.time;
+                    }
+                    document.getElementById('custom-notify-modal-title').innerText = 'แก้ไขการแจ้งเตือน';
                 }
-                document.getElementById('custom-notify-time').value = item.time;
             }
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => document.getElementById('modal-custom-notify-msg').focus(), 300);
+        };
 
-            // เปลี่ยนปุ่มบันทึกเป็น "บันทึกการแก้ไข" (สีน้ำเงิน)
-            const saveBtn = document.getElementById('btn-save-custom-notify');
-            saveBtn.innerHTML = '<i class="fa-solid fa-pen-to-square mr-2"></i> บันทึกการแก้ไข';
-            saveBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-            saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            saveBtn.dataset.editIdx = idx; // ฝังเลข Index ที่กำลังแก้อยู่ไว้ที่ปุ่ม
-
-            // เพิ่มปุ่ม "ยกเลิก" ถ้ายังไม่มี
-            let cancelBtn = document.getElementById('btn-cancel-custom-notify');
-            if (!cancelBtn) {
-                cancelBtn = document.createElement('button');
-                cancelBtn.id = 'btn-cancel-custom-notify';
-                cancelBtn.className = 'w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 rounded-xl shadow transition duration-300 mt-2';
-                cancelBtn.innerHTML = 'ยกเลิกการแก้ไข';
-                cancelBtn.addEventListener('click', resetCustomNotifyForm);
-                saveBtn.parentNode.insertBefore(cancelBtn, saveBtn.nextSibling);
-            }
-
-            // เลื่อนหน้าจอขึ้นไปที่ฟอร์ม
-            document.getElementById('custom-notify-msg').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            document.getElementById('custom-notify-msg').focus();
+        // 3. ฟังก์ชันปิด Modal
+        window.closeCustomNotifyModal = function() {
+            const modal = document.getElementById('custom-notify-modal');
+            if (modal) modal.classList.add('hidden');
+        };
+        
+        window.handleEditCustomNotify = function(idx) {
+            openCustomNotifyModal(null, idx);
         };
 		
-		// 1. ฟังก์ชันแสดงรายการแจ้งเตือนพิเศษ (Custom Notify List)
-		// ฟังก์ชันแสดงรายการ (ปรับปรุงให้มีปุ่ม Edit)
+		// ==========================================
+        // ฟังก์ชันเสริมสำหรับ ลบ/แก้ไข การแจ้งเตือนจากหน้าปฏิทิน
+        // ==========================================
+        window.editNotifyFromCal = function(dateStr, idx) {
+            Swal.close(); // ปิดหน้าต่างปฏิทิน
+            setTimeout(() => {
+                if (typeof openCustomNotifyModal === 'function') {
+                    openCustomNotifyModal(dateStr, idx);
+                }
+            }, 300);
+        };
+
+        window.deleteNotifyFromCal = async function(idx) {
+            Swal.close(); // ปิดหน้าต่างปฏิทินก่อน เพื่อให้ลบได้อย่างราบรื่น
+            setTimeout(async () => {
+                const n = state.customNotifications[idx];
+                if (!n) return;
+                
+                const confirm = await Swal.fire({
+                    title: 'ลบรายการ?', 
+                    text: 'ต้องการลบการแจ้งเตือนนี้ใช่ไหม', 
+                    icon: 'warning',
+                    showCancelButton: true, 
+                    confirmButtonText: 'ลบ', 
+                    confirmButtonColor: '#d33',
+                    customClass: { popup: state.isDarkMode ? 'swal2-popup' : '' },
+                    background: state.isDarkMode ? '#1a1a1a' : '#fff',
+                    color: state.isDarkMode ? '#e5e7eb' : '#545454'
+                });
+
+                if (confirm.isConfirmed) {
+                    state.customNotifications.splice(idx, 1);
+                    await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
+                    
+                    if (typeof addActivityLog === 'function') {
+                        addActivityLog('🗑️ ลบแจ้งเตือน', n.message, 'fa-bell', 'text-red-600');
+                    }
+                    
+                    if (typeof renderCustomNotifyList === 'function') renderCustomNotifyList();
+                    if (typeof renderCalendarView === 'function') renderCalendarView();
+                    if (typeof showToast === 'function') showToast('ลบเรียบร้อย', 'success');
+                }
+            }, 300);
+        };
+
+        // 4. ผูก Event ปุ่มบันทึกใน Modal
+        const modalBtnSaveCustom = document.getElementById('modal-btn-save-custom-notify');
+        if (modalBtnSaveCustom) {
+            modalBtnSaveCustom.addEventListener('click', async () => {
+                const editIdx = document.getElementById('custom-notify-idx').value;
+                const msg = document.getElementById('modal-custom-notify-msg').value.trim();
+                const date = document.getElementById('modal-custom-notify-date').value;
+                const days = document.getElementById('modal-custom-notify-days').value;
+                const repeat = document.getElementById('modal-custom-notify-repeat').value;
+                const timeTypeEl = document.querySelector('input[name="modal-notify-time-type"]:checked');
+                const timeType = timeTypeEl ? timeTypeEl.value : 'all1day';
+                let specificTime = null;
+
+                if (!msg || !date) {
+                    Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกข้อความและวันที่แจ้งเตือน', 'warning');
+                    return;
+                }
+                if (timeType === 'specific') {
+                    specificTime = document.getElementById('modal-custom-notify-time').value;
+                    if (!specificTime) {
+                        Swal.fire('ข้อมูลไม่ครบ', 'กรุณาระบุเวลาที่ต้องการให้เตือน', 'warning'); return;
+                    }
+                }
+
+                const notifyObj = {
+                    message: msg,
+                    date: date,
+                    advanceDays: days || 0,
+                    isAllDay: (timeType === 'all1day'),
+                    time: (timeType === 'all1day') ? '00:00' : specificTime,
+                    repeat: repeat
+                };
+
+                if (editIdx !== '') {
+                    const idx = parseInt(editIdx);
+                    state.customNotifications[idx] = { ...state.customNotifications[idx], ...notifyObj };
+                    showToast('แก้ไขสำเร็จ', 'success');
+                } else {
+                    state.customNotifications.push({ id: 'custom_' + Date.now(), ...notifyObj });
+                    showToast('เพิ่มการแจ้งเตือนสำเร็จ', 'success');
+                }
+
+                await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
+
+                const dateObj = new Date(date);
+                const formattedNotifyDate = dateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+                addActivityLog(
+                    editIdx !== '' ? '✏️ แก้ไขแจ้งเตือน' : '🔔 เพิ่มแจ้งเตือน',
+                    `${msg} | 📅 วันที่: ${formattedNotifyDate}`,
+                    'fa-bell',
+                    'text-purple-600'
+                );
+
+                closeCustomNotifyModal();
+                if (typeof renderCustomNotifyList === 'function') renderCustomNotifyList();
+                if (typeof renderCalendarView === 'function') renderCalendarView(); 
+            });
+        }
+
+        // 5. ฟังก์ชันวาดรายการ (Render) ให้สัมพันธ์กับ HTML ใหม่
         function renderCustomNotifyList() {
 			const list = document.getElementById('active-custom-notify-list');
 			if(!list) return;
 			list.innerHTML = '';
 			
 			if (!state.customNotifications || state.customNotifications.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 dark:text-gray-500 text-center py-4 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-xl text-sm">ยังไม่มีรายการแจ้งเตือน</p>';
 				return;
 			}
 			
@@ -4083,35 +4135,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				let timeDisplay = '';
 				if (n.isAllDay === false && n.time) { 
-					// [แก้ไข] เพิ่ม whitespace-nowrap ป้องกันข้อความฉีกขาดเมื่อจอแคบ
 					timeDisplay = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap"><i class="fa-regular fa-clock mr-1"></i>${n.time} น.</span>`;
 				} else {
 					timeDisplay = `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] whitespace-nowrap"><i class="fa-solid fa-sun mr-1"></i>ทั้งวัน</span>`;
 				}
 				
-				// [เพิ่มใหม่] แสดงสถานะการทำซ้ำ (Badge)
 				let repeatBadge = '';
 				if (n.repeat && n.repeat !== 'none') {
-					const repeatLabels = { 'weekly': 'ทุกสัปดาห์', 'monthly': 'ทุกเดือน', 'yearly': 'ทุกปี' };
-					repeatBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-200 whitespace-nowrap">
-						<i class="fa-solid fa-rotate mr-1"></i>${repeatLabels[n.repeat]}
-					</span>`;
+					const repeatLabels = { 'weekly': 'สัปดาห์', 'monthly': 'เดือน', 'yearly': 'ปี' };
+					repeatBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-rotate mr-1"></i>ทุก${repeatLabels[n.repeat]}</span>`;
 				}
 
-				// [แก้ไข HTML] ปรับโครงสร้าง Flexbox ให้รองรับหน้าจอมือถือ (Responsive)
 				const html = `
 					<div class="flex justify-between items-start sm:items-center bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mb-2 transition-colors gap-2">
 						<div class="${statusClass} flex-grow min-w-0"> <div class="font-bold text-sm flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
 								<span class="truncate block">${n.message}</span>
 								<div class="flex flex-wrap gap-1 items-center">
-									${timeDisplay}
-									${repeatBadge} </div>
+									${timeDisplay} ${repeatBadge}
+								</div>
 							</div>
 							<div class="text-xs mt-1.5 text-gray-500 dark:text-gray-400 flex items-center">
-								<i class="fa-regular fa-calendar mr-1"></i>${dateStr} (เตือนก่อน ${n.advanceDays} วัน)
+								<i class="fa-regular fa-calendar mr-1"></i>${dateStr} ${n.advanceDays > 0 ? `(เตือนก่อน ${n.advanceDays} วัน)` : ''}
 							</div>
 						</div>
-						<div class="flex items-center gap-1 shrink-0 mt-1 sm:mt-0"> <button onclick="handleEditCustomNotify(${idx})" class="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 p-2 transition bg-blue-50 dark:bg-blue-900/20 rounded-lg" title="แก้ไข">
+						<div class="flex items-center gap-1 shrink-0 mt-1 sm:mt-0"> 
+                            <button onclick="handleEditCustomNotify(${idx})" class="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 p-2 transition bg-blue-50 dark:bg-blue-900/20 rounded-lg" title="แก้ไข">
 								<i class="fa-solid fa-pen"></i>
 							</button>
 							<button class="text-red-500 hover:text-red-700 dark:hover:text-red-400 delete-custom-notify p-2 transition bg-red-50 dark:bg-red-900/20 rounded-lg" data-idx="${idx}" title="ลบ">
@@ -4123,7 +4171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				list.insertAdjacentHTML('beforeend', html);
 			});
 
-			// Listener สำหรับปุ่มลบ (เหมือนเดิม)
+			// ผูก Event ปุ่มลบ
 			document.querySelectorAll('.delete-custom-notify').forEach(btn => {
 				btn.addEventListener('click', async (e) => {
 					const targetBtn = e.target.closest('.delete-custom-notify');
@@ -4132,34 +4180,16 @@ document.addEventListener('DOMContentLoaded', () => {
 					const n = state.customNotifications[idx];
 
 					const confirm = await Swal.fire({
-						title: 'ลบรายการ?',
-						text: 'ต้องการลบการแจ้งเตือนนี้ใช่ไหม',
-						icon: 'warning',
-						showCancelButton: true,
-						confirmButtonText: 'ลบ',
-						cancelButtonText: 'ยกเลิก',
-						confirmButtonColor: '#d33',
+						title: 'ลบรายการ?', text: 'ต้องการลบการแจ้งเตือนนี้ใช่ไหม', icon: 'warning',
+						showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33',
 					});
 
 					if (confirm.isConfirmed) {
-						const saveBtn = document.getElementById('btn-save-custom-notify');
-						if (saveBtn && saveBtn.dataset.editIdx == idx) resetCustomNotifyForm();
-
 						state.customNotifications.splice(idx, 1);
 						await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
-
-						// ✅ ADD ACTIVITY LOG
-							const notifyDateObj = new Date(n.date);
-							const formattedNotifyDate = notifyDateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
-							
-							addActivityLog(
-								'🗑️ ลบแจ้งเตือน',
-								`${n.message} | 📅 วันที่เตือน: ${formattedNotifyDate}`,
-								'fa-bell',
-								'text-red-600'
-							);
-
+						addActivityLog('🗑️ ลบแจ้งเตือน', n.message, 'fa-bell', 'text-red-600');
 						renderCustomNotifyList();
+                        if (typeof renderCalendarView === 'function') renderCalendarView();
 					}
 				});
 			});
@@ -5966,222 +5996,389 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	async function renderCalendarView() {
-		try {
-			const moneyContainer = document.getElementById('calendar-money');
-			const importedContainer = document.getElementById('calendar-imported');
-			const moneyWrapper = document.getElementById('calendar-money-container');
-			const importedWrapper = document.getElementById('calendar-imported-container');
-			const yearInput = document.getElementById('cal-year-input');
+			try {
+				const moneyContainer = document.getElementById('calendar-money');
+				const importedContainer = document.getElementById('calendar-imported');
+				const moneyWrapper = document.getElementById('calendar-money-container');
+				const importedWrapper = document.getElementById('calendar-imported-container');
+				const yearInput = document.getElementById('cal-year-input');
 
-			if (!moneyContainer || !importedContainer || !yearInput) return;
+				if (!moneyContainer || !importedContainer || !yearInput) return;
 
-			const showMoney = document.getElementById('cal-toggle-money')?.checked ?? true;
-			const showImported = document.getElementById('cal-toggle-imported')?.checked ?? true;
+				const showMoney = document.getElementById('cal-toggle-money')?.checked ?? true;
+				const showImported = document.getElementById('cal-toggle-imported')?.checked ?? true;
 
-			if (moneyWrapper) moneyWrapper.style.display = showMoney ? 'block' : 'none';
-			if (importedWrapper) importedWrapper.style.display = showImported ? 'block' : 'none';
+				if (moneyWrapper) moneyWrapper.style.display = showMoney ? 'block' : 'none';
+				if (importedWrapper) importedWrapper.style.display = showImported ? 'block' : 'none';
 
-			let currentYear = new Date(state.calendarCurrentDate || new Date()).getFullYear();
-			yearInput.value = currentYear;
+				let currentYear = new Date(state.calendarCurrentDate || new Date()).getFullYear();
+				yearInput.value = currentYear;
 
-			// ---------- ปฏิทินธุรกรรม (moneyCalendar) ----------
-			if (showMoney) {
-				const moneyEvents = [];
-				const dailyTotals = {};
-				state.transactions.forEach(tx => {
-					const dateStr = tx.date.slice(0, 10);
-					if (!dailyTotals[dateStr]) dailyTotals[dateStr] = { income: 0, expense: 0, transfer: 0 };
-					if (tx.type === 'income') dailyTotals[dateStr].income += tx.amount;
-					else if (tx.type === 'expense') dailyTotals[dateStr].expense += tx.amount;
-					else if (tx.type === 'transfer') dailyTotals[dateStr].transfer += tx.amount;
-				});
+				// ---------- ปฏิทินธุรกรรม (moneyCalendar) ----------
+				if (showMoney) {
+					const moneyEvents = [];
+					const dailyTotals = {};
 
-				Object.keys(dailyTotals).forEach(date => {
-					const totals = dailyTotals[date];
-					const isFuture = date > new Date().toISOString().slice(0, 10);
-					if (totals.income > 0) {
-						moneyEvents.push({
-							id: date + '-inc',
-							title: '+' + formatCurrency(totals.income).replace(/[^\d.,-]/g, ''),
-							start: date,
-							allDay: true,
-							color: '#22c55e',
-							textColor: '#ffffff',
-							classNames: ['money-event']
-						});
-					}
-					if (totals.expense > 0) {
-						moneyEvents.push({
-							id: date + '-exp',
-							title: '-' + formatCurrency(totals.expense).replace(/[^\d.,-]/g, ''),
-							start: date,
-							allDay: true,
-							color: isFuture ? '#f59e0b' : '#ef4444',
-							textColor: '#ffffff',
-							classNames: ['money-event']
-						});
-					}
-					if (totals.transfer > 0) {
-						moneyEvents.push({
-							id: date + '-transfer',
-							title: '⇄ ' + formatCurrency(totals.transfer).replace(/[^\d.,-]/g, ''),
-							start: date,
-							allDay: true,
-							color: '#3b82f6', // สีฟ้า
-							textColor: '#ffffff',
-							classNames: ['money-event']
-						});
-					}
-				});
+					state.transactions.forEach(tx => {
+						const dateStr = tx.date.slice(0, 10);
+						if (!dailyTotals[dateStr]) dailyTotals[dateStr] = { income: 0, expense: 0, transfer: 0 };
+						if (tx.type === 'income') dailyTotals[dateStr].income += tx.amount;
+						else if (tx.type === 'expense') dailyTotals[dateStr].expense += tx.amount;
+						else if (tx.type === 'transfer') dailyTotals[dateStr].transfer += tx.amount;
+					});
 
-				if (moneyCalendar) moneyCalendar.destroy();
+					Object.keys(dailyTotals).forEach(date => {
+						const totals = dailyTotals[date];
+						const isFuture = date > new Date().toISOString().slice(0, 10);
 
-				moneyCalendar = new FullCalendar.Calendar(moneyContainer, {
-					initialView: 'dayGridMonth',
-					initialDate: state.calendarCurrentDate || new Date().toISOString().slice(0, 10),
-					locale: 'th',
-					contentHeight: 'auto',
-					buttonText: { today: 'วันนี้' },
-					headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-					showNonCurrentDates: false,
-					fixedWeekCount: false,
-					events: moneyEvents,
-					eventOrder: "start,-duration,allDay,title",
-					dateClick: function(info) { showDailyDetails(info.dateStr); },
-					eventClick: function(info) { showDailyDetails(info.event.startStr.slice(0, 10)); },
-					datesSet: function(info) {
-						// ✅ ป้องกัน loop ด้วย flag
-						if (isSyncingCalendars) return;
-						isSyncingCalendars = true;
-
-						const currentStart = info.view.currentStart;
-						const offset = currentStart.getTimezoneOffset();
-						const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
-						state.calendarCurrentDate = localDate.toISOString().slice(0, 10);
-						yearInput.value = currentStart.getFullYear();
-
-						// ซิงค์ปฏิทินกิจกรรม (ถ้ากำลังแสดง)
-						if (importedCalendar && showImported) {
-							importedCalendar.gotoDate(localDate);
+						if (totals.income > 0) {
+							moneyEvents.push({
+								id: date + '-inc',
+								title: '+' + formatCurrency(totals.income).replace(/[^\d.,-]/g, ''),
+								start: date,
+								allDay: true,
+								color: '#22c55e',
+								textColor: '#ffffff',
+								classNames: ['money-event']
+							});
 						}
-
-						isSyncingCalendars = false;
-					}
-				});
-				moneyCalendar.render();
-			} else {
-				if (moneyCalendar) {
-					moneyCalendar.destroy();
-					moneyCalendar = null;
-				}
-			}
-
-			// ---------- ปฏิทินกิจกรรม (importedCalendar) ----------
-			if (showImported) {
-				const importedEvents = [];
-
-				const visibleGroups = new Map();
-				state.icsImports.forEach(grp => visibleGroups.set(grp.id, grp.isVisible !== false));
-
-				state.importedEvents.forEach(ev => {
-					if (visibleGroups.get(ev.importId) !== false) {
-						importedEvents.push({
-							id: ev.id,
-							title: ev.title,
-							start: ev.start,
-							allDay: true,
-							color: ev.color || '#8b5cf6',
-							textColor: '#ffffff',
-							classNames: ['imported-event'],
-							extendedProps: { importId: ev.importId }
-						});
-					}
-				});
-
-				if (importedCalendar) importedCalendar.destroy();
-
-				importedCalendar = new FullCalendar.Calendar(importedContainer, {
-					initialView: 'dayGridMonth',
-					initialDate: state.calendarCurrentDate || new Date().toISOString().slice(0, 10),
-					locale: 'th',
-					contentHeight: 'auto',
-					buttonText: { today: 'วันนี้' },
-					headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-					showNonCurrentDates: false,
-					fixedWeekCount: false,
-					events: importedEvents,
-					eventOrder: "start,-duration,allDay,title",
-					dateClick: function(info) { showImportedDailyDetails(info.dateStr); },
-					eventClick: function(info) { showImportedDailyDetails(info.event.startStr.slice(0, 10)); },
-					datesSet: function(info) {
-						// ✅ ป้องกัน loop ด้วย flag
-						if (isSyncingCalendars) return;
-						isSyncingCalendars = true;
-
-						const currentStart = info.view.currentStart;
-						const offset = currentStart.getTimezoneOffset();
-						const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
-						state.calendarCurrentDate = localDate.toISOString().slice(0, 10);
-						yearInput.value = currentStart.getFullYear();
-
-						// ซิงค์ปฏิทินธุรกรรม (ถ้ากำลังแสดง)
-						if (moneyCalendar && showMoney) {
-							moneyCalendar.gotoDate(localDate);
+						if (totals.expense > 0) {
+							moneyEvents.push({
+								id: date + '-exp',
+								title: '-' + formatCurrency(totals.expense).replace(/[^\d.,-]/g, ''),
+								start: date,
+								allDay: true,
+								color: isFuture ? '#f59e0b' : '#ef4444',
+								textColor: '#ffffff',
+								classNames: ['money-event']
+							});
 						}
+						if (totals.transfer > 0) {
+							moneyEvents.push({
+								id: date + '-transfer',
+								title: '⇄ ' + formatCurrency(totals.transfer).replace(/[^\d.,-]/g, ''),
+								start: date,
+								allDay: true,
+								color: '#3b82f6', // สีฟ้า
+								textColor: '#ffffff',
+								classNames: ['money-event']
+							});
+						}
+					});
 
-						isSyncingCalendars = false;
+					if (moneyCalendar) moneyCalendar.destroy();
+					moneyCalendar = new FullCalendar.Calendar(moneyContainer, {
+						initialView: 'dayGridMonth',
+						initialDate: state.calendarCurrentDate || new Date().toISOString().slice(0, 10),
+						locale: 'th',
+						contentHeight: 'auto',
+						buttonText: { today: 'วันนี้' },
+						headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+						showNonCurrentDates: false,
+						fixedWeekCount: false,
+						events: moneyEvents,
+						eventOrder: "start,-duration,allDay,title",
+						dateClick: function(info) {
+							showDailyDetails(info.dateStr);
+						},
+						eventClick: function(info) {
+							showDailyDetails(info.event.startStr.slice(0, 10));
+						},
+						// [คงไว้] ปฏิทินเงิน โชว์แค่จุดสีส้มตามที่ต้องการ
+						dayCellDidMount: function(arg) {
+							const y = arg.date.getFullYear();
+							const m = String(arg.date.getMonth() + 1).padStart(2, '0');
+							const d = String(arg.date.getDate()).padStart(2, '0');
+							const dateStr = `${y}-${m}-${d}`;
+							
+							const hasNotify = state.customNotifications && state.customNotifications.some(n => {
+								if (typeof isNotificationDue === 'function') {
+									return isNotificationDue(n, dateStr);
+								}
+								return n.date === dateStr;
+							});
+							
+							if (hasNotify) {
+								const dotWrapper = document.createElement('div');
+								dotWrapper.className = 'absolute top-1 left-1 z-10 flex items-center justify-center';
+								dotWrapper.innerHTML = '<span class="w-2.5 h-2.5 bg-orange-500 rounded-full shadow-sm animate-pulse" title="มีการแจ้งเตือนพิเศษ"></span>';
+								
+								const frame = arg.el.querySelector('.fc-daygrid-day-frame');
+								if (frame) {
+									frame.style.position = 'relative';
+									frame.appendChild(dotWrapper);
+								}
+							}
+						},
+						datesSet: function(info) {
+							if (isSyncingCalendars) return;
+							isSyncingCalendars = true;
+							const currentStart = info.view.currentStart;
+							const offset = currentStart.getTimezoneOffset();
+							const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
+							state.calendarCurrentDate = localDate.toISOString().slice(0, 10);
+							yearInput.value = currentStart.getFullYear();
+
+							if (importedCalendar && showImported) {
+                                importedCalendar.gotoDate(localDate);
+							}
+							isSyncingCalendars = false;
+						}
+					});
+					moneyCalendar.render();
+				} else {
+					if (moneyCalendar) {
+						moneyCalendar.destroy();
+						moneyCalendar = null;
 					}
-				});
-				importedCalendar.render();
-			} else {
-				if (importedCalendar) {
-					importedCalendar.destroy();
-					importedCalendar = null;
 				}
-			}
 
-		} catch (err) {
-			console.error('Error rendering calendar:', err);
+				// ---------- ปฏิทินกิจกรรม (importedCalendar) ----------
+				if (showImported) {
+					if (importedCalendar) importedCalendar.destroy();
+					importedCalendar = new FullCalendar.Calendar(importedContainer, {
+						initialView: 'dayGridMonth',
+						initialDate: state.calendarCurrentDate || new Date().toISOString().slice(0, 10),
+						locale: 'th',
+						contentHeight: 'auto',
+						buttonText: { today: 'วันนี้' },
+						headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+						showNonCurrentDates: false,
+						fixedWeekCount: false,
+						// [ใหม่] สร้าง event ให้แสดงข้อความแจ้งเตือนพิเศษ (แทนจุดสีส้ม)
+						events: function(info, successCallback, failureCallback) {
+							const eventsArr = [];
+							
+							// 1. ดึงกิจกรรมที่นำเข้า (ICS)
+							const visibleGroups = new Map();
+							if (state.icsImports) {
+								state.icsImports.forEach(grp => visibleGroups.set(grp.id, grp.isVisible !== false));
+							}
+							
+							if (state.importedEvents) {
+								state.importedEvents.forEach(ev => {
+									if (visibleGroups.get(ev.importId) !== false) {
+										eventsArr.push({
+											id: ev.id,
+											title: ev.title,
+											start: ev.start,
+											allDay: true,
+											color: ev.color || '#8b5cf6',
+											textColor: '#ffffff',
+											classNames: ['imported-event'],
+											extendedProps: { importId: ev.importId }
+										});
+									}
+								});
+							}
+
+							// 2. ดึงการแจ้งเตือนพิเศษ และสร้างเป็นข้อความแถบสีส้มในปฏิทินเลย
+							const start = info.start;
+							const end = info.end;
+							for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+								const y = d.getFullYear();
+								const m = String(d.getMonth() + 1).padStart(2, '0');
+								const day = String(d.getDate()).padStart(2, '0');
+								const dateStr = `${y}-${m}-${day}`;
+								
+								(state.customNotifications || []).forEach(n => {
+									let isDue = false;
+									if (typeof isNotificationDue === 'function') {
+										isDue = isNotificationDue(n, dateStr);
+									} else {
+										isDue = (n.date === dateStr);
+									}
+									
+									if (isDue) {
+										eventsArr.push({
+											id: 'notif_' + n.id + '_' + dateStr,
+											title: '🔔 ' + n.message,
+											start: dateStr,
+											allDay: true,
+											color: '#f97316', // สีส้มเพื่อแยกแยะให้ชัดเจน
+											textColor: '#ffffff',
+											classNames: ['custom-notify-event']
+										});
+									}
+								});
+							}
+							successCallback(eventsArr);
+						},
+						eventOrder: "start,-duration,allDay,title",
+						dateClick: function(info) {
+							showImportedDailyDetails(info.dateStr);
+						},
+						eventClick: function(info) {
+							showImportedDailyDetails(info.event.startStr.slice(0, 10));
+						},
+						datesSet: function(info) {
+							if (isSyncingCalendars) return;
+							isSyncingCalendars = true;
+							const currentStart = info.view.currentStart;
+							const offset = currentStart.getTimezoneOffset();
+							const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
+							state.calendarCurrentDate = localDate.toISOString().slice(0, 10);
+							yearInput.value = currentStart.getFullYear();
+
+							if (moneyCalendar && showMoney) {
+								moneyCalendar.gotoDate(localDate);
+							}
+							isSyncingCalendars = false;
+						}
+					});
+					importedCalendar.render();
+				} else {
+					if (importedCalendar) {
+						importedCalendar.destroy();
+						importedCalendar = null;
+					}
+				}
+
+			} catch (err) {
+				console.error('Error rendering calendar:', err);
+			}
 		}
-	}
 	
 	async function showImportedDailyDetails(dateStr) {
-		const dailyImported = state.importedEvents.filter(ev => ev.start.startsWith(dateStr));
-
-		if (dailyImported.length === 0) {
-			Swal.fire({
-				icon: 'info',
-				title: 'ไม่มีกิจกรรม',
-				text: 'วันนี้ไม่มีกิจกรรมที่นำเข้า',
-				confirmButtonText: 'ตกลง'
-			});
-			return;
-		}
-
-		let html = '<ul class="space-y-2 max-h-96 overflow-y-auto">';
-		dailyImported.forEach(ev => {
-			html += `
-				<li class="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-800">
-					<i class="fa-regular fa-calendar-check text-purple-600 mt-1"></i>
-					<div>
-						<div class="font-bold text-gray-800 dark:text-gray-200">${escapeHTML(ev.title)}</div>
-						<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">🕒 ${ev.allDay ? 'ทั้งวัน' : ev.start}</div>
+			const dailyImported = state.importedEvents.filter(ev => ev.start.startsWith(dateStr));
+			
+			// [ปรับปรุง] Map index เดิมมาใช้ตอนลบและแก้ไข
+			const dailyNotif = (state.customNotifications || [])
+                .map((n, index) => ({ ...n, originalIndex: index }))
+                .filter(n => {
+				    if (typeof isNotificationDue === 'function') {
+					    return isNotificationDue(n, dateStr);
+				    }
+				    return n.date === dateStr;
+			    });
+			
+			if (dailyImported.length === 0 && dailyNotif.length === 0) {
+				let emptyHtml = `
+					<div class="py-6 text-center">
+						<i class="fa-regular fa-calendar-xmark text-4xl text-gray-300 dark:text-gray-600 mb-3 block"></i>
+						<p class="text-gray-500 dark:text-gray-400">วันนี้ไม่มีกิจกรรมที่นำเข้าและการแจ้งเตือนพิเศษ</p>
 					</div>
-				</li>
-			`;
-		});
-		html += '</ul>';
+					<div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+						<button id="cal-imported-add-notify-btn-empty" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-xl shadow-md transition duration-300 flex items-center justify-center gap-2 text-sm">
+							<i class="fa-solid fa-bell"></i> เพิ่มการแจ้งเตือนพิเศษ
+						</button>
+					</div>
+				`;
 
-		await Swal.fire({
-			title: `📅 กิจกรรมวันที่ ${new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}`,
-			html: html,
-			icon: 'info',
-			confirmButtonText: 'ปิด',
-			customClass: { popup: state.isDarkMode ? 'swal2-popup' : '' },
-			background: state.isDarkMode ? '#1a1a1a' : '#fff',
-			color: state.isDarkMode ? '#e5e7eb' : '#545454'
-		});
-	}
+				await Swal.fire({
+					title: `กิจกรรมวันที่ ${new Date(dateStr).toLocaleDateString('th-TH', {day: 'numeric', month: 'long', year: 'numeric'})}`,
+					html: emptyHtml,
+					showConfirmButton: false,
+					showCloseButton: true,
+					didOpen: () => {
+						const btnNotifyEmpty = document.getElementById('cal-imported-add-notify-btn-empty');
+						if (btnNotifyEmpty) {
+							btnNotifyEmpty.addEventListener('click', () => {
+								Swal.close();
+								setTimeout(() => {
+									if (typeof openCustomNotifyModal === 'function') {
+										openCustomNotifyModal(dateStr);
+									}
+								}, 300);
+							});
+						}
+					},
+					customClass: { popup: state.isDarkMode ? 'swal2-popup' : '' },
+					background: state.isDarkMode ? '#1a1a1a' : '#fff',
+					color: state.isDarkMode ? '#e5e7eb' : '#545454'
+				});
+				return;
+			}
+			
+			let html = '<div class="space-y-4 max-h-[60vh] overflow-y-auto px-1 text-left">';
+			
+			// 1. แสดงการแจ้งเตือนพิเศษพร้อมปุ่มแก้ไขและลบ
+			if (dailyNotif.length > 0) {
+				html += '<div><h5 class="font-bold text-orange-600 text-sm mb-2 flex items-center"><i class="fa-solid fa-bell mr-2"></i> แจ้งเตือนพิเศษ:</h5><ul class="space-y-2">';
+				dailyNotif.forEach(n => {
+					let timeBadge = (n.isAllDay === false && n.time) 
+						? `<span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-regular fa-clock mr-1"></i>${n.time} น.</span>` 
+						: `<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid fa-sun mr-1"></i>ทั้งวัน</span>`;
+						
+					html += `
+						<li class="flex justify-between items-center bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-100 dark:border-orange-800/50 text-sm shadow-sm gap-2 transition-all">
+							<div class="flex-1 min-w-0">
+                                <span class="font-bold text-orange-800 dark:text-orange-200 block truncate">${escapeHTML(n.message)}</span>
+                                <div class="mt-1">${timeBadge}</div>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button onclick="editNotifyFromCal('${dateStr}', ${n.originalIndex})" class="text-blue-500 hover:text-blue-700 bg-blue-100 dark:bg-blue-900/40 p-2 rounded-md transition hover:scale-110" title="แก้ไข">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button onclick="deleteNotifyFromCal(${n.originalIndex})" class="text-red-500 hover:text-red-700 bg-red-100 dark:bg-red-900/40 p-2 rounded-md transition hover:scale-110" title="ลบ">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+						</li>`;
+				});
+				html += '</ul></div>';
+			}
+
+			// 2. แสดงกิจกรรมที่นำเข้า (ถ้ามี)
+			if (dailyImported.length > 0) {
+				html += '<div><h5 class="font-bold text-purple-600 text-sm mb-2 flex items-center"><i class="fa-solid fa-calendar-check mr-2"></i> กิจกรรมที่นำเข้า:</h5><ul class="space-y-2">';
+				dailyImported.forEach(ev => {
+					html += `
+						<li class="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-800/50 shadow-sm">
+							<i class="fa-solid fa-calendar-day text-purple-500 mt-1"></i>
+							<div class="text-left flex-1 min-w-0">
+								<div class="font-bold text-gray-800 dark:text-gray-200 text-sm break-words">${escapeHTML(ev.title)}</div>
+								<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">🕒 ${ev.allDay ? 'ทั้งวัน' : ev.start.replace('T', ' ')}</div>
+							</div>
+						</li>
+					`;
+				});
+				html += '</ul></div>';
+			}
+
+			html += '</div>';
+			
+			// --- สร้าง Header & Footer HTML ---
+			const dateObj = new Date(dateStr);
+			const formattedDate = dateObj.toLocaleDateString('th-TH', {day: 'numeric', month: 'long', year: 'numeric'});
+			
+			let headerHtml = `
+				<div class="flex justify-between items-center mb-4 w-full border-b border-gray-100 dark:border-gray-700 pb-2">
+					<h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">กิจกรรมวันที่ ${formattedDate}</h3>
+				</div>
+			`;
+
+			let footerHtml = `
+				<div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+					<button id="cal-imported-add-notify-btn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-xl shadow-md transition duration-300 flex items-center justify-center gap-2 text-sm">
+						<i class="fa-solid fa-bell"></i> เพิ่มการแจ้งเตือนพิเศษ
+					</button>
+				</div>
+			`;
+			
+			await Swal.fire({
+				title: '',
+				html: headerHtml + html + footerHtml,
+				showConfirmButton: false,
+				showCloseButton: true,
+				didOpen: () => {
+					const btnNotify = document.getElementById('cal-imported-add-notify-btn');
+					if (btnNotify) {
+						btnNotify.addEventListener('click', () => {
+							Swal.close(); 
+							setTimeout(() => {
+								if (typeof openCustomNotifyModal === 'function') {
+									openCustomNotifyModal(dateStr); 
+								}
+							}, 300); 
+						});
+					}
+				},
+				customClass: { popup: state.isDarkMode ? 'swal2-popup' : '' },
+				background: state.isDarkMode ? '#1a1a1a' : '#fff',
+				color: state.isDarkMode ? '#e5e7eb' : '#545454'
+			});
+		}
 
 	// ============================================
 	// 2. ฟังก์ชันแสดงรายละเอียดรายวัน (Popup รายการ + ปุ่มกด)
@@ -6281,82 +6478,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// -- ปุ่มเพิ่มแจ้งเตือน (เรียกฟังก์ชันใหม่) --
 				document.getElementById('cal-btn-add-notif').onclick = () => {
-					Swal.close();
-					openCalAddNotify(dateStr); // ไปเปิดหน้าต่างเพิ่มแจ้งเตือนแบบมีเวลา
-				};
-			}
-		});
-	}
-
-	// ============================================
-	// 3. ฟังก์ชันเปิดหน้าต่างเพิ่มแจ้งเตือน (แบบระบุเวลา)
-	// ============================================
-	async function openCalAddNotify(dateStr) {
-		const { value: formValues } = await Swal.fire({
-			title: `เพิ่มการแจ้งเตือน (${dateStr})`,
-			html: `
-				<div class="text-left">
-					<label class="block text-sm font-bold text-gray-700 mb-1">ข้อความ:</label>
-					<input id="swal-evt-msg" class="swal2-input" placeholder="พิมพ์ข้อความ..." style="margin: 0 0 15px 0; width: 100%;">
-					
-					<label class="block text-sm font-bold text-gray-700 mb-2">เวลาแจ้งเตือน:</label>
-					<div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-						<div class="flex flex-col gap-2 mb-2">
-							<label class="inline-flex items-center cursor-pointer">
-								<input type="radio" name="swal-time-type" value="allday" class="form-radio text-purple-600 w-4 h-4" checked 
-									onchange="document.getElementById('swal-time-input-box').classList.add('hidden')">
-								<span class="ml-2 text-sm text-gray-700">เตือนทั้งวัน (00:00)</span>
-							</label>
-							<label class="inline-flex items-center cursor-pointer">
-								<input type="radio" name="swal-time-type" value="specific" class="form-radio text-purple-600 w-4 h-4"
-										onchange="document.getElementById('swal-time-input-box').classList.remove('hidden')">
-								<span class="ml-2 text-sm text-gray-700">ระบุเวลาเอง</span>
-							</label>
-						</div>
-						<div id="swal-time-input-box" class="hidden mt-1 pl-6">
-							<input type="time" id="swal-evt-time" class="p-2 border rounded text-gray-800 bg-white focus:ring-2 focus:ring-purple-500 w-full">
-						</div>
-					</div>
-				</div>
-			`,
-			focusConfirm: false,
-			showCancelButton: true,
-			confirmButtonText: 'บันทึก',
-			cancelButtonText: 'ยกเลิก',
-			preConfirm: () => {
-				const msg = document.getElementById('swal-evt-msg').value.trim();
-				const typeEl = document.querySelector('input[name="swal-time-type"]:checked');
-				const type = typeEl ? typeEl.value : 'allday';
-				const time = document.getElementById('swal-evt-time').value;
-
-				if (!msg) { Swal.showValidationMessage('กรุณากรอกข้อความ'); return false; }
-				if (type === 'specific' && !time) { Swal.showValidationMessage('กรุณาระบุเวลา'); return false; }
-
-				return { msg, isAllDay: (type === 'allday'), time: (type === 'allday') ? '00:00' : time };
-			}
-		});
-
-		if (formValues) {
-			const newNoti = {
-				id: 'custom_' + Date.now(),
-				message: formValues.msg,
-				date: dateStr,
-				advanceDays: 0,
-				isAllDay: formValues.isAllDay,
-				time: formValues.time
+				Swal.close();
+				setTimeout(() => {
+					openCustomNotifyModal(dateStr);
+				}, 300);
 			};
-
-			state.customNotifications.push(newNoti);
-			await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
-			
-			// Refresh หน้าจอ
-			renderCalendarView();
-			if(typeof renderCustomNotifyList === 'function') renderCustomNotifyList();
-			
-			Swal.fire({ icon: 'success', title: 'บันทึกเรียบร้อย', timer: 1000, showConfirmButton: false });
-		}
+			}
+		});
 	}
 
+	
 	function showDailyDetails(date) {
         // 1. ดึงรายการธุรกรรมจริง (Actual Transactions)
         const txsOnDay = state.transactions.filter(tx => 
@@ -6373,22 +6504,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!rule.active) return;
                 
                 const ruleStartDate = new Date(rule.nextDueDate);
-                // ถ้ารายการเริ่มหลังจากวันที่กดดู ก็ข้ามไป
                 if (targetDate < ruleStartDate) return;
 
                 let isMatch = false;
-                
-                // ตรวจสอบเงื่อนไขตามความถี่ (Frequency Logic)
                 if (rule.frequency === 'daily') {
                     isMatch = true; 
                 } else if (rule.frequency === 'weekly') {
-                    // ตรงวันในสัปดาห์ (0-6)
                     isMatch = targetDate.getDay() === ruleStartDate.getDay();
                 } else if (rule.frequency === 'monthly') {
-                    // ตรงวันที่ (1-31)
                     isMatch = targetDate.getDate() === ruleStartDate.getDate();
                 } else if (rule.frequency === 'yearly') {
-                    // ตรงวันที่และเดือน
                     isMatch = targetDate.getDate() === ruleStartDate.getDate() && 
                               targetDate.getMonth() === ruleStartDate.getMonth();
                 }
@@ -6399,7 +6524,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // --- สร้าง Header HTML (เพิ่มปุ่มแจ้งเตือนตรงนี้) ---
+        // [ใหม่] 3. ดึงรายการแจ้งเตือนพิเศษของวันนี้ (Map เก็บ index ไว้สำหรับการอ้างอิงตอนลบ/แก้ไข)
+        const dailyNotif = (state.customNotifications || [])
+            .map((n, index) => ({ ...n, originalIndex: index }))
+            .filter(n => {
+                if (typeof isNotificationDue === 'function') return isNotificationDue(n, date);
+                return n.date === date;
+            });
+
+        // --- สร้าง Header HTML ---
         let headerHtml = `
             <div class="flex justify-between items-center mb-4 w-full">
                 <h3 class="text-xl font-bold text-gray-800">สรุปวันที่ ${new Date(date).toLocaleDateString('th-TH', {day: 'numeric', month: 'long', year: 'numeric'})}</h3>
@@ -6411,7 +6544,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  </button>
                  
                  <button id="cal-add-notify-btn" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-3 rounded-xl shadow-md transition duration-300 flex items-center justify-center gap-2 text-sm">
-                    <i class="fa-solid fa-bell"></i> แจ้งเตือน
+                    <i class="fa-solid fa-bell"></i> เพิ่มการแจ้งเตือนพิเศษ
                  </button>
             </div>
         `;
@@ -6421,11 +6554,45 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalExpense = 0;
         let totalTransfer = 0;
         
-        // --- ส่วนแสดงรายการจริง ---
-        if (txsOnDay.length === 0 && recurringOnDay.length === 0) {
+        // --- ส่วนแสดงรายการ ---
+        if (txsOnDay.length === 0 && recurringOnDay.length === 0 && dailyNotif.length === 0) {
              html += '<p class="text-center text-gray-500 mt-8 mb-8">ไม่มีรายการในวันนี้</p>';
         } else {
-            // A. แสดงรายการที่บันทึกแล้ว
+            
+            // A. แสดงการแจ้งเตือนพิเศษ (ถ้ามี) โชว์ด้านบนสุดเลย
+            if (dailyNotif.length > 0) {
+                html += `<li class="text-xs font-bold text-orange-500 uppercase tracking-wider mb-2 flex items-center"><i class="fa-solid fa-bell mr-1"></i> แจ้งเตือนพิเศษ</li>`;
+                
+                dailyNotif.forEach(n => {
+                    let timeBadge = (n.isAllDay === false && n.time) 
+                        ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-regular fa-clock mr-1"></i>${n.time} น.</span>` 
+                        : `<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid fa-sun mr-1"></i>ทั้งวัน</span>`;
+                        
+                    let notifHtml = `
+                        <div class="flex justify-between items-center bg-orange-50 dark:bg-orange-900/20 p-2.5 rounded-lg border border-orange-100 dark:border-orange-800/50 text-sm shadow-sm w-full gap-2 transition-all">
+                            <div class="flex-1 min-w-0">
+                                <span class="font-bold text-orange-800 dark:text-orange-200 block truncate">${escapeHTML(n.message)}</span>
+                                <div class="mt-1">${timeBadge}</div>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button onclick="editNotifyFromCal('${date}', ${n.originalIndex})" class="text-blue-500 hover:text-blue-700 bg-blue-100 dark:bg-blue-900/40 p-2 rounded-md transition hover:scale-110" title="แก้ไข">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button onclick="deleteNotifyFromCal(${n.originalIndex})" class="text-red-500 hover:text-red-700 bg-red-100 dark:bg-red-900/40 p-2 rounded-md transition hover:scale-110" title="ลบ">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    html += `<li class="pb-2 mt-1">${notifHtml}</li>`;
+                });
+                
+                if (txsOnDay.length > 0 || recurringOnDay.length > 0) {
+                    html += `<li class="border-t border-dashed border-gray-300 mt-2 pt-2"></li>`;
+                }
+            }
+
+            // B. แสดงรายการที่บันทึกแล้ว
             txsOnDay.forEach(tx => {
                 let txHtml = '';
                 const receiptIconHtml = tx.receiptBase64 ? 
@@ -6433,10 +6600,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="fa-solid fa-receipt"></i>
                     </button>` : '';
 
-                // ตรวจสอบว่าเป็นรายการล่วงหน้าหรือไม่
                 const txDate = new Date(tx.date);
                 const now = new Date();
-                const isFuture = txDate > now; // ถ้ารายการ > เวลาปัจจุบัน คือรายการล่วงหน้า
+                const isFuture = txDate > now; 
 
                 if (tx.type === 'income') {
                     totalIncome += tx.amount;
@@ -6498,9 +6664,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // B. แสดงรายการ Recurring (รอจ่าย/รอรับ)
+            // C. แสดงรายการ Recurring (รอจ่าย/รอรับ)
             if (recurringOnDay.length > 0) {
-                if (txsOnDay.length > 0) {
+                if (txsOnDay.length > 0 || dailyNotif.length > 0) {
                     html += `<li class="pt-2 text-xs font-bold text-gray-400 uppercase tracking-wider mt-2 border-t border-dashed border-gray-300">รายการประจำ (ประมาณการ)</li>`;
                 }
                 
@@ -6570,7 +6736,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showConfirmButton: false, 
             showCloseButton: true,
             didOpen: () => {
-                // Event ปุ่มเพิ่มรายการ (เดิม)
                 const btnAdd = document.getElementById('cal-add-tx-btn');
                 if(btnAdd) {
                     btnAdd.addEventListener('click', () => {
@@ -6579,72 +6744,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 
-                // [ใหม่] Event ปุ่มเพิ่มการแจ้งเตือน
-                // [ใน showDailyDetails] แก้ไข Event ปุ่มแจ้งเตือน
                 const btnNotify = document.getElementById('cal-add-notify-btn');
                 if(btnNotify) {
-                    btnNotify.addEventListener('click', async () => {
-                        Swal.close(); // ปิดหน้าต่างสรุปก่อน
-                        
-                        // เปิด Popup แบบ Form (มีช่องข้อความ และ ช่องจำนวนวัน)
-                        const { value: formValues } = await Swal.fire({
-                            title: 'สร้างการแจ้งเตือน',
-                            html: `
-                                <div class="text-left mb-1 text-sm font-semibold text-gray-600">ข้อความเตือน:</div>
-                                <input id="swal-noti-text" class="swal2-input" placeholder="เช่น จ่ายค่าบัตรเครดิต" style="margin: 0 0 1.25em 0;">
-                                
-                                <div class="text-left mb-1 text-sm font-semibold text-gray-600">เตือนล่วงหน้า (วัน):</div>
-                                <input id="swal-noti-days" type="number" class="swal2-input" value="0" min="0" placeholder="0 = เตือนวันนั้นเลย" style="margin: 0;">
-                                <div class="text-xs text-gray-400 mt-1 text-left">* ใส่ 0 หากต้องการให้เตือนในวันที่ถึงกำหนด</div>
-                            `,
-                            showCancelButton: true,
-                            confirmButtonText: 'บันทึก',
-                            confirmButtonColor: '#f97316',
-                            cancelButtonText: 'ยกเลิก',
-                            focusConfirm: false,
-                            preConfirm: () => {
-                                return [
-                                    document.getElementById('swal-noti-text').value,
-                                    document.getElementById('swal-noti-days').value
-                                ]
-                            }
-                        });
-
-                        if (formValues) {
-                            const [text, advanceDaysStr] = formValues;
-                            if (!text) return; // ถ้าไม่ใส่ข้อความก็ไม่บันทึก
-
-                            // เตรียมตัวแปร state
-                            if (!state.customNotifications) state.customNotifications = [];
-                            
-                            const newNoti = {
-                                id: 'custom_' + Date.now(),
-                                message: text,
-                                date: date,                // วันที่เป้าหมาย (จากปฏิทิน)
-                                advanceDays: parseInt(advanceDaysStr) || 0, // วันที่เตือนล่วงหน้า
-                                isRead: false
-                            };
-                            
-                            state.customNotifications.push(newNoti);
-                            
-                            try {
-                                // บันทึกลง DB
-                                await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: state.customNotifications });
-                                
-                                showToast('บันทึกการแจ้งเตือนเรียบร้อย', 'success');
-                                
-                                // [สำคัญ] อัปเดตรายการในหน้าตั้งค่าทันที
-                                renderCustomNotificationsList(); 
-                                
-                            } catch (err) {
-                                console.error('Save notification failed', err);
-                                showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
-                            }
-                        }
+                    btnNotify.addEventListener('click', () => {
+                        Swal.close(); 
+                        setTimeout(() => {
+                            openCustomNotifyModal(date); 
+                        }, 300);
                     });
                 }
                 
-                // Event ปุ่มดูใบเสร็จ
                 document.querySelectorAll('.view-receipt-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const base64 = e.currentTarget.dataset.base64;
