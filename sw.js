@@ -28,10 +28,6 @@ const ASSETS_TO_CACHE = [
   `./libs/xlsx.full.min.js?v=${APP_VERSION}`,
   `./libs/tesseract.min.js?v=${APP_VERSION}`,
   `./libs/ical.min.js?v=${APP_VERSION}`,
-  './images/chart-bar-sample.png',
-  './images/chart-doughnut-sample.png',
-  './images/chart-pie-sample.png',
-  './images/chart-trend-sample.png'
 ];
 
 // 2. Event Install: ติดตั้งและบังคับข้ามการรอ (Skip Waiting)
