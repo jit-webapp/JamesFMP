@@ -5120,31 +5120,72 @@ document.addEventListener('DOMContentLoaded', () => {
             container.insertAdjacentHTML('beforeend', cardHtml);
         });
     }
-
+	
+	// ============================================
+    // [NEW] ฟังก์ชันดึงรายชื่อบัญชีมาใส่ Dropdown ในหน้าค้นหา
     // ============================================
-	// [NEW] ADVANCED RENDER LIST PAGE
+    function updateAccountDropdown(selectId) {
+        const accountSelect = document.getElementById(selectId);
+        if (!accountSelect || typeof state === 'undefined' || !state.accounts) return;
+
+        const isFilter = selectId === 'adv-filter-account';
+        let optionsHtml = isFilter ? '<option value="all">💳 ทั้งหมด</option>' : '';
+
+        const getIcon = (type) => {
+            switch(type) {
+                case 'cash': return '💵';
+                case 'bank': return '🏦';
+                case 'credit': return '💳';
+                case 'ewallet': return '📱';
+                default: return '💰';
+            }
+        };
+
+        state.accounts.forEach(acc => {
+            const icon = getIcon(acc.type); 
+            optionsHtml += `<option value="${acc.id}">${icon} ${escapeHTML(acc.name)}</option>`;
+        });
+
+        const currentValue = accountSelect.value;
+        accountSelect.innerHTML = optionsHtml;
+        
+        if (currentValue && accountSelect.querySelector(`option[value="${currentValue}"]`)) {
+            accountSelect.value = currentValue;
+        } else if (isFilter) {
+            accountSelect.value = 'all'; 
+        } else if (state.accounts.length > 0) {
+            accountSelect.value = state.accounts[0].id;
+        }
+    }
+
+	// ============================================
+	// [NEW] ADVANCED RENDER LIST PAGE (อัปเกรดให้รองรับการค้นหาด้วยบัญชี)
 	// ============================================
 	function renderListPage() {
+        // อัปเดตรายชื่อบัญชีเข้า Dropdown อัตโนมัติทุกครั้งที่โหลดหน้ารายการ
+        updateAccountDropdown('adv-filter-account');
+
 		const getEl = (id) => document.getElementById(id);
 		
 		// 1. ดึงค่าจาก Input กรองต่างๆ
-		const startDate = getEl('adv-filter-start').value;
-		const endDate = getEl('adv-filter-end').value;
-		const filterType = getEl('adv-filter-type').value;
-		const searchTerm = getEl('adv-filter-search').value.toLowerCase().trim();
+		const startDate = getEl('adv-filter-start') ? getEl('adv-filter-start').value : '';
+		const endDate = getEl('adv-filter-end') ? getEl('adv-filter-end').value : '';
+		const filterType = getEl('adv-filter-type') ? getEl('adv-filter-type').value : 'all';
+        const filterAccount = getEl('adv-filter-account') ? getEl('adv-filter-account').value : 'all'; 
+		const searchTerm = getEl('adv-filter-search') ? getEl('adv-filter-search').value.toLowerCase().trim() : '';
 
 		// ปุ่ม Clear Search
 		const btnClear = getEl('btn-clear-search');
-		if(searchTerm.length > 0) btnClear.classList.remove('hidden');
-		else btnClear.classList.add('hidden');
+        if (btnClear) {
+		    if(searchTerm.length > 0) btnClear.classList.remove('hidden');
+		    else btnClear.classList.add('hidden');
+        }
 
 		// 2. กรองข้อมูล (Filtering)
-		// เริ่มจากรายการทั้งหมดในระบบ
 		let filtered = state.transactions.filter(tx => {
-			const txDate = tx.date.slice(0, 10); // เอาเฉพาะ YYYY-MM-DD
+			const txDate = tx.date ? tx.date.slice(0, 10) : ''; 
 			
 			// 2.1 กรองวันที่ (Start <= Date <= End)
-			// กรณี User ไม่เลือกวันที่ (ว่าง) ให้ถือว่าผ่าน
 			const isDateInRange = (!startDate || txDate >= startDate) && 
 								  (!endDate || txDate <= endDate);
 			if (!isDateInRange) return false;
@@ -5152,7 +5193,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			// 2.2 กรองประเภท (Type)
 			if (filterType !== 'all' && tx.type !== filterType) return false;
 
-			// 2.3 กรองคำค้นหา (Search Keyword)
+            // 🌟 2.3 กรองตามบัญชี (Account)
+            if (filterAccount !== 'all') {
+                if (tx.accountId !== filterAccount && tx.toAccountId !== filterAccount) {
+                    return false;
+                }
+            }
+
+			// 2.4 กรองคำค้นหา (Search Keyword)
 			if (searchTerm) {
 				const amountStr = String(tx.amount);
 				const fromAccount = state.accounts.find(a => a.id === tx.accountId);
@@ -5161,9 +5209,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				const toAccName = toAccount ? toAccount.name.toLowerCase() : '';
 				const category = tx.category ? tx.category.toLowerCase() : '';
 				const name = tx.name ? tx.name.toLowerCase() : '';
-				const desc = tx.desc ? tx.desc.toLowerCase() : ''; // Note
+				const desc = tx.desc ? tx.desc.toLowerCase() : ''; 
 
-				// เช็คว่ามีคำค้นอยู่ใน field ไหนบ้าง
 				const matches = name.includes(searchTerm) || 
 								category.includes(searchTerm) || 
 								desc.includes(searchTerm) ||
@@ -5180,7 +5227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		// 3. เรียงลำดับ (วันที่ใหม่สุดขึ้นก่อน)
 		filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-		// 4. [HIGHLIGHT] คำนวณ Dynamic Summary (สรุปยอดจากรายการที่เห็น)
+		// 4. คำนวณ Dynamic Summary (สรุปยอดจากรายการที่เห็น)
 		let sumIncome = 0;
 		let sumExpense = 0;
 		
@@ -5192,27 +5239,30 @@ document.addEventListener('DOMContentLoaded', () => {
 		const sumNet = sumIncome - sumExpense;
 
 		// อัปเดตตัวเลขบนหน้าจอ
-		getEl('dyn-sum-income').textContent = formatCurrency(sumIncome);
-		getEl('dyn-sum-expense').textContent = formatCurrency(sumExpense);
+		if (getEl('dyn-sum-income')) getEl('dyn-sum-income').textContent = formatCurrency(sumIncome);
+		if (getEl('dyn-sum-expense')) getEl('dyn-sum-expense').textContent = formatCurrency(sumExpense);
 		
 		const netEl = getEl('dyn-sum-net');
-		netEl.textContent = formatCurrency(sumNet);
-		// เปลี่ยนสีตามยอดคงเหลือ
-		if (sumNet > 0) { netEl.className = "text-sm md:text-base font-bold text-green-600"; }
-		else if (sumNet < 0) { netEl.className = "text-sm md:text-base font-bold text-red-600"; }
-		else { netEl.className = "text-sm md:text-base font-bold text-gray-600"; }
+        if (netEl) {
+		    netEl.textContent = formatCurrency(sumNet);
+		    if (sumNet > 0) { netEl.className = "text-sm md:text-base font-bold text-green-600"; }
+		    else if (sumNet < 0) { netEl.className = "text-sm md:text-base font-bold text-red-600"; }
+		    else { netEl.className = "text-sm md:text-base font-bold text-gray-600"; }
+        }
 
-		getEl('dyn-count-display').textContent = `${filtered.length} รายการ`;
+		if (getEl('dyn-count-display')) getEl('dyn-count-display').textContent = `${filtered.length} รายการ`;
 		
-		// ------------------------------------
-		// [NEW] เรียกแสดงกราฟ
-		renderAnalyticsChart(filtered);
-		// ------------------------------------
+		// เรียกแสดงกราฟ
+        if (typeof renderAnalyticsChart === 'function') {
+		    renderAnalyticsChart(filtered);
+        }
 
-		// 5. แสดงผลรายการ (Pagination)
-		// ใช้ state.listItemsPerPage ที่มีอยู่เดิม
-		renderTransactionList('transaction-list-body', filtered, 'list');
+		// 5. แสดงผลรายการ 
+        if (typeof renderTransactionList === 'function') {
+		    renderTransactionList('transaction-list-body', filtered, 'list');
+        }
 	}
+    // สิ้นสุดฟังก์ชัน renderListPage --------------------------
 	
 	// ฟังก์ชันรีเซ็ตตัวกรองให้เป็นเดือนปัจจุบัน
 	function resetToCurrentMonth() {
@@ -17740,6 +17790,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				}, 1000); // จบการหน่วงเวลา 1 วินาที
 			});
 			// =========================================================================
-			
+			window.renderListPage = renderListPage;
+			window.updateAccountDropdown = updateAccountDropdown;
 
         });
