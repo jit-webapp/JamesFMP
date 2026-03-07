@@ -12396,6 +12396,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initApp();
 			
 			window.showPage = showPage;
+			window.addActivityLog = addActivityLog;
 			window.openModal = openModal;
 			window.startVoiceRecognition = startVoiceRecognition;
 			window.handleSummaryCardClick = handleSummaryCardClick;   // ตอนนี้มีค่าแล้ว

@@ -1,5 +1,5 @@
-// 0. นำเข้าตัวแปร APP_VERSION จากไฟล์ version.js
-importScripts('version.js?v=' + (new URL(location.href).searchParams.get('v')));
+// 0. นำเข้าตัวแปร APP_VERSION จากไฟล์ version.js (เอา ?v=... ออกเพื่อแก้บัคอัปเดตซ้ำ)
+importScripts('version.js');
 
 // 1. กำหนดชื่อ Cache โดยอิงจาก APP_VERSION
 const CACHE_NAME = 'finance-manager-' + APP_VERSION;
@@ -30,10 +30,9 @@ const ASSETS_TO_CACHE = [
   `./libs/ical.min.js?v=${APP_VERSION}`,
 ];
 
-// 2. Event Install: ติดตั้งและบังคับข้ามการรอ (Skip Waiting)
+// 2. Event Install: ติดตั้งและรอให้ผู้ใช้กดปุ่ม (ไม่บังคับอัปเดตอัตโนมัติ)
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing new version:', CACHE_NAME);
-  self.skipWaiting(); // บังคับอัปเดตทันที ไม่ต้องรอปิด Browser
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Caching app shell');
@@ -42,7 +41,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// รับคำสั่ง skipWaiting จาก Message (เผื่อใช้ปุ่มกดอัปเดต)
+// รับคำสั่ง skipWaiting จาก Message (กดปุ่มอัปเดต)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'skipWaiting') {
     self.skipWaiting();
@@ -75,25 +74,17 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
-      // 1. ถ้ามีในเครื่องแล้ว ใช้จากเครื่องเลย
       if (cachedResponse) {
         return cachedResponse;
       }
-
-      // 2. ถ้าไม่มี ให้โหลดจากเน็ต
       return fetch(event.request).then((networkResponse) => {
-        // ตรวจสอบความถูกต้องของ Response 
-        // 🟢 เพิ่มเงื่อนไข .startsWith('http') เพื่อป้องกัน Error จาก Chrome Extension
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic' || !event.request.url.startsWith('http')) {
           return networkResponse;
         }
-
-        // *** เก็บลงเครื่องอัตโนมัติ (สำหรับไอคอน Font Awesome และฟอนต์ที่โหลดสด) ***
         const responseToCache = networkResponse.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);
         });
-
         return networkResponse;
       }).catch((error) => {
          console.error('[Service Worker] Fetch failed:', error);
