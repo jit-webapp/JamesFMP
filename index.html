@@ -614,417 +614,429 @@
                 </div>
             </div>
 
-            <div id="page-settings" class="app-page hidden">
-				<h1 class="text-xl font-bold text-purple-600 mb-6"><i class="fa-solid fa-gear mr-2"></i>ตั้งค่า</h1>
+          <div id="page-settings" class="app-page hidden">
+				<h1 class="text-xl md:text-2xl font-bold text-purple-600 dark:text-purple-400 mb-6 flex items-center">
+					<i class="fa-solid fa-gear mr-3"></i>ตั้งค่าระบบ
+				</h1>
 
-                <div class="mb-5 bg-white p-4 rounded-xl shadow-sm border border-transparent transition-colors duration-200 dark:border-gray-700">
-					<h3 class="mt-0 text-base font-bold text-gray-800 mb-3 flex items-center gap-2 dark:text-gray-200">
-						<i class="fas fa-cloud text-blue-500"></i> บัญชีผู้ใช้ (Cloud Sync)
-					</h3>
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
 					
-					<div id="auth-container" class="flex justify-between items-center">
-						<div class="flex items-center gap-3">
-							<div id="user-avatar" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden dark:bg-gray-700 transition-colors">
-								<i class="fas fa-user text-gray-500 text-lg dark:text-gray-400"></i>
-							</div>
-							
-							<div>
-								<span id="user-name-display" class="font-bold text-gray-800 text-sm block dark:text-gray-100">Guest (Offline)</span>
-								<span id="user-status" class="text-xs text-gray-500 block dark:text-gray-400">ข้อมูลเก็บในเครื่องนี้เท่านั้น</span>
-							</div>
-						</div>
+					<div class="flex flex-col gap-6">
 
-						<div>
-							<button id="btn-login" onclick="window.loginWithGoogle()" class="bg-[#4285F4] hover:bg-[#3367d6] text-white border-0 py-2 px-4 rounded-full text-sm cursor-pointer flex items-center gap-2 transition-colors shadow-sm">
-								<i class="fab fa-google"></i> <span class="hidden sm:inline">เข้าสู่ระบบ</span>
-							</button>
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border border-blue-100 dark:border-gray-700 transition-colors">
+							<h2 class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-4 flex items-center">
+								<i class="fa-solid fa-cloud mr-2"></i> บัญชีผู้ใช้ (Cloud Sync)
+							</h2>
 
-							<button id="btn-logout" onclick="window.logout()" class="hidden bg-red-50 text-red-600 border border-red-200 py-1 px-3 rounded-full text-xs cursor-pointer hover:bg-red-100 transition-colors dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/40">
-								ออกจากระบบ
-							</button>
-						</div>
-					</div>
-				</div>
-				
-				<div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-4">
-					<div class="flex justify-between items-center mb-2 border-b pb-2 cursor-pointer settings-toggle-header" data-target="settings-line-content">
-						<h3 class="font-bold text-gray-800">
-							<i class="fa-brands fa-line text-green-500 mr-2"></i>การแจ้งเตือน LINE
-						</h3>
-						<div class="flex items-center gap-2">
-							<a id="line-oa-link" href="#" target="_blank" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-lg hover:bg-green-200 transition-colors" onclick="event.stopPropagation()">
-								<i class="fa-solid fa-user-plus mr-1"></i> แอดบอท
-							</a>
-							<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
-						</div>
-					</div>
-					
-					<div id="settings-line-content" class="transition-all">
-					
-					<div class="flex flex-col gap-2 mb-3">
-					<!-- ตัวเลือกแจ้งเตือนตามประเภท -->
-					<div class="mt-4 border-t border-gray-200 pt-4">
-						<h4 class="font-medium text-gray-700 mb-3">แจ้งเตือนเมื่อ:</h4>
-						<div class="space-y-3">
-							<!-- เพิ่ม -->
-							<label class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300">➕ เพิ่มรายการใหม่</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="notify-on-add" class="sr-only peer">
-									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-								</label>
-							</label>
-							<!-- แก้ไข -->
-							<label class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300">✏️ แก้ไขรายการ</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="notify-on-edit" class="sr-only peer">
-									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-								</label>
-							</label>
-							<!-- ลบ -->
-							<label class="flex items-center justify-between">
-								<span class="text-gray-700 dark:text-gray-300">🗑️ ลบรายการ</span>
-								<label class="relative inline-flex items-center cursor-pointer">
-									<input type="checkbox" id="notify-on-delete" class="sr-only peer">
-									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-								</label>
-							</label>
-						</div>
-					</div>
-					</div>
-					
-						<div class="flex flex-col gap-2 mb-3">
-							<div class="flex gap-2">
-								<input type="text" id="input-line-nickname" class="w-1/3 p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-purple-500" placeholder="ชื่อเล่น (เช่น เจมส์)">
-								<input type="text" id="input-line-user-id" class="flex-1 p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-purple-500" placeholder="User ID (U...)">
-							</div>
-							<button id="btn-add-line-id" class="bg-green-500 hover:bg-green-600 text-white w-full py-2 rounded-lg transition-colors font-medium text-sm">
-								<i class="fa-solid fa-plus mr-1"></i> เพิ่มผู้รับแจ้งเตือน
-							</button>
-						</div>
-
-						<div id="line-id-list" class="space-y-2"></div>
-
-						<p class="text-xs text-gray-400 mt-2">
-							<i class="fa-solid fa-circle-info mr-1"></i>วิธีใช้:
-							1. กดปุ่ม "แอดบอท" ด้านบน<br>
-							2. พิมพ์คำว่า "id" ในแชทบอท<br>
-							3. นำรหัส U... มาใส่ในช่อง User ID
-						</p>
-					</div>
-				</div>
-				
-				<!-- เพิ่ม script เล็กน้อยที่ท้าย body หรือในฟังก์ชันที่ทำงานหลังโหลด DOM -->
-				<script>
-					// ตั้งค่า LINE OA URL เมื่อโหลดหน้าเว็บ
-					document.addEventListener('DOMContentLoaded', function() {
-						const lineOaLink = document.getElementById('line-oa-link');
-						if (lineOaLink && window.LINE_CONFIG && window.LINE_CONFIG.OA_BOT_URL) {
-							lineOaLink.href = window.LINE_CONFIG.OA_BOT_URL;
-						}
-					});
-				</script>
-				
-				<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-xl shadow-lg mb-6 border border-purple-100 dark:border-gray-700 transition-colors">
-					<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-notification-content">
-						<h2 class="text-xl font-bold text-purple-600 dark:text-purple-400">
-							<i class="fa-solid fa-bell mr-2"></i>ตั้งค่าการแจ้งเตือน
-						</h2>
-						<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
-					</div>
-
-					<div id="settings-notification-content" class="mt-4 transition-all">
-
-						<div class="flex flex-wrap items-center gap-x-5 gap-y-3 mb-6 bg-purple-50/30 dark:bg-gray-700/30 p-4 rounded-xl border border-purple-100 dark:border-gray-700">
-								<label class="inline-flex items-center cursor-pointer group">
-									<input type="checkbox" id="toggle-notify-scheduled" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
-									<span class="ml-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-600 transition-colors whitespace-nowrap">รายการล่วงหน้า</span>
-								</label>
-								
-								<label class="inline-flex items-center cursor-pointer group">
-									<input type="checkbox" id="toggle-notify-recurring" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
-									<span class="ml-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-600 transition-colors whitespace-nowrap">รายการประจำ</span>
-								</label>
-
-								<div class="flex items-center gap-x-4 border-l border-purple-200 dark:border-gray-600 pl-4">
-									<span class="text-sm font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">แจ้งเตือน "งบประมาณ" ใกล้หมด:</span>
-									
-									<div class="flex items-center gap-2">
-										<input type="checkbox" id="toggle-notify-budget-1" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded cursor-pointer transition">
-										<div class="flex items-center relative">
-											<input type="number" id="input-notify-budget-percent-1" value="50" min="1" max="100" class="w-14 py-0.5 px-1 text-center text-sm font-bold text-purple-700 dark:text-purple-400 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 focus:ring-1 focus:ring-purple-500 pr-4">
-											<span class="absolute right-1 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
+							<div class="bg-gray-50 dark:bg-gray-700/40 p-4 rounded-xl shadow-sm border border-transparent transition-colors duration-200">
+								<div id="auth-container" class="flex justify-between items-center">
+									<div class="flex items-center gap-3">
+										<div id="user-avatar" class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden dark:bg-gray-600 transition-colors">
+											<i class="fas fa-user text-gray-500 text-xl dark:text-gray-400"></i>
+										</div>
+										<div>
+											<span id="user-name-display" class="font-bold text-gray-800 text-sm block dark:text-gray-100">Guest (Offline)</span>
+											<span id="user-status" class="text-xs text-gray-500 block dark:text-gray-400">ข้อมูลเก็บในเครื่องนี้เท่านั้น</span>
 										</div>
 									</div>
-
-									<div class="flex items-center gap-2">
-										<input type="checkbox" id="toggle-notify-budget-2" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded cursor-pointer transition">
-										<div class="flex items-center relative">
-											<input type="number" id="input-notify-budget-percent-2" value="90" min="1" max="100" class="w-14 py-0.5 px-1 text-center text-sm font-bold text-purple-700 dark:text-purple-400 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 focus:ring-1 focus:ring-purple-500 pr-4">
-											<span class="absolute right-1 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
-										</div>
+									<div>
+										<button id="btn-login" onclick="window.loginWithGoogle()" class="bg-[#4285F4] hover:bg-[#3367d6] text-white border-0 py-2.5 px-5 rounded-full text-sm font-bold cursor-pointer flex items-center gap-2 transition-colors shadow-sm">
+											<i class="fab fa-google"></i> <span class="hidden sm:inline">เข้าสู่ระบบ</span>
+										</button>
+										<button id="btn-logout" onclick="window.logout()" class="hidden bg-red-50 text-red-600 border border-red-200 py-1.5 px-4 rounded-full text-xs font-bold cursor-pointer hover:bg-red-100 transition-colors dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/40">
+											ออกจากระบบ
+										</button>
 									</div>
 								</div>
 							</div>
 						</div>
 
-						<hr class="border-gray-200 dark:border-gray-700 my-4">
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border border-red-100 dark:border-gray-700 transition-colors">
+							<h2 class="text-lg font-bold text-red-500 dark:text-red-400 mb-5 flex items-center">
+								<i class="fa-solid fa-shield-halved mr-2"></i> ความปลอดภัย
+							</h2>
 
-						<h3 class="font-bold text-gray-800 dark:text-gray-200 mb-3"><i class="fa-solid fa-bell mr-2"></i>การแจ้งเตือนพิเศษ</h3>
-						<div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl transition-colors">
-							<button onclick="openCustomNotifyModal()" class="w-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 py-3 rounded-xl mb-4 font-bold transition shadow-sm flex items-center justify-center gap-2">
-								<i class="fa-solid fa-plus"></i> สร้างการแจ้งเตือนใหม่
+							<button id="btn-manage-password" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-xl shadow-md transition duration-300 mb-5 text-lg flex items-center justify-center gap-2">
+								<i class="fa-solid fa-key"></i> ตั้งค่ารหัสผ่านแอป
 							</button>
-							<div id="active-custom-notify-list" class="mt-4 space-y-2 max-h-80 overflow-y-auto pr-1"></div>
-							<div class="flex justify-end mb-2 mt-4 border-t border-gray-200 dark:border-gray-600 pt-3">
-								<button id="btn-clear-custom-expired" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg transition-colors">
-									<i class="fa-solid fa-broom mr-1"></i> ล้างรายการที่แจ้งเตือนแล้ว
-								</button>
+
+							<div class="space-y-4 divide-y divide-gray-100 dark:divide-gray-700">
+								<div class="pt-4 first:pt-0">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+												<i class="fa-solid fa-fingerprint"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">เข้าใช้งานด้วย Biometric</span>
+										</div>
+										<button id="btn-biometric-settings" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition-colors shrink-0">
+											ตั้งค่า
+										</button>
+									</div>
+									<p id="bio-status-text" class="text-sm text-gray-500 dark:text-gray-400 ml-14">ใช้ลายนิ้วมือหรือใบหน้าแทนรหัสผ่าน (เฉพาะเครื่องนี้)</p>
+								</div>
+
+								<div class="pt-4">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0">
+												<i class="fa-solid fa-wand-magic-sparkles"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">ยืนยันรหัสผ่านอัตโนมัติ</span>
+										</div>
+										<label class="relative inline-flex items-center cursor-pointer shrink-0">
+											<input type="checkbox" id="toggle-auto-confirm-password" class="sr-only peer">
+											<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+										</label>
+									</div>
+									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">ตรวจสอบและยืนยันทันทีเมื่อพิมพ์รหัสผ่านถูกต้อง</p>
+								</div>
+
+								<div class="pt-4">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+												<i class="fa-solid fa-user-lock"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">ตั้งค่า Auto Lock</span>
+										</div>
+										<select id="auto-lock-select" class="form-select text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:ring-purple-500 focus:border-purple-500 py-2 px-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white shrink-0">
+											<option value="0">ปิด</option>
+											<option value="1">1 นาที</option>
+											<option value="5">5 นาที</option>
+											<option value="10">10 นาที</option>
+											<option value="30">30 นาที</option>
+											<option value="60">60 นาที</option>
+										</select>
+									</div>
+									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">ล็อกหน้าจออัตโนมัติเมื่อไม่มีกิจกรรม (ใช้ได้เมื่อตั้งรหัสผ่าน)</p>
+								</div>
 							</div>
 						</div>
+
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border border-purple-100 dark:border-gray-700 transition-colors mb-6">
+							<h2 class="text-lg font-bold text-purple-600 dark:text-purple-400 mb-5 flex items-center">
+								<i class="fa-solid fa-display mr-2"></i> การแสดงผลและเสียง
+							</h2>
+
+							<div class="space-y-4 divide-y divide-gray-100 dark:divide-gray-700">
+								<div class="pt-4 first:pt-0">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 shrink-0">
+												<i class="fa-solid fa-moon"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">Dark Mode</span>
+										</div>
+										<label class="relative inline-flex items-center cursor-pointer shrink-0">
+											<input type="checkbox" id="toggle-dark-mode" class="sr-only peer">
+											<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+										</label>
+									</div>
+									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">เปลี่ยนธีมเป็นสีดำสนิทเพื่อถนอมสายตา</p>
+								</div>
+
+								<div class="pt-4">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 shrink-0">
+												<i class="fa-solid fa-volume-high"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">เสียงตอบรับ (Smart Voice)</span>
+										</div>
+										<label class="relative inline-flex items-center cursor-pointer shrink-0">
+											<input type="checkbox" id="toggle-smart-voice" class="sr-only peer" checked>
+											<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+										</label>
+									</div>
+									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">เปิด/ปิด เสียงโต้ตอบจากระบบอัจฉริยะ</p>
+								</div>
+
+								<div class="pt-4">
+									<div class="flex items-center justify-between mb-3">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+												<i class="fa-solid fa-bars"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">รูปแบบเมนูมือถือ</span>
+										</div>
+									</div>
+									<div class="ml-14 space-y-2 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input type="radio" name="mobile-menu-style" value="hamburger" class="form-radio text-purple-600 w-4 h-4">
+											<span class="text-gray-700 dark:text-gray-300 text-sm">เมนูแฮมเบอร์เกอร์ (กดปุ่มสามขีดเพื่อเปิดเมนู)</span>
+										</label>
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input type="radio" name="mobile-menu-style" value="bottom" class="form-radio text-purple-600 w-4 h-4">
+											<span class="text-gray-700 dark:text-gray-300 text-sm">เมนูด้านล่าง (กดไอคอนเปลี่ยนหน้าทันที)</span>
+										</label>
+									</div>
+								</div>
+
+								<div class="pt-4">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+												<i class="fa-solid fa-eye"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">แสดงยอดคงเหลือรวมหน้าแรก</span>
+										</div>
+										<label class="relative inline-flex items-center cursor-pointer shrink-0">
+											<input type="checkbox" id="toggle-show-balance" class="sr-only peer">
+											<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+										</label>
+									</div>
+									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">หากปิด ยอดคงเหลือสุทธิจะถูกซ่อนจากหน้าแรก</p>
+								</div>
+
+								<div class="pt-4">
+									<div class="flex items-center justify-between mb-4">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 shrink-0">
+												<i class="fa-solid fa-font"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">ขนาดตัวอักษร</span>
+										</div>
+										<span id="fontLabelDisplay" class="text-blue-600 bg-blue-100 px-3 py-1 rounded-full text-xs font-bold shrink-0">ปกติ</span>
+									</div>
+									<div class="ml-14 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
+										<div class="relative w-full px-1 mb-5 mt-2">
+											<input type="range" id="fontSizeSlider" min="0" max="5" step="1" value="2" 
+												   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 block dark:bg-gray-600">
+											
+											<div class="relative w-full h-6 mt-2 text-[10px] sm:text-xs text-gray-400 font-medium">
+												<span class="absolute left-0 top-0">เล็กสุดๆ</span>
+												<span class="absolute top-0 -translate-x-1/2" style="left: 20%;">เล็ก</span>
+												<span class="absolute top-0 -translate-x-1/2" style="left: 40%;">ปกติ</span>
+												<span class="absolute top-0 -translate-x-1/2" style="left: 60%;">ใหญ่</span>
+												<span class="absolute top-0 -translate-x-1/2" style="left: 80%;">ใหญ่มาก</span>
+												<span class="absolute right-0 top-0 translate-x-1/2 max-w-[40px] text-right whitespace-nowrap overflow-visible">ใหญ่สุดๆ</span>
+											</div>
+										</div>
+										<button id="btnSaveFontSize" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow transition duration-300 flex items-center justify-center gap-2">
+											<i class="fa-solid fa-save"></i> บันทึกขนาดตัวอักษร
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+
 					</div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                    <div class="flex flex-col gap-6">
-                        <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg mt-0">
-                            <h2 class="text-xl font-bold text-purple-600 mb-4"><i class="fa-solid fa-sliders mr-2"></i>ตั้งค่าทั่วไป</h2>
-                                    
-									<div class="mb-5 pb-4 border-b border-gray-100">
-										<div class="flex items-center justify-between mb-2">
-											<div class="flex items-center gap-3">
-												<div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
-													<i class="fa-solid fa-fingerprint"></i>
+
+					<div class="flex flex-col gap-6">
+
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border border-green-100 dark:border-gray-700 transition-colors">
+							<h2 class="text-lg font-bold text-green-600 dark:text-green-400 mb-5 flex items-center">
+								<i class="fa-solid fa-bell mr-2"></i> การแจ้งเตือน
+							</h2>
+
+							<div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-600 mb-4 transition-colors">
+								<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-line-content">
+									<h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center text-sm md:text-base">
+										<i class="fa-brands fa-line text-green-500 mr-2 text-lg"></i> แจ้งเตือนผ่าน LINE
+									</h3>
+									<div class="flex items-center gap-2">
+										<a id="line-oa-link" href="#" target="_blank" class="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-200 transition-colors font-bold" onclick="event.stopPropagation()">
+											<i class="fa-solid fa-user-plus mr-1"></i> แอดบอท
+										</a>
+										<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
+									</div>
+								</div>
+								
+								<div id="settings-line-content" class="transition-all mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+									<div class="flex flex-col gap-2 mb-4">
+										<h4 class="font-bold text-gray-700 dark:text-gray-300 mb-2 text-sm">เงื่อนไขการแจ้งเตือน:</h4>
+										<div class="space-y-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+											<label class="flex items-center justify-between cursor-pointer">
+												<span class="text-sm text-gray-700 dark:text-gray-300">➕ เพิ่มรายการใหม่</span>
+												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
+													<input type="checkbox" id="notify-on-add" class="sr-only peer">
+													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+												</label>
+											</label>
+											<label class="flex items-center justify-between cursor-pointer">
+												<span class="text-sm text-gray-700 dark:text-gray-300">✏️ แก้ไขรายการ</span>
+												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
+													<input type="checkbox" id="notify-on-edit" class="sr-only peer">
+													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+												</label>
+											</label>
+											<label class="flex items-center justify-between cursor-pointer">
+												<span class="text-sm text-gray-700 dark:text-gray-300">🗑️ ลบรายการ</span>
+												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
+													<input type="checkbox" id="notify-on-delete" class="sr-only peer">
+													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+												</label>
+											</label>
+										</div>
+									</div>
+									
+									<div class="flex flex-col gap-3 mb-3">
+										<h4 class="font-bold text-gray-700 dark:text-gray-300 text-sm">ตั้งค่าผู้รับ (LINE User ID):</h4>
+										<div class="flex gap-2">
+											<input type="text" id="input-line-nickname" class="w-1/3 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:border-purple-500" placeholder="ชื่อเล่น">
+											<input type="text" id="input-line-user-id" class="flex-1 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:border-purple-500" placeholder="User ID (U...)">
+										</div>
+										<button id="btn-add-line-id" class="bg-green-500 hover:bg-green-600 text-white w-full py-2.5 rounded-lg transition-colors font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+											<i class="fa-solid fa-plus"></i> เพิ่มผู้รับ
+										</button>
+									</div>
+
+									<div id="line-id-list" class="space-y-2 mb-3"></div>
+
+									<div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800/50">
+										<p class="text-[11px] sm:text-xs text-yellow-700 dark:text-yellow-400">
+											<i class="fa-solid fa-circle-info mr-1"></i><strong>วิธีใช้:</strong>
+											1. กดปุ่ม "แอดบอท" ด้านบน<br>
+											<span class="ml-4">2. พิมพ์คำว่า <code class="bg-white dark:bg-gray-800 px-1 rounded">id</code> ในแชทบอท</span><br>
+											<span class="ml-4">3. นำรหัส U... มาใส่ในช่อง User ID</span>
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-600 transition-colors">
+								<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-notification-content">
+									<h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center text-sm md:text-base">
+										<i class="fa-solid fa-mobile-screen text-purple-500 mr-2 text-lg"></i> แจ้งเตือนในแอปพลิเคชัน
+									</h3>
+									<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
+								</div>
+
+								<div id="settings-notification-content" class="mt-4 transition-all pt-4 border-t border-gray-200 dark:border-gray-600">
+									<div class="flex flex-wrap items-center gap-x-5 gap-y-4 mb-5 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+										<label class="inline-flex items-center cursor-pointer group w-full sm:w-auto">
+											<input type="checkbox" id="toggle-notify-scheduled" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
+											<span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-600 transition-colors">รายการล่วงหน้า</span>
+										</label>
+										
+										<label class="inline-flex items-center cursor-pointer group w-full sm:w-auto">
+											<input type="checkbox" id="toggle-notify-recurring" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
+											<span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-600 transition-colors">รายการประจำ</span>
+										</label>
+
+										<div class="w-full mt-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+											<span class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">แจ้งเตือน "งบประมาณ" ใกล้หมด:</span>
+											<div class="flex flex-wrap items-center gap-4">
+												<div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
+													<input type="checkbox" id="toggle-notify-budget-1" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded cursor-pointer transition">
+													<div class="flex items-center relative">
+														<span class="text-xs text-gray-500 mr-2">ระดับ 1</span>
+														<input type="number" id="input-notify-budget-percent-1" value="50" min="1" max="100" class="w-16 py-1 px-2 text-center text-sm font-bold text-purple-700 dark:text-purple-400 rounded-md border border-gray-300 dark:border-gray-500 dark:bg-gray-800 focus:ring-1 focus:ring-purple-500 pr-5">
+														<span class="absolute right-2 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
+													</div>
 												</div>
-												<span class="text-lg text-gray-700 font-medium">เข้าใช้งานด้วย Biometric</span>
+												<div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
+													<input type="checkbox" id="toggle-notify-budget-2" class="form-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded cursor-pointer transition">
+													<div class="flex items-center relative">
+														<span class="text-xs text-gray-500 mr-2">ระดับ 2</span>
+														<input type="number" id="input-notify-budget-percent-2" value="90" min="1" max="100" class="w-16 py-1 px-2 text-center text-sm font-bold text-purple-700 dark:text-purple-400 rounded-md border border-gray-300 dark:border-gray-500 dark:bg-gray-800 focus:ring-1 focus:ring-purple-500 pr-5">
+														<span class="absolute right-2 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
+													</div>
+												</div>
 											</div>
-											
-											<button id="btn-biometric-settings" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition-colors">
-												ตั้งค่า
+										</div>
+									</div>
+
+									<div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+										<h4 class="font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center text-sm">
+											<i class="fa-solid fa-star text-orange-500 mr-2"></i> การแจ้งเตือนพิเศษแบบกำหนดเอง
+										</h4>
+										<button onclick="openCustomNotifyModal()" class="w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 py-2.5 rounded-xl mb-4 font-bold transition shadow-sm flex items-center justify-center gap-2">
+											<i class="fa-solid fa-plus"></i> สร้างการแจ้งเตือนใหม่
+										</button>
+										<div id="active-custom-notify-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+										<div class="flex justify-end mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+											<button id="btn-clear-custom-expired" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+												<i class="fa-solid fa-broom"></i> ล้างรายการที่แจ้งเตือนแล้ว
 											</button>
 										</div>
-										<p id="bio-status-text" class="text-sm text-gray-500 mt-2 ml-14">ใช้ลายนิ้วมือหรือใบหน้าแทนรหัสผ่าน (เฉพาะเครื่องนี้)</p>
 									</div>
-									
-									
-									<div class="flex items-center justify-between mt-5"> <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                        </div>
-                                        <span class="text-lg text-gray-700 font-medium">ยืนยันรหัสผ่านอัตโนมัติ</span>
-                                    </div>
-									
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" id="toggle-auto-confirm-password" class="sr-only peer">
-                                        <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-                                    </label>
-                                </div>
-                                <p class="text-sm text-gray-500 mt-2 ml-14">ตรวจสอบและยืนยันทันทีเมื่อพิมพ์รหัสผ่านถูกต้อง</p>
-                            <div class="mb-5 pb-4">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                            <i class="fa-solid fa-user-lock"></i>
-                                        </div>
-                                        <span class="text-lg text-gray-700 font-medium">ตั้งค่า Auto Lock</span>
-                                    </div>
-                                    
-                                    <select id="auto-lock-select" class="form-select text-base text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:ring-purple-500 focus:border-purple-500 py-2 px-3">
-                                        <option value="0">ปิด</option>
-                                        <option value="1">1 นาที</option>
-                                        <option value="5">5 นาที</option>
-                                        <option value="10">10 นาที</option>
-                                        <option value="30">30 นาที</option>
-                                        <option value="60">60 นาที</option>
-                                    </select>
-                                </div>
-                                <p class="text-sm text-gray-500 mt-2 ml-14">ล็อกหน้าจออัตโนมัติเมื่อไม่มีกิจกรรม (ใช้ได้เมื่อตั้งรหัสผ่าน)</p>
-                            </div>
-                            <div class="mb-5 pb-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
-                                            <i class="fa-solid fa-moon"></i>
-                                        </div>
-                                        <span class="text-lg text-gray-700 font-medium">Dark Mode</span>
-                                    </div>
-                                    
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" id="toggle-dark-mode" class="sr-only peer">
-                                        <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-                                    </label>
-                                </div>
-                                <p class="text-sm text-gray-500 mt-2 ml-14">เปลี่ยนธีมเป็นสีดำสนิทเพื่อถนอมสายตา</p>
-                            </div>
-							
-							<div class="mb-5 pb-4 border-b border-gray-100 dark:border-gray-700">
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-3">
-										<div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600">
-											<i class="fa-solid fa-volume-high"></i>
-										</div>
-										<span class="text-lg text-gray-700 font-medium">เสียงตอบรับ (Smart Voice)</span>
-									</div>
-									
-									<label class="relative inline-flex items-center cursor-pointer">
-										<input type="checkbox" id="toggle-smart-voice" class="sr-only peer" checked>
-										<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-									</label>
 								</div>
-								<p class="text-sm text-gray-500 mt-2 ml-14">เปิด/ปิด เสียงโต้ตอบจากระบบอัจฉริยะ</p>
 							</div>
-							
-							<!-- รูปแบบเมนูมือถือ -->
-							<div class="mb-5 pb-4 border-b border-gray-100 dark:border-gray-700">
-								<div class="flex items-center justify-between mb-2">
-									<div class="flex items-center gap-3">
-										<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
-											<i class="fa-solid fa-bars"></i>
-										</div>
-										<span class="text-lg text-gray-700 font-medium">รูปแบบเมนูมือถือ</span>
-									</div>
-								</div>
-								<div class="ml-14 space-y-2">
-									<label class="flex items-center gap-2">
-										<input type="radio" name="mobile-menu-style" value="hamburger" class="form-radio text-purple-600">
-										<span class="text-gray-700 dark:text-gray-300">เมนูแฮมเบอร์เกอร์ (กดปุ่มสามขีดเพื่อเปิดเมนู)</span>
-									</label>
-									<label class="flex items-center gap-2">
-										<input type="radio" name="mobile-menu-style" value="bottom" class="form-radio text-purple-600">
-										<span class="text-gray-700 dark:text-gray-300">เมนูด้านล่าง (กดไอคอนเปลี่ยนหน้าทันที)</span>
-									</label>
-								</div>
-								<p class="text-sm text-gray-500 mt-2 ml-14">เลือกแบบที่คุณถนัด (เปลี่ยนทันที)</p>
-							</div>
+						</div>
 
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </div>
-                                    <span class="text-lg text-gray-700 font-medium">แสดงยอดคงเหลือรวม (หน้าแรก)</span>
-                                </div>
-                                
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="toggle-show-balance" class="sr-only peer">
-                                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-                                </label>
-                            </div>
-                            <p class="text-sm text-gray-500 mt-2 ml-14">หากปิด ยอดคงเหลือสุทธิจะถูกซ่อนจากหน้าแรก</p>
-                        </div>
-						
-						<!-- ส่วนจัดการคำสั่งเสียงที่เรียนรู้ -->
-						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-xl shadow-lg mb-6">
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border border-cyan-100 dark:border-gray-700 transition-colors mb-6">
 							<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-voice-commands-content">
-								<h2 class="text-xl font-bold text-purple-600 dark:text-purple-400">
-									<i class="fa-solid fa-microphone mr-2"></i> คำสั่งเสียงที่เรียนรู้
+								<h2 class="text-lg font-bold text-cyan-600 dark:text-cyan-400 flex items-center">
+									<i class="fa-solid fa-microphone-lines mr-2"></i> คำสั่งเสียงอัจฉริยะ (AI Voice)
 								</h2>
 								<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
 							</div>
-							<div id="settings-voice-commands-content" class="mt-4 transition-all">
-								<div class="flex justify-end mb-3">
-									<button onclick="openVoiceCommandModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2">
-										<i class="fa-solid fa-plus"></i> เพิ่มคำสั่งใหม่
+							
+							<div id="settings-voice-commands-content" class="mt-4 transition-all pt-4 border-t border-gray-100 dark:border-gray-700">
+								<div class="flex justify-between items-center mb-4">
+									<p class="text-sm text-gray-500 dark:text-gray-400">สอนให้ระบบเข้าใจคำสั่งเสียงของคุณเอง</p>
+									<button onclick="openVoiceCommandModal()" class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2 shrink-0">
+										<i class="fa-solid fa-plus"></i> สอนคำสั่ง
 									</button>
 								</div>
-								<div id="voice-commands-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
-								<button id="btn-clear-all-voice" class="mt-3 text-sm text-red-500 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg transition-colors">
-									<i class="fa-solid fa-broom mr-1"></i> ล้างคำสั่งที่เรียนรู้ทั้งหมด
+								
+								<div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl border border-gray-200 dark:border-gray-600 mb-3">
+									<div id="voice-commands-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+								</div>
+								
+								<div class="flex justify-end">
+									<button id="btn-clear-all-voice" class="text-xs text-red-500 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+										<i class="fa-solid fa-trash-can"></i> ล้างคำสั่งทั้งหมด
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border border-orange-100 dark:border-gray-700 transition-colors mb-6">
+							<h2 class="text-lg font-bold text-orange-600 dark:text-orange-400 mb-5 flex items-center">
+								<i class="fa-solid fa-database mr-2"></i> จัดการข้อมูลระบบ
+							</h2>
+
+							<div class="grid grid-cols-2 gap-3 mb-5">
+								<button id="btn-undo" class="bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 px-4 rounded-xl shadow-sm transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex justify-center items-center gap-2">
+									<i class="fa-solid fa-rotate-left"></i> ย้อนกลับ (Undo)
+								</button>
+								<button id="btn-redo" class="bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 px-4 rounded-xl shadow-sm transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex justify-center items-center gap-2">
+									<i class="fa-solid fa-rotate-right"></i> ทำซ้ำ (Redo)
 								</button>
 							</div>
-						</div>
 
-                        <div class="mb-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-							<div class="flex items-center justify-between mb-4">
-								<div class="flex items-center gap-3">
-									<div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
-										<i class="fa-solid fa-font"></i>
-									</div>
-									<span class="text-lg text-gray-700 font-medium">ขนาดตัวอักษร</span>
+							<div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-600 mb-5 transition-colors">
+								<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-autobackup-content">
+									<h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center text-sm md:text-base">
+										<i class="fa-solid fa-clock-rotate-left text-orange-500 mr-2 text-lg"></i> สำรองข้อมูลอัตโนมัติ
+									</h3>
+									<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
 								</div>
-								<span id="fontLabelDisplay" class="text-blue-600 bg-blue-100 px-3 py-1 rounded-full text-sm">ปกติ</span>
-							</div>
-							
-							<div class="relative w-full px-1 mb-4">
-								<input type="range" id="fontSizeSlider" min="0" max="5" step="1" value="2" 
-									   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 block">
-								
-								<div class="relative w-full h-6 mt-2 text-xs text-gray-400 font-medium">
-									<span class="absolute left-0 top-0" style="left: 0%;">เล็กสุดๆ</span>
-									<span class="absolute top-0 -translate-x-1/2" style="left: 20%;">เล็ก</span>
-									<span class="absolute top-0 -translate-x-1/2" style="left: 40%;">ปกติ</span>
-									<span class="absolute top-0 -translate-x-1/2" style="left: 60%;">ใหญ่</span>
-									<span class="absolute top-0 -translate-x-1/2" style="left: 80%;">ใหญ่มาก</span>
-									<span class="absolute right-0 top-0" style="left: 100%; transform: translateX(-100%);">ใหญ่สุดๆ</span>
-								</div>
-							</div>
 
-							<button id="btnSaveFontSize" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow transition duration-300">
-								<i class="fa-solid fa-save mr-2"></i> บันทึกขนาดตัวอักษร
-							</button>
-							<p class="text-xs text-gray-400 text-center mt-2">* กดปุ่มบันทึกเพื่อให้การเปลี่ยนแปลงมีผล</p>
-						</div>
-                    </div>
-
-                    <div class="flex flex-col gap-6">
-                        <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg">
-                            <h2 class="text-xl font-bold text-purple-600 mb-4"><i class="fa-solid fa-database mr-2"></i>จัดการข้อมูล</h2>
-                            <button id="btn-manage-password" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 mb-4 text-lg"> <i class="fa-solid fa-key mr-2"></i> จัดการรหัสผ่าน
-                            </button>
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                <button id="btn-undo" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"> <i class="fa-solid fa-rotate-left mr-2"></i> ย้อนกลับ
-                            </button>
-                            <button id="btn-redo" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"> <i class="fa-solid fa-rotate-right mr-2"></i> ทำซ้ำ
-                                </button>
-                            </div>
-							
-							<!-- ===== AUTO BACKUP SETTINGS ===== -->
-									<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-xl shadow-lg mb-6">
-										<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-autobackup-content">
-											<h2 class="text-xl font-bold text-purple-600 dark:text-purple-400">
-												<i class="fa-solid fa-clock mr-2"></i> สำรองข้อมูลอัตโนมัติ
-											</h2>
-											<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
+								<div id="settings-autobackup-content" class="mt-4 transition-all pt-4 border-t border-gray-200 dark:border-gray-600">
+									<div class="space-y-4">
+										<div class="flex items-center justify-between">
+											<span class="text-gray-700 dark:text-gray-300 font-medium text-sm">เปิดใช้งาน (เก็บลงเครื่อง)</span>
+											<label class="relative inline-flex items-center cursor-pointer">
+												<input type="checkbox" id="toggle-auto-backup" class="sr-only peer">
+												<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+											</label>
 										</div>
 
-										<div id="settings-autobackup-content" class="mt-4 transition-all">
-											<div class="space-y-4">
-												<!-- สวิตช์เปิด/ปิด -->
-												<div class="flex items-center justify-between">
-													<span class="text-gray-700 dark:text-gray-300 text-lg">เปิดใช้งาน</span>
-													<label class="relative inline-flex items-center cursor-pointer">
-														<input type="checkbox" id="toggle-auto-backup" class="sr-only peer">
-														<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-													</label>
-												</div>
+										<div>
+											<label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">ความถี่</label>
+											<select id="auto-backup-frequency" class="w-full p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 text-sm" disabled>
+												<option value="daily">ทุกวัน</option>
+												<option value="weekly">ทุกสัปดาห์ (ทุกวันจันทร์)</option>
+												<option value="monthly">ทุกเดือน (วันที่ 1)</option>
+											</select>
+										</div>
 
-												<!-- เลือกความถี่ (จะ enable เมื่อเปิดใช้งาน) -->
-												<div>
-													<label class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">ความถี่</label>
-													<select id="auto-backup-frequency" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500" disabled>
-														<option value="daily">ทุกวัน</option>
-														<option value="weekly">ทุกสัปดาห์ (ทุกวันจันทร์)</option>
-														<option value="monthly">ทุกเดือน (วันที่ 1)</option>
-													</select>
-													<p class="text-xs text-gray-400 mt-2">ระบบจะสำรองข้อมูลเป็นไฟล์ JSON ลงเครื่องของคุณโดยอัตโนมัติ</p>
-												</div>
-
-												<!-- แสดงเวลาสำรองครั้งล่าสุด (optional) -->
-												<div class="text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-3">
-													<span>📦 สำรองอัตโนมัติครั้งล่าสุด: </span><span id="last-auto-backup-time">ไม่เคย</span>
-												</div>
-												<div class="text-sm text-gray-500 dark:text-gray-400 pt-1">
-													<span>✋ สำรองเอง (JSON) ครั้งล่าสุด: </span><span id="last-manual-backup-time">ไม่เคย</span>
-												</div>
-												<div class="text-sm text-gray-500 dark:text-gray-400 pt-1">
-													<span>☁️ ซิงค์ขึ้น Cloud ครั้งล่าสุด: </span><span id="last-cloud-sync-time">ไม่เคย</span>
-												</div>
-											</div>
+										<div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 space-y-2 mt-2">
+											<div class="flex justify-between"><span>📦 สำรองอัตโนมัติ (เครื่อง):</span> <span id="last-auto-backup-time" class="font-medium text-gray-700 dark:text-gray-300">ไม่เคย</span></div>
+											<div class="flex justify-between"><span>✋ สำรองเอง (JSON):</span> <span id="last-manual-backup-time" class="font-medium text-gray-700 dark:text-gray-300">ไม่เคย</span></div>
+											<div class="flex justify-between"><span>☁️ ซิงค์ขึ้น Cloud:</span> <span id="last-cloud-sync-time" class="font-medium text-gray-700 dark:text-gray-300">ไม่เคย</span></div>
 										</div>
 									</div>
+								</div>
+							</div>
 
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                <button id="btn-backup" class="bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded-xl shadow-lg transition duration-300 text-lg h-auto"> 
+							<div class="grid grid-cols-2 gap-3 mb-5">
+								<button id="btn-backup" class="bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded-xl shadow-lg transition duration-300 text-lg h-auto"> 
                                     <div class="flex flex-col items-center leading-tight">
 										<span><i class="fa-solid fa-vault mr-2"></i> ศูนย์สำรองข้อมูล</span>
 										<span class="text-xs font-normal opacity-80 mt-1">JSON / Excel / Cloud</span>
@@ -1037,47 +1049,59 @@
                                         <span class="text-xs font-normal opacity-80 mt-1">(จากอุปกรณ์)</span>
                                     </div>
                                 </button>
-                                <input type="file" id="import-file-input" class="hidden" accept=".json">
-									<div class="col-span-2 mt-2 pt-2 border-t border-gray-200">
-
-										<!-- ปุ่มตรวจสอบอัปเดต (ย้ายมาอยู่บน) -->
-										<button id="btn-system-update" class="w-full bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 text-lg mb-3">
-											<i class="fa-solid fa-rotate mr-2 animate-spin-slow"></i> ตรวจสอบและอัปเดตเวอร์ชันล่าสุด / ล้างแคช
-										</button>
-
-										<!-- ปุ่ม Hard Reset (เดิม) -->
-										<button id="btn-hard-reset" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 text-lg">
-											<i class="fa-solid fa-power-off text-red-400 mr-2"></i> ล้างระบบแก้แอปค้าง แอปพัง อัพเดทไม่ได้ (Hard Reset)
-										</button>
-									</div>
-
-                                <button id="btn-clear-all" class="col-span-2 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition duration-300 text-lg"> <i class="fa-solid fa-trash-alt mr-2"></i> รีเซ็ตและล้างข้อมูลทั้งหมด
-                                </button>
-                            </div>
-							<div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mt-6">
-								<div class="flex items-center gap-3 mb-4">
-									<div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-400">
-										<i class="fa-solid fa-mobile-screen-button"></i>
-									</div>
-									<div>
-										<h3 class="font-bold text-gray-800 dark:text-white">ติดตั้งแอปพลิเคชัน</h3>
-										<p class="text-xs text-gray-500">เพิ่มลงหน้าจอโฮมเพื่อใช้งานแบบออฟไลน์</p>
-									</div>
-								</div>
-
-								<button id="btn-pwa-install" class="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
-									<i class="fa-solid fa-download"></i>
-									<span>ติดตั้งลงเครื่องนี้</span>
-								</button>
-								
-								<p id="txt-pwa-status" class="text-center text-[10px] text-gray-400 mt-2">
-									รองรับทั้ง Android และ iOS
-								</p>
+								<input type="file" id="import-file-input" class="hidden" accept=".json">
 							</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
+							<div class="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700 space-y-3">
+								<h3 class="text-[14px] font-bold text-gray-400 uppercase tracking-wider mb-3">อัปเดตและรีเซ็ต</h3>
+								
+								<button id="btn-system-update" class="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 text-sm flex items-center justify-center gap-2">
+									<i class="fa-solid fa-rotate animate-spin-slow"></i> อัปเดตเวอร์ชัน / ล้างแคชระบบ
+								</button>
+
+								<button id="btn-hard-reset" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 text-sm flex items-center justify-center gap-2">
+									<i class="fa-solid fa-power-off text-red-400"></i> Hard Reset (แก้แอปค้าง/พัง)
+								</button>
+
+								<button id="btn-clear-all" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 text-sm flex items-center justify-center gap-2">
+									<i class="fa-solid fa-trash-alt"></i> รีเซ็ตและล้างข้อมูลทั้งหมด
+								</button>
+							</div>
+						</div>
+
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border border-indigo-100 dark:border-gray-700 transition-colors mb-6">
+							<div class="flex items-center gap-3 mb-4">
+								<div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+									<i class="fa-solid fa-mobile-screen-button"></i>
+								</div>
+								<div>
+									<h3 class="font-bold text-gray-800 dark:text-white text-sm md:text-base">ติดตั้งแอปพลิเคชัน</h3>
+									<p class="text-xs text-gray-500 dark:text-gray-400">เพิ่มลงหน้าจอโฮมเพื่อใช้งานแบบออฟไลน์</p>
+								</div>
+							</div>
+
+							<button id="btn-pwa-install" class="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
+								<i class="fa-solid fa-download"></i>
+								<span>ติดตั้งลงเครื่องนี้</span>
+							</button>
+							
+							<p id="txt-pwa-status" class="text-center text-[10px] text-gray-400 mt-2">
+								รองรับทั้ง Android และ iOS
+							</p>
+						</div>
+
+					</div>
+				</div>
+
+				<script>
+					document.addEventListener('DOMContentLoaded', function() {
+						const lineOaLink = document.getElementById('line-oa-link');
+						if (lineOaLink && window.LINE_CONFIG && window.LINE_CONFIG.OA_BOT_URL) {
+							lineOaLink.href = window.LINE_CONFIG.OA_BOT_URL;
+						}
+					});
+				</script>
+			</div>
         
             <div id="page-guide" class="app-page hidden">
 				<!-- จะใส่เนื้อหาด้วย JavaScript -->
@@ -2031,8 +2055,8 @@
 
 					signOut(auth).then(() => {
 						// +++ อัปเดตไอคอนให้เป็นสถานะ logout ทันที (สีเทา) +++
-						if (typeof updateCloudStatusIcon === 'function') {
-							updateCloudStatusIcon(null);
+						if (typeof window.updateCloudStatusIcon === 'function') {
+							window.updateCloudStatusIcon(null);
 						}
 						window.location.reload(); 
 					}).catch((error) => {
@@ -2081,14 +2105,14 @@
 			}
 
 			// เรียกฟังก์ชันอัปเดตไอคอน (ส่ง user object เพื่อความแม่นยำ)
-			if (typeof updateCloudStatusIcon === 'function') {
-				updateCloudStatusIcon(user);
+			if (typeof window.updateCloudStatusIcon === 'function') {
+				window.updateCloudStatusIcon(user);
 			}
 
 			// เรียกอีกครั้งหลังจาก 200ms เพื่อให้แน่ใจว่า DOM และ auth state พร้อม
 			setTimeout(() => {
-				if (typeof updateCloudStatusIcon === 'function') {
-					updateCloudStatusIcon(user);
+				if (typeof window.updateCloudStatusIcon === 'function') {
+					window.updateCloudStatusIcon(user);
 				}
 			}, 200);
 		});

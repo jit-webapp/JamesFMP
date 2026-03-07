@@ -2255,7 +2255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		}
 		
-		function updateCloudStatusIcon(user = null) {
+		window.updateCloudStatusIcon = function(user = null) {
 			const cloudMobile = document.getElementById('status-cloud-mobile');
 			const cloudDesktop = document.getElementById('status-cloud-desktop');
 			const isOnline = navigator.onLine;
@@ -2289,7 +2289,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					el.title = title;
 				}
 			});
-		}
+		};
 		
 		// ============================================
 		// รีเฟรชข้อมูลจากคลาวด์ (เหมือนเปิดแอปใหม่)
@@ -3731,6 +3731,7 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleSch.addEventListener('change', async (e) => {
                 state.notifySettings.scheduled = e.target.checked;
                 await dbPut(STORE_CONFIG, { key: 'notification_settings', value: state.notifySettings });
+                showToast(`ตั้งค่าแจ้งเตือนล่วงหน้า ${e.target.checked ? 'เปิด' : 'ปิด'} เรียบร้อย`, 'success');
             });
         }
 
@@ -3740,6 +3741,7 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleRec.addEventListener('change', async (e) => {
                 state.notifySettings.recurring = e.target.checked;
                 await dbPut(STORE_CONFIG, { key: 'notification_settings', value: state.notifySettings });
+                showToast(`ตั้งค่าแจ้งเตือนรายการประจำ ${e.target.checked ? 'เปิด' : 'ปิด'} เรียบร้อย`, 'success');
             });
         }
 		// ==========================================
@@ -16118,133 +16120,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// ฟังก์ชันสำหรับคำสั่งค้นหาคำ + ช่วงเวลา (เช่น "เติมเงินมกราปีนี้")
 			function handleKeywordPeriodCommand(text, lowerText) {
-				// ========== ตรวจจับหลายเดือน (คั่นด้วย "และ", "กับ", หรือ "ถึง") ==========
-				const parts = lowerText.split(/\s*(?:และ|กับ|ถึง)\s*/).filter(p => p.length > 0);
-				if (parts.length >= 2) {
-					let months = [];
-					let keyword = '';
-					let year = parseYearFromText(lowerText);
-					if (year === null) year = new Date().getFullYear();
-
-					const monthKeysSorted = Object.keys(thaiMonthMap).sort((a, b) => b.length - a.length);
-
-					for (let i = 0; i < parts.length; i++) {
-						const part = parts[i];
-						let foundMonth = null;
-						let foundMonthKey = null;
-
-						for (const key of monthKeysSorted) {
-							if (part.includes(key)) {
-								foundMonth = thaiMonthMap[key];
-								foundMonthKey = key;
-								break;
-							}
-						}
-						if (foundMonth !== null) {
-							months.push(foundMonth);
-							if (i === 0) {
-								// ส่วนแรก: ตัดเดือนออก เหลือ keyword ดิบ
-								let rawKeyword = part.replace(foundMonthKey, '').replace(/\s+/g, ' ').trim();
-								// ตัดคำนำหน้าค้นหาและคำสุภาพ
-								rawKeyword = trimSearchPrefix(rawKeyword);
-								rawKeyword = trimPoliteSuffix(rawKeyword);
-								keyword = rawKeyword;
-							}
-						}
-					}
-
-					if (months.length >= 2) {
-						const minMonth = Math.min(...months);
-						const maxMonth = Math.max(...months);
-						const startDate = new Date(year, minMonth - 1, 1);
-						const endDate = new Date(year, maxMonth, 0);
-						const formatLocalDate = (d) => {
-							const y = d.getFullYear();
-							const m = String(d.getMonth() + 1).padStart(2, '0');
-							const day = String(d.getDate()).padStart(2, '0');
-							return `${y}-${m}-${day}`;
-						};
-
-						showPage('page-list');
-
-						const searchInput = document.getElementById('adv-filter-search');
-						if (searchInput) searchInput.value = '';
-						state.advFilterSearch = '';
-
-						if (searchInput) searchInput.value = keyword;
-						state.advFilterSearch = keyword;
-
-						state.advFilterType = 'all';
-						const typeSelect = document.getElementById('adv-filter-type');
-						if (typeSelect) typeSelect.value = 'all';
-
-						document.getElementById('adv-filter-start').value = formatLocalDate(startDate);
-						document.getElementById('adv-filter-end').value = formatLocalDate(endDate);
-
-						renderListPage();
-
-						const hasRange = lowerText.includes('ถึง');
-						const connector = hasRange ? ' ถึง ' : ' และ ';
-						const monthNames = months.map(m => Object.keys(thaiMonthMap).find(k => thaiMonthMap[k] === m)).join(connector);
-						const yearThai = year + 543;
-						const periodText = `เดือน${monthNames} พ.ศ. ${yearThai}`;
-
-						setTimeout(() => {
-							const filtered = getCurrentFilteredTransactions();
-							const keywordLower = keyword.toLowerCase();
-							const relevant = filtered.filter(tx => tx.name && tx.name.toLowerCase().includes(keywordLower));
-
-							const totalIncome = relevant.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
-							const totalExpense = relevant.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
-							const totalTransfer = relevant.filter(tx => tx.type === 'transfer').reduce((sum, tx) => sum + tx.amount, 0);
-							const net = totalIncome - totalExpense;
-
-							if (relevant.length === 0) {
-								speak(`ไม่พบรายการ "${keyword}" ในช่วง${periodText}`);
-							} else {
-								let message = `ในช่วง${periodText} รายการ "${keyword}" `;
-								if (totalIncome > 0) message += `มีรายรับ ${formatCurrency(totalIncome)} `;
-								if (totalExpense > 0) message += `มีรายจ่าย ${formatCurrency(totalExpense)} `;
-								if (totalTransfer > 0) message += `มีโอนย้าย ${formatCurrency(totalTransfer)} `;
-								message += `รวมสุทธิ ${formatCurrency(net)}`;
-								speak(message);
-							}
-						}, 600);
-						return true;
-					}
-				}
-
-				// ========== กรณีเดือนเดียว ==========
-				let foundMonth = null;
-				let monthIndex = -1;
-				let monthKey = null;
+			// ========== ตรวจจับหลายเดือน (คั่นด้วย "และ", "กับ", หรือ "ถึง") ==========
+			const parts = lowerText.split(/\s*(?:และ|กับ|ถึง)\s*/).filter(p => p.length > 0);
+			if (parts.length >= 2) {
+				let months = [];
+				let keyword = '';
+				let year = parseYearFromText(lowerText);
+				if (year === null) year = new Date().getFullYear();
 
 				const monthKeysSorted = Object.keys(thaiMonthMap).sort((a, b) => b.length - a.length);
-				for (const key of monthKeysSorted) {
-					const idx = lowerText.indexOf(key);
-					if (idx !== -1) {
-						foundMonth = thaiMonthMap[key];
-						monthIndex = idx;
-						monthKey = key;
-						break;
+
+				for (let i = 0; i < parts.length; i++) {
+					const part = parts[i];
+					let foundMonth = null;
+					let foundMonthKey = null;
+
+					for (const key of monthKeysSorted) {
+						if (part.includes(key)) {
+							foundMonth = thaiMonthMap[key];
+							foundMonthKey = key;
+							break;
+						}
+					}
+					if (foundMonth !== null) {
+						months.push(foundMonth);
+						if (i === 0) {
+							// ส่วนแรก: ตัดเดือนออก เหลือ keyword ดิบ
+							let rawKeyword = part.replace(foundMonthKey, '').replace(/\s+/g, ' ').trim();
+							// ตัดคำนำหน้าค้นหาและคำสุภาพ
+							rawKeyword = trimSearchPrefix(rawKeyword);
+							rawKeyword = trimPoliteSuffix(rawKeyword);
+							keyword = rawKeyword;
+						}
 					}
 				}
 
-				if (foundMonth !== null) {
-					// ดึง keyword ดิบ (ข้อความก่อนหน้าเดือน)
-					let rawKeyword = lowerText.substring(0, monthIndex).trim();
-					if (rawKeyword === '') return false;
-
-					// ตัดคำนำหน้าค้นหาและคำสุภาพ
-					let keyword = trimSearchPrefix(rawKeyword);
-					keyword = trimPoliteSuffix(keyword);
-					if (keyword === '') return false; // ถ้าตัดแล้วเหลือว่าง ให้ยกเลิก
-
-					let year = parseYearFromText(lowerText);
-					if (year === null) year = new Date().getFullYear();
-
-					const startDate = new Date(year, foundMonth - 1, 1);
-					const endDate = new Date(year, foundMonth, 0);
+				if (months.length >= 2) {
+					const minMonth = Math.min(...months);
+					const maxMonth = Math.max(...months);
+					const startDate = new Date(year, minMonth - 1, 1);
+					const endDate = new Date(year, maxMonth, 0);
 					const formatLocalDate = (d) => {
 						const y = d.getFullYear();
 						const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -16270,21 +16185,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					renderListPage();
 
-					const monthName = Object.keys(thaiMonthMap).find(k => thaiMonthMap[k] === foundMonth);
+					const hasRange = lowerText.includes('ถึง');
+					const connector = hasRange ? ' ถึง ' : ' และ ';
+					const monthNames = months.map(m => Object.keys(thaiMonthMap).find(k => thaiMonthMap[k] === m)).join(connector);
 					const yearThai = year + 543;
-					const periodText = `เดือน${monthName} พ.ศ. ${yearThai}`;
+					const periodText = `เดือน${monthNames} พ.ศ. ${yearThai}`;
 
 					setTimeout(() => {
 						const filtered = getCurrentFilteredTransactions();
-						const keywordLower = keyword.toLowerCase();
-						const relevant = filtered.filter(tx => tx.name && tx.name.toLowerCase().includes(keywordLower));
-
-						const totalIncome = relevant.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
-						const totalExpense = relevant.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
-						const totalTransfer = relevant.filter(tx => tx.type === 'transfer').reduce((sum, tx) => sum + tx.amount, 0);
+						const totalIncome = filtered.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
+						const totalExpense = filtered.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
+						const totalTransfer = filtered.filter(tx => tx.type === 'transfer').reduce((sum, tx) => sum + tx.amount, 0);
 						const net = totalIncome - totalExpense;
 
-						if (relevant.length === 0) {
+						if (filtered.length === 0) {
 							speak(`ไม่พบรายการ "${keyword}" ในช่วง${periodText}`);
 						} else {
 							let message = `ในช่วง${periodText} รายการ "${keyword}" `;
@@ -16297,26 +16211,45 @@ document.addEventListener('DOMContentLoaded', () => {
 					}, 600);
 					return true;
 				}
+			}
 
-				// ========== กรณีช่วงเวลาพื้นฐาน (วันนี้ สัปดาห์นี้ ฯลฯ) ==========
-				let foundPeriod = null;
-				let periodThai = null;
-				for (const [thai, code] of Object.entries(periodThaiMap)) {
-					if (lowerText.endsWith(thai)) {
-						foundPeriod = code;
-						periodThai = thai;
-						break;
-					}
+			// ========== กรณีเดือนเดียว ==========
+			let foundMonth = null;
+			let monthIndex = -1;
+			let monthKey = null;
+
+			const monthKeysSorted = Object.keys(thaiMonthMap).sort((a, b) => b.length - a.length);
+			for (const key of monthKeysSorted) {
+				const idx = lowerText.indexOf(key);
+				if (idx !== -1) {
+					foundMonth = thaiMonthMap[key];
+					monthIndex = idx;
+					monthKey = key;
+					break;
 				}
-				if (!foundPeriod) return false;
+			}
 
-				let keyword = lowerText.slice(0, -periodThai.length).trim();
-				if (!keyword) return false;
-				if (keyword === 'รายจ่าย' || keyword === 'รายรับ' || keyword === 'โอนย้าย') return false;
+			if (foundMonth !== null) {
+				// ดึง keyword ดิบ (ข้อความก่อนหน้าเดือน)
+				let rawKeyword = lowerText.substring(0, monthIndex).trim();
+				if (rawKeyword === '') return false;
 
 				// ตัดคำนำหน้าค้นหาและคำสุภาพ
-				keyword = trimSearchPrefix(keyword);
+				let keyword = trimSearchPrefix(rawKeyword);
 				keyword = trimPoliteSuffix(keyword);
+				if (keyword === '') return false; // ถ้าตัดแล้วเหลือว่าง ให้ยกเลิก
+
+				let year = parseYearFromText(lowerText);
+				if (year === null) year = new Date().getFullYear();
+
+				const startDate = new Date(year, foundMonth - 1, 1);
+				const endDate = new Date(year, foundMonth, 0);
+				const formatLocalDate = (d) => {
+					const y = d.getFullYear();
+					const m = String(d.getMonth() + 1).padStart(2, '0');
+					const day = String(d.getDate()).padStart(2, '0');
+					return `${y}-${m}-${day}`;
+				};
 
 				showPage('page-list');
 
@@ -16331,32 +16264,92 @@ document.addEventListener('DOMContentLoaded', () => {
 				const typeSelect = document.getElementById('adv-filter-type');
 				if (typeSelect) typeSelect.value = 'all';
 
-				applyCustomPeriod(periodThai);
+				document.getElementById('adv-filter-start').value = formatLocalDate(startDate);
+				document.getElementById('adv-filter-end').value = formatLocalDate(endDate);
+
+				renderListPage();
+
+				const monthName = Object.keys(thaiMonthMap).find(k => thaiMonthMap[k] === foundMonth);
+				const yearThai = year + 543;
+				const periodText = `เดือน${monthName} พ.ศ. ${yearThai}`;
 
 				setTimeout(() => {
 					const filtered = getCurrentFilteredTransactions();
-					const keywordLower = keyword.toLowerCase();
-					const relevant = filtered.filter(tx => tx.name && tx.name.toLowerCase().includes(keywordLower));
-
-					const totalIncome = relevant.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
-					const totalExpense = relevant.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
-					const totalTransfer = relevant.filter(tx => tx.type === 'transfer').reduce((sum, tx) => sum + tx.amount, 0);
+					const totalIncome = filtered.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
+					const totalExpense = filtered.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
+					const totalTransfer = filtered.filter(tx => tx.type === 'transfer').reduce((sum, tx) => sum + tx.amount, 0);
 					const net = totalIncome - totalExpense;
 
-					if (relevant.length === 0) {
-						speak(`ไม่พบรายการ "${keyword}" ในช่วง${periodThai}`);
+					if (filtered.length === 0) {
+						speak(`ไม่พบรายการ "${keyword}" ในช่วง${periodText}`);
 					} else {
-						let message = `ในช่วง${periodThai} รายการ "${keyword}" `;
+						let message = `ในช่วง${periodText} รายการ "${keyword}" `;
 						if (totalIncome > 0) message += `มีรายรับ ${formatCurrency(totalIncome)} `;
 						if (totalExpense > 0) message += `มีรายจ่าย ${formatCurrency(totalExpense)} `;
 						if (totalTransfer > 0) message += `มีโอนย้าย ${formatCurrency(totalTransfer)} `;
 						message += `รวมสุทธิ ${formatCurrency(net)}`;
 						speak(message);
 					}
-				}, 500);
-
+				}, 600);
 				return true;
 			}
+
+			// ========== กรณีช่วงเวลาพื้นฐาน (วันนี้ สัปดาห์นี้ ฯลฯ) ==========
+			let foundPeriod = null;
+			let periodThai = null;
+			for (const [thai, code] of Object.entries(periodThaiMap)) {
+				if (lowerText.endsWith(thai)) {
+					foundPeriod = code;
+					periodThai = thai;
+					break;
+				}
+			}
+			if (!foundPeriod) return false;
+
+			let keyword = lowerText.slice(0, -periodThai.length).trim();
+			if (!keyword) return false;
+			if (keyword === 'รายจ่าย' || keyword === 'รายรับ' || keyword === 'โอนย้าย') return false;
+
+			// ตัดคำนำหน้าค้นหาและคำสุภาพ
+			keyword = trimSearchPrefix(keyword);
+			keyword = trimPoliteSuffix(keyword);
+
+			showPage('page-list');
+
+			const searchInput = document.getElementById('adv-filter-search');
+			if (searchInput) searchInput.value = '';
+			state.advFilterSearch = '';
+
+			if (searchInput) searchInput.value = keyword;
+			state.advFilterSearch = keyword;
+
+			state.advFilterType = 'all';
+			const typeSelect = document.getElementById('adv-filter-type');
+			if (typeSelect) typeSelect.value = 'all';
+
+			applyCustomPeriod(periodThai);
+
+			setTimeout(() => {
+				const filtered = getCurrentFilteredTransactions();
+				const totalIncome = filtered.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
+				const totalExpense = filtered.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
+				const totalTransfer = filtered.filter(tx => tx.type === 'transfer').reduce((sum, tx) => sum + tx.amount, 0);
+				const net = totalIncome - totalExpense;
+
+				if (filtered.length === 0) {
+					speak(`ไม่พบรายการ "${keyword}" ในช่วง${periodThai}`);
+				} else {
+					let message = `ในช่วง${periodThai} รายการ "${keyword}" `;
+					if (totalIncome > 0) message += `มีรายรับ ${formatCurrency(totalIncome)} `;
+					if (totalExpense > 0) message += `มีรายจ่าย ${formatCurrency(totalExpense)} `;
+					if (totalTransfer > 0) message += `มีโอนย้าย ${formatCurrency(totalTransfer)} `;
+					message += `รวมสุทธิ ${formatCurrency(net)}`;
+					speak(message);
+				}
+			}, 500);
+
+			return true;
+		}
 			
 
 			// ===== ฟังก์ชันพูด (เลือกเสียงภาษาไทยโดยอัตโนมัติ) =====
@@ -17335,6 +17328,92 @@ document.addEventListener('DOMContentLoaded', () => {
 					localStorage.setItem('hasSeenWelcomeModal_FMPro', 'true');
 				}
 			});
+			
+			// =========================================================================
+			// ฟังก์ชันเสริม: ระบบจัดการการตั้งค่าแจ้งเตือน (รายการล่วงหน้า, รายการประจำ, งบประมาณ)
+			// =========================================================================
+			document.addEventListener('DOMContentLoaded', () => {
+				
+				// หน่วงเวลา 1 วินาที เพื่อให้มั่นใจว่า HTML ทุกส่วน (รวมถึงเมนูที่ซ่อนอยู่) โหลดเสร็จสมบูรณ์ 100%
+				setTimeout(() => {
+					// รายการ ID ของปุ่มตั้งค่าทั้งหมดที่ต้องการให้แจ้งเตือนและบันทึก
+					const notifySettingsConfig = [
+						{ id: 'toggle-notify-scheduled', key: 'fmpro_notify_scheduled', name: 'อัปเดต: แจ้งเตือนรายการล่วงหน้า', type: 'checkbox' },
+						{ id: 'toggle-notify-recurring', key: 'fmpro_notify_recurring', name: 'อัปเดต: แจ้งเตือนรายการประจำ', type: 'checkbox' },
+						{ id: 'toggle-notify-budget-1', key: 'fmpro_notify_budget_1', name: 'อัปเดต: แจ้งเตือนงบประมาณ (ระดับ 1)', type: 'checkbox' },
+						{ id: 'input-notify-budget-percent-1', key: 'fmpro_notify_budget_percent_1', name: 'อัปเดต: เปอร์เซ็นต์งบประมาณ (ระดับ 1)', type: 'number' },
+						{ id: 'toggle-notify-budget-2', key: 'fmpro_notify_budget_2', name: 'อัปเดต: แจ้งเตือนงบประมาณ (ระดับ 2)', type: 'checkbox' },
+						{ id: 'input-notify-budget-percent-2', key: 'fmpro_notify_budget_percent_2', name: 'อัปเดต: เปอร์เซ็นต์งบประมาณ (ระดับ 2)', type: 'number' }
+					];
+
+					// 1. โหลดค่าเดิมจาก localStorage มาแสดงที่หน้าจอ
+					notifySettingsConfig.forEach(item => {
+						const el = document.getElementById(item.id);
+						if (el) {
+							const savedValue = localStorage.getItem(item.key);
+							if (savedValue !== null) {
+								if (item.type === 'checkbox') {
+									el.checked = (savedValue === 'true');
+								} else {
+									el.value = savedValue;
+								}
+							}
+
+							// 2. ดักจับเมื่อมีการคลิกหรือพิมพ์เปลี่ยนค่า (Change Event)
+							el.addEventListener('change', (e) => {
+								// หาค่าใหม่ที่ถูกเปลี่ยน
+								const newValue = item.type === 'checkbox' ? e.target.checked : e.target.value;
+								
+								// บันทึกลงระบบเครื่อง (เพื่อรองรับระบบกู้คืนและ Backup เดิม)
+								localStorage.setItem(item.key, newValue);
+
+								// แจ้งเตือนมุมซ้ายบน (top-start)
+								if (typeof Swal !== 'undefined') {
+									Swal.fire({
+										icon: 'success',
+										title: 'บันทึกสำเร็จ',
+										text: item.name,
+										toast: true,
+										position: 'top-start', // ตั้งค่าให้ออกมุมซ้ายบนตามที่ต้องการ
+										showConfirmButton: false,
+										timer: 2000,
+										timerProgressBar: true
+									});
+								}
+
+								// 3. สั่งซิงค์ข้อมูลขึ้นคลาวด์อัตโนมัติ (ครอบคลุมฟังก์ชันซิงค์ทั้งหมดของระบบ)
+								if (typeof syncDataToFirebase === 'function') {
+									syncDataToFirebase();
+								} else if (typeof autoSync === 'function') {
+									autoSync();
+								} else if (typeof syncSettingsToCloud === 'function') {
+									syncSettingsToCloud();
+								}
+							});
+						}
+					});
+
+					// 4. ดักจับเมื่อมีการกู้คืนข้อมูล (Restore) ให้รีเฟรชค่าบนหน้าจอแบบเรียลไทม์
+					window.addEventListener('storage', (e) => {
+						if (e.key && e.key.startsWith('fmpro_notify_')) {
+							notifySettingsConfig.forEach(item => {
+								if (e.key === item.key) {
+									const el = document.getElementById(item.id);
+									if (el) {
+										if (item.type === 'checkbox') {
+											el.checked = (e.newValue === 'true');
+										} else {
+											el.value = e.newValue;
+										}
+									}
+								}
+							});
+						}
+					});
+
+				}, 1000); // จบการหน่วงเวลา 1 วินาที
+			});
+			// =========================================================================
 			
 
         });
