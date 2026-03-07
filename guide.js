@@ -894,7 +894,7 @@ window.guideHTML = `
 						<div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mr-4 text-blue-600 dark:text-blue-400">
 							<i class="fa-solid fa-microphone-lines text-2xl"></i>
 						</div>
-						<h3 class="text-2xl font-bold text-gray-800 dark:text-white">ผู้ช่วยเสียงอัจฉริยะ (Smart Voice Command)</h3>
+						<h3 class="text-2xl font-bold text-gray-800 dark:text-white">ผู้ช่วยเสียงอัจฉริยะ (AI Voice Command)</h3>
 					</div>
 					<p class="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
 						สั่งการระบบ จัดการข้อมูล และนำทางไปยังหน้าต่างๆ ได้อย่างรวดเร็วเพียงแค่ใช้เสียงของคุณ พร้อมระบบตอบรับด้วยเสียง (Voice Feedback) ที่สามารถเปิด-ปิดได้ตามต้องการ
