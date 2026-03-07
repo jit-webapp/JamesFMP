@@ -7464,30 +7464,32 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 	
+	// ==========================================
+	// แสดงรายการคำสั่งเสียง (พร้อมระบบลบและแก้ไขแบบใหม่)
+	// ==========================================
 	async function renderVoiceCommandsList() {
 		const listContainer = document.getElementById('voice-commands-list');
 		if (!listContainer) return;
 
 		try {
 			const commands = await dbGetAll(STORE_VOICE_COMMANDS);
-			if (!commands || commands.length === 0) {
+			// กรองเอาเฉพาะอันที่ไม่ได้ถูกลบ 
+			const activeCommands = commands.filter(c => !c.isDeleted);
+
+			if (!activeCommands || activeCommands.length === 0) {
 				listContainer.innerHTML = '<p class="text-gray-400 text-center py-4 border-2 border-dashed border-gray-200 rounded-xl">ยังไม่มีคำสั่งที่เรียนรู้</p>';
 				return;
 			}
 
-			commands.sort((a, b) => (b.useCount || 0) - (a.useCount || 0));
+			activeCommands.sort((a, b) => (b.useCount || 0) - (a.useCount || 0));
 
 			let html = '';
-			commands.forEach(cmd => {
+			activeCommands.forEach(cmd => {
 				let actionText = '';
 				let details = '';
-				let parts;   // ✅ ประกาศไว้ที่นี้
+				let parts;
 
-				// ป้องกันกรณี cmd ไม่มี property ที่จำเป็น
-				if (!cmd.action) {
-					console.warn('คำสั่งเสียหาย:', cmd);
-					return; // ข้ามรายการนี้
-				}
+				if (!cmd.action) return; // ข้ามรายการที่เสีย
 
 				switch (cmd.action) {
 					case 'openPage':
@@ -7498,18 +7500,10 @@ document.addEventListener('DOMContentLoaded', () => {
 						actionText = 'เปิดส่วนตั้งค่า';
 						if (cmd.section) details = `ส่วน: ${cmd.section}`;
 						break;
-					case 'toggleDarkMode':
-						actionText = 'สลับโหมดมืด';
-						break;
-					case 'toggleBalanceVisibility':
-						actionText = 'แสดง/ซ่อนยอด';
-						break;
-					case 'backupData':
-						actionText = 'สำรองข้อมูล';
-						break;
-					case 'changePassword':
-						actionText = 'เปลี่ยนรหัสผ่าน';
-						break;
+					case 'toggleDarkMode': actionText = 'สลับโหมดมืด'; break;
+					case 'toggleBalanceVisibility': actionText = 'แสดง/ซ่อนยอด'; break;
+					case 'backupData': actionText = 'สำรองข้อมูล'; break;
+					case 'changePassword': actionText = 'เปลี่ยนรหัสผ่าน'; break;
 					case 'addTransaction':
 						actionText = 'เพิ่มรายการ';
 						parts = [];
@@ -7544,33 +7538,36 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				html += `
-					<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-sm transition">
-						<div class="flex-1">
-							<div class="font-medium text-gray-800 dark:text-gray-200">"${escapeHTML(cmd.command || '')}"</div>
-							<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-								<span class="bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded text-purple-700 dark:text-purple-300">${actionText}</span>
-								${details ? `<span class="ml-2">${details}</span>` : ''}
-								• ใช้แล้ว ${cmd.useCount || 0} ครั้ง
-							</div>
-						</div>
-						<div class="flex gap-1">
-							<button class="edit-voice-command text-blue-500 hover:text-blue-700 p-2" data-id="${cmd.id}" title="แก้ไข">
-								<i class="fa-solid fa-pen"></i>
-							</button>
-							<button class="delete-voice-command text-red-500 hover:text-red-700 p-2" data-id="${cmd.id}" title="ลบ">
-								<i class="fa-solid fa-trash"></i>
-							</button>
+				<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-sm transition">
+					<div class="flex-1">
+						<div class="font-medium text-gray-800 dark:text-gray-200">"${escapeHTML(cmd.command || '')}"</div>
+						<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+							<span class="bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded text-purple-700 dark:text-purple-300">${actionText}</span>
+							${details ? `<span class="ml-2">${details}</span>` : ''} • ใช้แล้ว ${cmd.useCount || 0} ครั้ง
 						</div>
 					</div>
+					<div class="flex gap-1">
+						<button class="edit-voice-command text-blue-500 hover:text-blue-700 p-2" data-id="${cmd.id}" title="แก้ไขคำสั่งพูด">
+							<i class="fa-solid fa-pen"></i>
+						</button>
+						<button class="delete-voice-command text-red-500 hover:text-red-700 p-2" data-id="${cmd.id}" title="ลบ">
+							<i class="fa-solid fa-trash"></i>
+						</button>
+					</div>
+				</div>
 				`;
 			});
 
 			listContainer.innerHTML = html;
 
-			// ผูก event สำหรับปุ่มลบ (เหมือนเดิม)
+			// 1. ดักจับ Event สำหรับปุ่มลบ (แก้บัค cmd is not defined)
 			document.querySelectorAll('.delete-voice-command').forEach(btn => {
 				btn.addEventListener('click', async (e) => {
 					const id = e.currentTarget.dataset.id;
+					
+					// ค้นหาข้อมูลคำสั่งที่จะลบ เพื่อเอาชื่อไปแสดงในประวัติ
+					const cmdToDelete = activeCommands.find(c => c.id === id);
+					
 					const confirm = await Swal.fire({
 						title: 'ลบคำสั่ง?',
 						text: 'คุณต้องการลบคำสั่งนี้ออกจากรายการที่เรียนรู้หรือไม่?',
@@ -7580,24 +7577,58 @@ document.addEventListener('DOMContentLoaded', () => {
 						confirmButtonText: 'ลบ',
 						cancelButtonText: 'ยกเลิก'
 					});
-					if (confirm.isConfirmed) {
+
+					if (confirm.isConfirmed && cmdToDelete) {
 						await dbDelete(STORE_VOICE_COMMANDS, id);
-						addActivityLog(
-							'🗑️ ลบคำสั่งเสียง',
-							`"${cmd.command}"`,
-							'fa-trash',
-							'text-red-600'
-						);
+						
+						if (typeof addActivityLog === 'function') {
+							addActivityLog(
+								'🗑️ ลบคำสั่งเสียง', 
+								`"${cmdToDelete.command}"`, 
+								'fa-trash', 
+								'text-red-600'
+							);
+						}
+						
 						renderVoiceCommandsList();
 						showToast('ลบคำสั่งแล้ว', 'success');
 					}
 				});
 			});
 
-			// ผูก event สำหรับปุ่มแก้ไข
+			// 2. ดักจับ Event สำหรับปุ่มแก้ไข (สร้าง Popup แก้ไขแบบด่วนให้)
 			document.querySelectorAll('.edit-voice-command').forEach(btn => {
-				btn.addEventListener('click', () => {
-					openVoiceCommandModal(btn.dataset.id);
+				btn.addEventListener('click', async (e) => {
+					const id = e.currentTarget.dataset.id;
+					const cmdToEdit = activeCommands.find(c => c.id === id);
+					if (!cmdToEdit) return;
+
+					if (typeof openVoiceCommandModal === 'function') {
+						openVoiceCommandModal(id);
+					} else {
+						// หากยังไม่มี Modal แบบเต็มใบ ให้ใช้ Popup (Swal) สำหรับเปลี่ยนชื่อคำสั่ง
+						const { value: newCmdName } = await Swal.fire({
+							title: 'เปลี่ยนคำที่ใช้เรียก',
+							text: 'ตั้งชื่อคำสั่งใหม่เพื่อให้ระบบจดจำ',
+							input: 'text',
+							inputValue: cmdToEdit.command,
+							showCancelButton: true,
+							confirmButtonColor: '#3b82f6',
+							confirmButtonText: 'บันทึก',
+							cancelButtonText: 'ยกเลิก',
+							inputValidator: (value) => {
+								if (!value) return 'กรุณาระบุคำที่ต้องการใช้พูด';
+							}
+						});
+
+						// ถ้าผู้ใช้พิมพ์มาใหม่และไม่ซ้ำกับของเดิม
+						if (newCmdName && newCmdName.trim() !== cmdToEdit.command) {
+							cmdToEdit.command = newCmdName.trim();
+							await dbPut(STORE_VOICE_COMMANDS, cmdToEdit);
+							renderVoiceCommandsList();
+							showToast('แก้ไขคำเรียกเรียบร้อย', 'success');
+						}
+					}
 				});
 			});
 
@@ -14218,54 +14249,484 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			};
 			
-			// ค้นหาคำสั่งที่ใกล้เคียงที่สุด (ใช้ similarity อย่างง่าย)
+			// ==========================================
+			// 1. ระบบค้นหาคำสั่ง (V.12 Ultimate AI - รองรับ บัญชี, วันที่, ค้างจ่าย)
+			// ==========================================
 			async function findLearnedCommand(spokenText) {
 				try {
-					const allCommands = await dbGetAll(STORE_VOICE_COMMANDS);
-					if (!allCommands || allCommands.length === 0) return null;
+					const rawCommands = await dbGetAll(STORE_VOICE_COMMANDS);
+					const allCommands = (rawCommands || []).filter(cmd => !cmd.isDeleted);
+					if (allCommands.length === 0) return null;
 
-					const spokenLower = spokenText.toLowerCase().trim();
+					const normalize = (txt) => {
+						if (!txt) return '';
+						return txt.toString().toLowerCase()
+								  .replace(/คิวอาร์โค้ด|คิวอาร์/g, 'qr')
+								  .replace(/พร้อมเพย์/g, 'promptpay')
+								  .replace(/\s*จุด\s*/g, '.')
+								  .replace(/\s+/g, ' ')
+								  .trim();
+					};
 
-					// 1. Exact match (กรณีพูดตรงกับคำสั่งที่เคยบันทึก)
-					const exactMatch = allCommands.find(cmd => cmd.command.toLowerCase() === spokenLower);
-					if (exactMatch) {
-						exactMatch.useCount = (exactMatch.useCount || 0) + 1;
-						await dbPut(STORE_VOICE_COMMANDS, exactMatch);
-						return exactMatch;
+					let normSpoken = normalize(spokenText);
+					
+					// --- 🌟 AI V.12: สกัดข้อมูลอัจฉริยะ (วันที่, สถานะ, บัญชี) ออกจากคำพูด ---
+					let extractedDate = null;
+					let isPending = false;
+					let extractedAccountId = null;
+					let extractedAccountName = null;
+
+					// 1. หาวันที่ (เมื่อวาน, วันนี้, พรุ่งนี้)
+					const dateKeywords = [
+						{ word: 'เมื่อวานซืน', offset: -2 },
+						{ word: 'เมื่อวาน', offset: -1 },
+						{ word: 'พรุ่งนี้', offset: 1 },
+						{ word: 'มะรืน', offset: 2 },
+						{ word: 'วันนี้', offset: 0 }
+					];
+					for (const dk of dateKeywords) {
+						if (normSpoken.includes(dk.word)) {
+							const d = new Date();
+							d.setDate(d.getDate() + dk.offset);
+							const y = d.getFullYear();
+							const m = String(d.getMonth() + 1).padStart(2, '0');
+							const day = String(d.getDate()).padStart(2, '0');
+							extractedDate = `${y}-${m}-${day}`; // รูปแบบ YYYY-MM-DD
+							normSpoken = normSpoken.replace(dk.word, '').trim();
+							break;
+						}
 					}
 
-					// 2. Token overlap scoring (เฉพาะคำที่มีความหมาย)
-					const spokenTokens = spokenLower.split(/\s+/).filter(t => t.length > 1);
-					if (spokenTokens.length === 0) return null;
+					// 2. หาสถานะค้างจ่าย
+					const pendingKeywords = ['ค้างจ่าย', 'ยังไม่จ่าย', 'ติดไว้ก่อน', 'แปะไว้ก่อน', 'ลูกหนี้', 'เจ้าหนี้'];
+					for (const pk of pendingKeywords) {
+						if (normSpoken.includes(pk)) {
+							isPending = true;
+							normSpoken = normSpoken.replace(pk, '').trim();
+							break;
+						}
+					}
+
+					// 3. หาบัญชีจากที่ตั้งค่าไว้ในระบบ
+					if (typeof state !== 'undefined' && state.accounts && state.accounts.length > 0) {
+						// เรียงชื่อจากยาวไปสั้น เพื่อให้จับชื่อเต็มก่อน
+						const sortedAccounts = [...state.accounts].sort((a, b) => b.name.length - a.name.length);
+						for (const acc of sortedAccounts) {
+							const accNameLower = acc.name.toLowerCase();
+							if (normSpoken.includes(accNameLower)) {
+								extractedAccountId = acc.id;
+								extractedAccountName = acc.name;
+								normSpoken = normSpoken.replace(new RegExp(accNameLower, 'g'), '').trim();
+								break;
+							}
+						}
+						// ถ้าจับไม่เจอตรงๆ ลองดักจับคำพ้องความหมาย (Synonyms)
+						if (!extractedAccountId) {
+							if (normSpoken.includes('พร้อมเพย์') || normSpoken.includes('promptpay')) {
+								const pp = state.accounts.find(a => a.name.toLowerCase().includes('พร้อมเพย์') || a.name.toLowerCase().includes('promptpay'));
+								if (pp) { extractedAccountId = pp.id; extractedAccountName = pp.name; }
+								normSpoken = normSpoken.replace(/พร้อมเพย์|promptpay/g, '').trim();
+							} else if (normSpoken.includes('เงินสด')) {
+								const cash = state.accounts.find(a => a.type === 'cash' || a.name.includes('เงินสด'));
+								if (cash) { extractedAccountId = cash.id; extractedAccountName = cash.name; }
+								normSpoken = normSpoken.replace(/เงินสด/g, '').trim();
+							} else if (normSpoken.includes('บัตรเครดิต') || normSpoken.includes('บัตร')) {
+								const credit = state.accounts.find(a => a.type === 'credit' || a.name.includes('บัตรเครดิต'));
+								if (credit) { extractedAccountId = credit.id; extractedAccountName = credit.name; }
+								normSpoken = normSpoken.replace(/บัตรเครดิต|บัตร/g, '').trim();
+							}
+						}
+						// ล้างคำว่าบัญชีออก เพื่อความสะอาด
+						normSpoken = normSpoken.replace(/บัญชี|จากบัญชี|โอนผ่าน/g, '').trim();
+					}
+					// ----------------------------------------------------
+
+					const thaiToNumber = (text) => {
+						const unitMultiplier = { 'สิบ':10,'ร้อย':100,'พัน':1000,'หมื่น':10000,'แสน':100000,'ล้าน':1000000 };
+						let preParsed = text.replace(/([\d,]+)\s*([สิบร้อยพันหมื่นแสนล้าน]+)/g, (match, numStr, unit) => {
+							let num = parseFloat(numStr.replace(/,/g, ''));
+							if (unitMultiplier[unit]) {
+								return (num * unitMultiplier[unit]).toString();
+							}
+							return match;
+						});
+
+						const numMap = { 'ศูนย์':0,'หนึ่ง':1,'เอ็ด':1,'สอง':2,'ยี่':2,'สาม':3,'สี่':4,'ห้า':5,'หก':6,'เจ็ด':7,'แปด':8,'เก้า':9 };
+						const words = Object.keys(numMap).concat(Object.keys(unitMultiplier));
+						
+						const regex = new RegExp(`((?:${words.join('|')})+)(?:\\.((?:${words.join('|')})+))?`, 'g');
+						
+						return preParsed.replace(regex, (match, intPart, decPart) => {
+							let intTotal = 0, intCurrent = 0, i = 0;
+							while (i < intPart.length) {
+								let found = false;
+								for (let unit in unitMultiplier) {
+									if (intPart.startsWith(unit, i)) {
+										if (intCurrent === 0) intCurrent = 1; 
+										intTotal += intCurrent * unitMultiplier[unit];
+										intCurrent = 0; i += unit.length; found = true; break;
+									}
+								}
+								if (found) continue;
+								for (let num in numMap) {
+									if (intPart.startsWith(num, i)) {
+										intCurrent = numMap[num];
+										i += num.length; found = true; break;
+									}
+								}
+								if (!found) i++; 
+							}
+							intTotal += intCurrent;
+
+							if (decPart) {
+								let decValue = '', j = 0;
+								while (j < decPart.length) {
+									let found = false;
+									for (let num in numMap) {
+										if (decPart.startsWith(num, j)) {
+											decValue += numMap[num];
+											j += num.length; found = true; break;
+										}
+									}
+									if (!found) j++;
+								}
+								return intTotal + '.' + decValue;
+							}
+							return intTotal.toString();
+						});
+					};
+
+					allCommands.sort((a, b) => (b.command || '').length - (a.command || '').length);
 
 					let bestMatch = null;
-					let bestScore = 0;
+					let extractedAmount = null;
+
+					const extractSmartAmount = (remainderText) => {
+						let parsedRemainder = thaiToNumber(remainderText);
+						let noCommas = parsedRemainder.replace(/,/g, '');
+						let tokens = noCommas.split(/\s+/);
+						let currentNum = null;
+
+						for (let token of tokens) {
+							let numericToken = token.replace(/[^\d.]/g, ''); 
+							if (!numericToken) continue;
+
+							if (/^\d+$/.test(numericToken)) {
+								let val = parseInt(numericToken, 10);
+								if (currentNum === null) {
+									currentNum = numericToken;
+								} else if (/^\d+$/.test(currentNum)) {
+									let trailingZeros = currentNum.match(/0+$/);
+									let numZeros = trailingZeros ? trailingZeros[0].length : 0;
+									
+									if (val > 0 && numZeros >= numericToken.length) {
+										currentNum = (parseInt(currentNum, 10) + val).toString();
+									} else {
+										currentNum += numericToken;
+									}
+								} else {
+									currentNum += numericToken;
+								}
+							} else if (numericToken === '.') {
+								if (currentNum !== null && !currentNum.includes('.')) {
+									currentNum += '.';
+								} else if (currentNum === null) {
+									currentNum = '0.';
+								}
+							} else if (numericToken.includes('.')) {
+								 if (currentNum !== null) {
+									 currentNum += numericToken;
+								 } else {
+									 currentNum = numericToken;
+								 }
+							}
+						}
+
+						if (currentNum !== null) {
+							if (currentNum.split('.').length > 2) {
+								let parts = currentNum.split('.');
+								currentNum = parts[0] + '.' + parts.slice(1).join('');
+							}
+							if (!isNaN(currentNum)) {
+								return parseFloat(currentNum);
+							}
+						}
+						return null;
+					};
 
 					for (const cmd of allCommands) {
-						const cmdTokens = cmd.command.toLowerCase().split(/\s+/).filter(t => t.length > 1);
-						if (cmdTokens.length === 0) continue;
+						const normCmd = normalize(cmd.command);
+						if (!normCmd) continue;
 
-						// นับจำนวน token ที่ตรงกัน
-						const matchCount = spokenTokens.filter(t => cmdTokens.includes(t)).length;
-						// คะแนน = สัดส่วนของ token ที่ตรงกัน เทียบกับจำนวน token ของคำสั่งที่บันทึก
-						const score = matchCount / cmdTokens.length;
+						if (normSpoken.includes(normCmd)) {
+							bestMatch = { ...cmd };
+							let remainder = normSpoken.replace(normCmd, '').trim();
+							if (remainder.length > 0) {
+								extractedAmount = extractSmartAmount(remainder);
+							}
+							break; 
+						}
+					}
 
-						// ต้องมีคะแนน >= 0.7 และมากกว่าคะแนนเดิม
-						if (score >= 0.7 && score > bestScore) {
-							bestScore = score;
-							bestMatch = cmd;
+					if (!bestMatch) {
+						const spokenTokens = normSpoken.split(/\s+/).filter(t => t.length > 1);
+						let bestScore = 0;
+						for (const cmd of allCommands) {
+							const normCmd = normalize(cmd.command);
+							const cmdTokens = normCmd.split(/\s+/).filter(t => t.length > 1);
+							if (cmdTokens.length === 0) continue;
+
+							const matchCount = spokenTokens.filter(t => cmdTokens.includes(t)).length;
+							const score = matchCount / cmdTokens.length;
+
+							if (score >= 0.7 && score > bestScore) {
+								bestScore = score;
+								bestMatch = { ...cmd };
+							}
+						}
+						if (bestMatch) {
+							extractedAmount = extractSmartAmount(normSpoken);
 						}
 					}
 
 					if (bestMatch) {
-						bestMatch.useCount = (bestMatch.useCount || 0) + 1;
-						await dbPut(STORE_VOICE_COMMANDS, bestMatch);
+						const originalCmd = allCommands.find(c => c.id === bestMatch.id);
+						if (originalCmd) {
+							originalCmd.useCount = (originalCmd.useCount || 0) + 1;
+							await dbPut(STORE_VOICE_COMMANDS, originalCmd);
+						}
+						
+						// 🌟 แนบข้อมูลอัจฉริยะส่งต่อไปยังแบบฟอร์ม
+						if (extractedAmount !== null) bestMatch.dynamicAmount = extractedAmount;
+						if (extractedDate !== null) bestMatch.dynamicDate = extractedDate;
+						if (isPending) bestMatch.isPending = true;
+						if (extractedAccountId !== null) {
+							bestMatch.dynamicAccountId = extractedAccountId;
+							bestMatch.dynamicAccountName = extractedAccountName;
+						}
+						
+						console.log('✅ พบคำสั่งใช้งานได้:', bestMatch.command, 
+									'| ยอด:', extractedAmount, 
+									'| วันที่:', extractedDate, 
+									'| บัญชี:', extractedAccountName, 
+									'| ค้างจ่าย:', isPending);
+						return bestMatch;
 					}
 
-					return bestMatch;
+					return null;
 				} catch (err) {
 					console.error('Error finding learned command:', err);
 					return null;
+				}
+			}
+
+			// ==========================================
+			// 3. ระบบสั่งการนำไปปฏิบัติจริง (อัปเดตให้รองรับปลายทางตอนพูด)
+			// ==========================================
+			async function executeLearnedCommand(cmd) {
+				console.log('Executing learned command:', cmd);
+				switch (cmd.action) {
+					// ... โค้ดส่วนบนปล่อยไว้เหมือนเดิม ... (เพื่อประหยัดพื้นที่ ผมดึงมาเฉพาะ addTransaction นะครับ)
+					case 'openPage':
+						if (cmd.page) { showPage(cmd.page); speak(`เปิด${getPageName(cmd.page)}แล้ว`); }
+						break;
+					case 'openSettingsSection':
+						showPage('page-settings');
+						setTimeout(() => {
+							const section = document.getElementById(cmd.section);
+							if (section) {
+								if (section.classList.contains('hidden')) {
+									const toggle = document.querySelector(`[data-target="${cmd.section}"]`);
+									if (toggle) toggle.click();
+								}
+								section.scrollIntoView({ behavior: 'smooth' });
+							}
+						}, 300);
+						speak(`เปิดหน้าการตั้งค่าส่วน${cmd.section || ''}แล้ว`);
+						break;
+					case 'toggleDarkMode':
+						document.getElementById('toggle-dark-mode')?.click();
+						setTimeout(() => speak(state.isDarkMode ? 'เปิดโหมดมืดแล้ว' : 'ปิดโหมดมืดแล้ว'), 50);
+						break;
+					case 'toggleBalanceVisibility':
+						document.getElementById('toggle-show-balance')?.click();
+						setTimeout(() => speak(state.showBalanceCard ? 'แสดงยอดคงเหลือแล้ว' : 'ซ่อนยอดคงเหลือแล้ว'), 50);
+						break;
+					case 'changePassword':
+						setTimeout(() => { handleManagePassword(); setTimeout(() => speak('กำลังเปิดหน้าจัดการรหัสผ่าน'), 500); }, 500);
+						break;
+					case 'backupData':
+					case 'exportData':
+						setTimeout(() => { handleBackup(); setTimeout(() => speak('กำลังเปิดศูนย์สำรองข้อมูล'), 500); }, 500);
+						break;
+					case 'importData':
+						setTimeout(() => { document.getElementById('btn-import')?.click(); setTimeout(() => speak('เตรียมนำเข้าข้อมูล กรุณาเลือกไฟล์'), 500); }, 500);
+						break;
+					case 'clearAllData':
+						setTimeout(() => handleClearAll(), 500);
+						break;
+					case 'hardReset':
+						setTimeout(() => handleHardReset(), 500);
+						break;
+					case 'systemUpdate':
+						setTimeout(() => { handleSystemUpdate(); setTimeout(() => speak('กำลังตรวจสอบและอัปเดตระบบ'), 500); }, 500);
+						break;
+					case 'undo':
+						setTimeout(() => { handleUndo(); setTimeout(() => speak('ย้อนกลับรายการล่าสุด'), 500); }, 500);
+						break;
+					case 'redo':
+						setTimeout(() => { handleRedo(); setTimeout(() => speak('ทำซ้ำรายการล่าสุด'), 500); }, 500);
+						break;
+					case 'lockApp':
+						setTimeout(() => { lockApp(); speak('ล็อคแอปแล้ว'); }, 500);
+						break;
+					case 'openAccountsPage':
+						showPage('page-accounts'); speak('เปิดหน้าบัญชีแล้ว');
+						break;
+					case 'openBudgetSettings':
+						showPage('page-accounts');
+						setTimeout(() => {
+							const budgetContent = document.getElementById('settings-budget-content');
+							const budgetHeader = document.querySelector('[data-target="settings-budget-content"]');
+							if (budgetContent && budgetHeader && budgetContent.classList.contains('hidden')) budgetHeader.click();
+							if (budgetContent) budgetContent.scrollIntoView({ behavior: 'smooth' });
+							speak('เปิดหน้าการตั้งค่างบประมาณแล้ว');
+						}, 300);
+						break;
+					case 'openRecurringSettings':
+						showPage('page-accounts');
+						setTimeout(() => {
+							const recContent = document.getElementById('settings-recurring-content');
+							const recHeader = document.getElementById('btn-manage-recurring');
+							if (recContent && recHeader && recContent.classList.contains('hidden')) recHeader.click();
+							if (recContent) recContent.scrollIntoView({ behavior: 'smooth' });
+							speak('เปิดหน้าการตั้งค่ารายการประจำแล้ว');
+						}, 300);
+						break;
+
+					case 'addTransaction':
+						openModal();
+						setTimeout(() => {
+							if (cmd.defaultType) {
+								const radio = document.querySelector(`input[name="tx-type"][value="${cmd.defaultType}"]`);
+								if (radio) radio.checked = true;
+								if (typeof updateFormVisibility === 'function') updateFormVisibility(); 
+								if (typeof updateCategoryDropdown === 'function') updateCategoryDropdown(cmd.defaultType); 
+							}
+							
+							if (cmd.defaultName) document.getElementById('tx-name').value = cmd.defaultName;
+							if (cmd.defaultCategory) {
+								setTimeout(() => {
+									const catSelect = document.getElementById('tx-category');
+									if (catSelect) catSelect.value = cmd.defaultCategory;
+								}, 200);
+							}
+
+							// สถานะค้างจ่ายประทับลงในหมายเหตุ
+							let descText = cmd.defaultDesc || '';
+							if (cmd.isPending) {
+								descText = descText ? `${descText} [ค้างจ่าย]` : '[ค้างจ่าย]';
+							}
+							document.getElementById('tx-desc').value = descText;
+
+							// กำหนดเวลาย้อนหลัง
+							if (cmd.dynamicDate) {
+								const now = new Date();
+								const hh = String(now.getHours()).padStart(2, '0');
+								const mm = String(now.getMinutes()).padStart(2, '0');
+								document.getElementById('tx-date').value = `${cmd.dynamicDate}T${hh}:${mm}`;
+							} else {
+								const now = new Date();
+								now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+								document.getElementById('tx-date').value = now.toISOString().slice(0, 16);
+							}
+
+							// 🌟 สลับบัญชีให้อัตโนมัติ (ต้นทาง)
+							const targetAccountId = cmd.dynamicAccountId || cmd.defaultAccountId;
+							if (targetAccountId) {
+								const accountSelect = document.getElementById('tx-account');
+								if (accountSelect) accountSelect.value = targetAccountId;
+							}
+
+							// 🌟 สลับบัญชีปลายทางอัตโนมัติ (ถ้าเป็นโอนย้าย)
+							if (cmd.defaultType === 'transfer' && cmd.defaultToAccountId) {
+								const toAccountSelect = document.getElementById('tx-to-account') || document.getElementById('tx-target-account');
+								if (toAccountSelect) toAccountSelect.value = cmd.defaultToAccountId;
+							}
+
+							const finalAmount = cmd.dynamicAmount !== undefined ? cmd.dynamicAmount : cmd.defaultAmount;
+							if (finalAmount) {
+								const amountInput = document.getElementById('tx-amount');
+								amountInput.value = finalAmount;
+								amountInput.dispatchEvent(new Event('keyup')); 
+							}
+							
+							// 🤖 ระบบเสียงตอบกลับ (อัปเกรดให้ตอบเรื่องการโอนได้)
+							let speakParts = [];
+							speakParts.push(`เปิดฟอร์ม ${cmd.defaultName || 'รายการ'}`);
+							if (finalAmount) speakParts.push(`จำนวน ${finalAmount} บาท`);
+							
+							if (cmd.defaultType === 'transfer' && cmd.defaultToAccountId) {
+								 speakParts.push(`ทำรายการโอนย้ายเข้าบัญชีปลายทางเรียบร้อย`);
+							} else if (cmd.dynamicAccountName) {
+								 speakParts.push(`ผ่านบัญชี${cmd.dynamicAccountName}`);
+							}
+							
+							if (cmd.dynamicDate) speakParts.push(`ลงวันที่ที่กำหนด`);
+							if (cmd.isPending) speakParts.push(`และบันทึกว่าค้างจ่ายค่ะ`);
+
+							if (speakParts.length > 1) {
+								speak(speakParts.join(' '));
+							} else {
+								speak(`เปิดฟอร์ม ${cmd.defaultName || 'รายการ'} ตามที่สอนไว้`);
+							}
+						}, 300);
+						break;
+
+					case 'quickDraft':
+						if (typeof openQuickDraftModal === 'function') openQuickDraftModal();
+						setTimeout(() => {
+							const finalAmount = cmd.dynamicAmount !== undefined ? cmd.dynamicAmount : cmd.defaultAmount;
+							if (finalAmount) {
+								document.getElementById('draft-amount').value = finalAmount;
+							}
+							
+							let descText = cmd.defaultDesc || cmd.command;
+							if (cmd.isPending) descText += ' [ค้างจ่าย]';
+							document.getElementById('draft-note').value = descText;
+							
+							let speakMsg = `จดบันทึกด่วน`;
+							if (finalAmount) speakMsg += ` จำนวน ${finalAmount} บาท`;
+							if (cmd.isPending) speakMsg += ` ระบุว่าค้างจ่าย`;
+							speak(speakMsg);
+						}, 300);
+						break;
+						
+					case 'search':
+						showPage('page-list');
+						setTimeout(() => {
+							const searchInput = document.getElementById('adv-filter-search');
+							if (searchInput) {
+								const keyword = cmd.defaultKeyword || cmd.command;
+								searchInput.value = keyword;
+								searchInput.dispatchEvent(new Event('input'));
+								speak(`ค้นหารายการที่เกี่ยวข้องกับ ${keyword}`);
+							} else {
+								speak('เปิดหน้ารายการแล้ว');
+							}
+						}, 300);
+						break;
+
+					case 'filterByType':
+						if (typeof filterByType === 'function') filterByType(cmd.filterType);
+						break;
+
+					case 'applyTimeFilter':
+						if (typeof applyTimeFilter === 'function') applyTimeFilter(cmd.period);
+						break;
+
+					default:
+						speak('เปิดระบบตามที่คุณสอนไว้เรียบร้อยแล้ว');
 				}
 			}
 
@@ -14351,235 +14812,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				handleFallbackCommand(text);
 			}
 			
-			async function executeLearnedCommand(cmd) {
-				console.log('Executing learned command:', cmd);
-
-				switch (cmd.action) {
-					case 'openPage':
-						if (cmd.page) {
-							showPage(cmd.page);
-							speak(`เปิด${getPageName(cmd.page)}แล้ว`);
-						}
-						break;
-
-					case 'openSettingsSection':
-						showPage('page-settings');
-						setTimeout(() => {
-							const section = document.getElementById(cmd.section);
-							if (section) {
-								if (section.classList.contains('hidden')) {
-									const toggle = document.querySelector(`[data-target="${cmd.section}"]`);
-									if (toggle) toggle.click();
-								}
-								section.scrollIntoView({ behavior: 'smooth' });
-							}
-						}, 300);
-						speak(`เปิดหน้าการตั้งค่าส่วน${cmd.section || ''}แล้ว`);
-						break;
-
-					case 'toggleDarkMode':
-						document.getElementById('toggle-dark-mode')?.click();
-						setTimeout(() => {
-							speak(state.isDarkMode ? 'เปิดโหมดมืดแล้ว' : 'ปิดโหมดมืดแล้ว');
-						}, 50);
-						break;
-
-					case 'toggleBalanceVisibility':
-						document.getElementById('toggle-show-balance')?.click();
-						setTimeout(() => {
-							speak(state.showBalanceCard ? 'แสดงยอดคงเหลือแล้ว' : 'ซ่อนยอดคงเหลือแล้ว');
-						}, 50);
-						break;
-
-					case 'changePassword':
-						setTimeout(() => {
-							handleManagePassword();
-							// รอให้ handleManagePassword ทำงานเสร็จและ Swal แสดงเต็มที่
-							setTimeout(() => {
-								speak('กำลังเปิดหน้าจัดการรหัสผ่าน');
-							}, 500); // ให้เวลาหลังจากเปิด Swal 200ms
-						}, 500);
-						break;
-
-					case 'backupData':
-						setTimeout(() => {
-							handleBackup();
-							setTimeout(() => {
-								speak('กำลังเปิดศูนย์สำรองข้อมูล');
-							}, 500);
-						}, 500);
-						break;
-
-					case 'addTransaction':
-					openModal();
-					setTimeout(() => {
-						// ✅ ตั้งค่าประเภทรายการ
-						if (cmd.defaultType) {
-							const radio = document.querySelector(`input[name="tx-type"][value="${cmd.defaultType}"]`);
-							if (radio) radio.checked = true;
-							updateFormVisibility();                 // ซ่อน/แสดงฟิลด์ตามประเภท
-							updateCategoryDropdown(cmd.defaultType); // โหลดหมวดหมู่ตามประเภท
-						}
-
-						// เติมชื่อรายการ (รอให้ dropdown หมวดหมู่อัปเดตก่อน)
-						if (cmd.defaultName) {
-							document.getElementById('tx-name').value = cmd.defaultName;
-						}
-
-						// ตั้งค่าหมวดหมู่ (ต้องรอสักครู่ให้ dropdown เตรียมข้อมูลเสร็จ)
-						if (cmd.defaultCategory) {
-							setTimeout(() => {
-								const catSelect = document.getElementById('tx-category');
-								if (catSelect) catSelect.value = cmd.defaultCategory;
-							}, 200);
-						}
-
-						if (cmd.defaultAmount) {
-							document.getElementById('tx-amount').value = cmd.defaultAmount;
-							document.getElementById('tx-amount').dispatchEvent(new Event('keyup'));
-						}
-						if (cmd.defaultDesc) {
-							document.getElementById('tx-desc').value = cmd.defaultDesc;
-						}
-						speak('เปิดฟอร์มเพิ่มรายการตามที่คุณสอนไว้');
-					}, 300);
-					break;
-
-					case 'quickDraft':
-						openQuickDraftModal();
-						setTimeout(() => {
-							if (cmd.defaultAmount) document.getElementById('draft-amount').value = cmd.defaultAmount;
-							document.getElementById('draft-note').value = cmd.defaultDesc || cmd.command;
-							speak('จดบันทึกด่วนตามที่คุณสอนไว้');
-						}, 300);
-						break;
-						
-					case 'exportData':
-						setTimeout(() => {
-							handleBackup();  // เรียกฟังก์ชันสำรองข้อมูลที่มีอยู่แล้ว
-							setTimeout(() => {
-								speak('กำลังเปิดศูนย์สำรองข้อมูล');
-							}, 500);
-						}, 500);
-						break;
-
-					case 'importData':
-						setTimeout(() => {
-							document.getElementById('btn-import').click(); // คลิกปุ่มนำเข้า
-							setTimeout(() => {
-								speak('เตรียมนำเข้าข้อมูล กรุณาเลือกไฟล์');
-							}, 500);
-						}, 500);
-						break;
-
-					case 'clearAllData':
-						setTimeout(() => {
-							handleClearAll();  // ฟังก์ชันล้างข้อมูลทั้งหมด
-							// handleClearAll จะจัดการป๊อปอัปและเสียงพูดเอง
-						}, 500);
-						break;
-
-					case 'hardReset':
-						setTimeout(() => {
-							handleHardReset(); // ฟังก์ชันรีเซ็ตระบบ
-						}, 500);
-						break;
-						
-					case 'systemUpdate':
-						setTimeout(() => {
-							handleSystemUpdate();
-							setTimeout(() => {
-								speak('กำลังตรวจสอบและอัปเดตระบบ');
-							}, 500);
-						}, 500);
-						break;
-						
-					case 'undo':
-						setTimeout(() => {
-							handleUndo();  // ฟังก์ชันย้อนกลับที่มีอยู่แล้ว
-							setTimeout(() => {
-								speak('ย้อนกลับรายการล่าสุด');
-							}, 500);
-						}, 500);
-						break;
-
-					case 'redo':
-						setTimeout(() => {
-							handleRedo();  // ฟังก์ชันทำซ้ำที่มีอยู่แล้ว
-							setTimeout(() => {
-								speak('ทำซ้ำรายการล่าสุด');
-							}, 500);
-						}, 500);
-						break;
-
-					case 'lockApp':
-						setTimeout(() => {
-							lockApp(); // ฟังก์ชันล็อคหน้าจอ
-							speak('ล็อคแอปแล้ว');
-						}, 500);
-						break;
-
-					case 'openAccountsPage':
-						showPage('page-accounts');
-						speak('เปิดหน้าบัญชีแล้ว');
-						break;
-
-					case 'openBudgetSettings':
-						showPage('page-accounts');
-						setTimeout(() => {
-							// ขยายส่วนงบประมาณ (ถ้ายังไม่เปิด)
-							const budgetContent = document.getElementById('settings-budget-content');
-							const budgetHeader = document.querySelector('[data-target="settings-budget-content"]');
-							if (budgetContent && budgetHeader && budgetContent.classList.contains('hidden')) {
-								budgetHeader.click();
-							}
-							if (budgetContent) budgetContent.scrollIntoView({ behavior: 'smooth' });
-							speak('เปิดหน้าการตั้งค่างบประมาณแล้ว');
-						}, 300);
-						break;
-
-					case 'openRecurringSettings':
-						showPage('page-accounts');
-						setTimeout(() => {
-							// ขยายส่วนรายการประจำ
-							const recContent = document.getElementById('settings-recurring-content');
-							const recHeader = document.getElementById('btn-manage-recurring');
-							if (recContent && recHeader && recContent.classList.contains('hidden')) {
-								recHeader.click();
-							}
-							if (recContent) recContent.scrollIntoView({ behavior: 'smooth' });
-							speak('เปิดหน้าการตั้งค่ารายการประจำแล้ว');
-						}, 300);
-						break;
-
-					case 'search':
-						showPage('page-list');
-						setTimeout(() => {
-							const searchInput = document.getElementById('adv-filter-search');
-							if (searchInput) {
-								const keyword = cmd.defaultKeyword || cmd.command;
-								searchInput.value = keyword;
-								searchInput.dispatchEvent(new Event('input'));
-								speak(`ค้นหารายการที่เกี่ยวข้องกับ ${keyword}`);
-							} else {
-								speak('เปิดหน้ารายการแล้ว');
-							}
-						}, 300);
-						break;
-
-					case 'filterByType':
-						filterByType(cmd.filterType);
-						break;
-
-					case 'applyTimeFilter':
-						applyTimeFilter(cmd.period);
-						break;
-
-					default:
-						showToast('ไม่รู้จัก Action นี้', 'warning');
-				}
-			}
-
 			function getPageName(pageId) {
 				const map = {
 					'page-home': 'หน้าแรก',
@@ -15192,6 +15424,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			window.closeVoiceCommandModal = closeVoiceCommandModal;
 			
+			// ==========================================
+			// 1. ส่วนเรนเดอร์ฟิลด์ตั้งค่า (อัปเกรดให้รองรับบัญชีปลายทางสำหรับการโอน)
+			// ==========================================
 			function renderDynamicFields(action, existingData = null) {
 				const container = document.getElementById('voice-command-dynamic-fields');
 				container.innerHTML = '';
@@ -15231,38 +15466,79 @@ document.addEventListener('DOMContentLoaded', () => {
 					case 'toggleBalanceVisibility':
 					case 'backupData':
 					case 'changePassword':
-						html = '<p class="text-sm text-gray-500">✅ Action นี้ไม่ต้องการรายละเอียดเพิ่มเติม</p>';
+					case 'exportData':
+					case 'importData':
+					case 'systemUpdate':
+					case 'clearAllData':
+					case 'hardReset':
+					case 'lockApp':
+					case 'undo':
+					case 'redo':
+					case 'openAccountsPage':
+					case 'openBudgetSettings':
+					case 'openRecurringSettings':
+						html = '<p class="text-sm text-gray-500 dark:text-gray-400">✅ Action นี้ไม่ต้องการรายละเอียดเพิ่มเติม (ระบบจะจัดการให้อัตโนมัติ)</p>';
 						break;
 					case 'addTransaction':
-					html = `
-						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📊 ประเภทรายการ</label>
-						<select id="vc-tx-type" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3">
-							<option value="expense" ${existingData?.defaultType === 'expense' ? 'selected' : ''}>รายจ่าย</option>
-							<option value="income" ${existingData?.defaultType === 'income' ? 'selected' : ''}>รายรับ</option>
-							<option value="transfer" ${existingData?.defaultType === 'transfer' ? 'selected' : ''}>โอนย้าย</option>
-						</select>
+						const currentType = existingData?.defaultType || 'expense';
 
-						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">💰 ชื่อรายการเริ่มต้น</label>
-						<input list="vc-tx-name-datalist" id="vc-tx-name" value="${existingData?.defaultName || ''}" 
-							   class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-1" 
-							   placeholder="พิมพ์หรือเลือกชื่อรายการ">
-						<datalist id="vc-tx-name-datalist">
-							${generateItemOptions()}
-						</datalist>
-						<p class="text-xs text-gray-500 mb-3">สามารถพิมพ์ชื่อใหม่หรือเลือกจากที่มีอยู่</p>
+						// สร้างตัวเลือก Dropdown สำหรับ "บัญชีต้นทาง" และ "บัญชีปลายทาง"
+						let accountOptions = '<option value="">-- ไม่ระบุ (สามารถสั่งด้วยเสียงได้) --</option>';
+						let toAccountOptions = '<option value="">-- ไม่ระบุปลายทาง --</option>';
 
-						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📂 หมวดหมู่เริ่มต้น</label>
-						<select id="vc-tx-category" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3">
-							${generateCategoryOptions(existingData?.defaultType || 'expense', existingData?.defaultCategory)}
-						</select>
+						if (typeof state !== 'undefined' && state.accounts && state.accounts.length > 0) {
+							state.accounts.forEach(acc => {
+								const isSelected = existingData?.defaultAccountId === acc.id ? 'selected' : '';
+								accountOptions += `<option value="${acc.id}" ${isSelected}>${escapeHTML(acc.name)}</option>`;
 
-						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🔢 จำนวนเงินเริ่มต้น</label>
-						<input type="number" id="vc-tx-amount" value="${existingData?.defaultAmount || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3" placeholder="50">
+								const isToSelected = existingData?.defaultToAccountId === acc.id ? 'selected' : '';
+								toAccountOptions += `<option value="${acc.id}" ${isToSelected}>${escapeHTML(acc.name)}</option>`;
+							});
+						}
 
-						<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📝 หมายเหตุเริ่มต้น</label>
-						<input type="text" id="vc-tx-desc" value="${existingData?.defaultDesc || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg" placeholder="เช่น ไม่ใส่ความหวาน">
-					`;
-					break;
+						const accountLabel = currentType === 'transfer' ? '🏦 โอนจากบัญชี (ต้นทาง)' : '🏦 บัญชีเริ่มต้น';
+
+						html = `
+							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📊 ประเภทรายการ</label>
+							<select id="vc-tx-type" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3">
+								<option value="expense" ${currentType === 'expense' ? 'selected' : ''}>รายจ่าย</option>
+								<option value="income" ${currentType === 'income' ? 'selected' : ''}>รายรับ</option>
+								<option value="transfer" ${currentType === 'transfer' ? 'selected' : ''}>โอนย้าย</option>
+							</select>
+
+							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">${accountLabel}</label>
+							<select id="vc-tx-account" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3">
+								${accountOptions}
+							</select>
+
+							${currentType === 'transfer' ? `
+							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📥 เข้าบัญชี (ปลายทาง)</label>
+							<select id="vc-tx-to-account" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3">
+								${toAccountOptions}
+							</select>
+							` : ''}
+
+							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">💰 ชื่อรายการเริ่มต้น</label>
+							<input list="vc-tx-name-datalist" id="vc-tx-name" value="${existingData?.defaultName || ''}" 
+								   class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-1" 
+								   placeholder="พิมพ์หรือเลือกชื่อรายการ">
+							<datalist id="vc-tx-name-datalist">
+								${generateItemOptions()}
+							</datalist>
+							<p class="text-[11px] text-gray-500 dark:text-gray-400 mb-3">สามารถพิมพ์ชื่อใหม่หรือเลือกจากที่มีอยู่</p>
+
+							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📂 หมวดหมู่เริ่มต้น</label>
+							<select id="vc-tx-category" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3">
+								${generateCategoryOptions(currentType, existingData?.defaultCategory)}
+							</select>
+
+							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🔢 จำนวนเงินเริ่มต้น</label>
+							<input type="number" id="vc-tx-amount" value="${existingData?.defaultAmount || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mb-3" placeholder="ตัวอย่าง: 50">
+
+							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📝 หมายเหตุเริ่มต้น</label>
+							<input type="text" id="vc-tx-desc" value="${existingData?.defaultDesc || ''}" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg" placeholder="เช่น ไม่ใส่ความหวาน">
+						`;
+						break;
 					case 'quickDraft':
 						html = `
 							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">🔢 จำนวนเงินเริ่มต้น</label>
@@ -15281,14 +15557,14 @@ document.addEventListener('DOMContentLoaded', () => {
 						html = `
 							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📊 ประเภทที่ต้องการกรอง</label>
 							<select id="vc-filter-type" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
-								<option value="income" ${existingData?.filterType === 'income' ? 'selected' : ''}>รายรับ</option>
 								<option value="expense" ${existingData?.filterType === 'expense' ? 'selected' : ''}>รายจ่าย</option>
+								<option value="income" ${existingData?.filterType === 'income' ? 'selected' : ''}>รายรับ</option>
 							</select>
 						`;
 						break;
 					case 'applyTimeFilter':
 						html = `
-							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">⏱️ ช่วงเวลา</label>
+							<label class="block text-gray-700 dark:text-gray-300 font-medium mb-1">📅 ช่วงเวลาเริ่มต้น</label>
 							<select id="vc-time-period" class="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
 								<option value="today" ${existingData?.period === 'today' ? 'selected' : ''}>วันนี้</option>
 								<option value="this_week" ${existingData?.period === 'this_week' ? 'selected' : ''}>สัปดาห์นี้</option>
@@ -15297,37 +15573,44 @@ document.addEventListener('DOMContentLoaded', () => {
 							</select>
 						`;
 						break;
-					default:
-						html = '<p class="text-sm text-gray-500">⚠️ ไม่มีฟิลด์เพิ่มเติมสำหรับ Action นี้</p>';
 				}
+
 				container.innerHTML = html;
-				
+
+				// 🌟 ดักจับเมื่อเปลี่ยน "ประเภทรายการ" ให้ทำการรีเซ็ตหน้าจอเพื่อโชว์/ซ่อน ช่องโอนย้าย
 				if (action === 'addTransaction') {
 					const typeSelect = document.getElementById('vc-tx-type');
 					if (typeSelect) {
-						typeSelect.addEventListener('change', function() {
-							const catSelect = document.getElementById('vc-tx-category');
-							if (catSelect) {
-								catSelect.innerHTML = generateCategoryOptions(this.value);
-							}
+						typeSelect.addEventListener('change', (e) => {
+							// เก็บค่าเก่าที่พิมพ์ค้างไว้ จะได้ไม่หายตอนรีเฟรชกล่อง
+							const tempExistingData = {
+								...existingData,
+								defaultType: e.target.value,
+								defaultAccountId: document.getElementById('vc-tx-account')?.value,
+								defaultToAccountId: document.getElementById('vc-tx-to-account')?.value,
+								defaultName: document.getElementById('vc-tx-name')?.value,
+								defaultCategory: document.getElementById('vc-tx-category')?.value,
+								defaultAmount: document.getElementById('vc-tx-amount')?.value,
+								defaultDesc: document.getElementById('vc-tx-desc')?.value,
+							};
+							// สั่งรีเฟรชหน้าจอกล่องนี้กล่องเดียว
+							renderDynamicFields('addTransaction', tempExistingData);
 						});
 					}
 				}
 			}
-			
-			// Helper: สร้าง options สำหรับชื่อรายการ (จาก frequentItems + autoCompleteList)
+
+			// Helper: สร้าง options สำหรับชื่อรายการ (ที่มีอยู่เดิม)
 			function generateItemOptions() {
 				let options = '';
 				const existingNames = new Set();
 
-				// เพิ่มจากรายการที่ใช้บ่อย
 				if (state.frequentItems && state.frequentItems.length) {
 					state.frequentItems.forEach(item => {
 						options += `<option value="${escapeHTML(item)}">`;
 						existingNames.add(item);
 					});
 				}
-				// เพิ่มจาก Auto‑Learn (ที่ไม่ซ้ำ)
 				if (state.autoCompleteList && state.autoCompleteList.length) {
 					state.autoCompleteList.forEach(item => {
 						if (!existingNames.has(item.name)) {
@@ -15339,11 +15622,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				return options;
 			}
 
-			// Helper: สร้าง options สำหรับหมวดหมู่ ตาม type
+			// Helper: สร้าง options สำหรับหมวดหมู่ (ที่มีอยู่เดิม)
 			function generateCategoryOptions(type, selectedCategory = '') {
 				let categories = [];
 				if (type === 'transfer') {
-					categories = ['โอนย้าย']; // หรือจะปล่อยว่างก็ได้
+					categories = ['โอนย้าย'];
 				} else {
 					categories = state.categories[type] || [];
 				}
@@ -15357,7 +15640,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				return options;
 			}
-			
+
+			// ==========================================
+			// 2. ฟังก์ชันบันทึกข้อมูลคำสั่ง (อัปเดตให้จำบัญชีปลายทางด้วย)
+			// ==========================================
 			async function saveVoiceCommand(e) {
 				e.preventDefault();
 				const idInput = document.getElementById('voice-command-id');
@@ -15369,7 +15655,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					return;
 				}
 
-				// เก็บค่าจาก dynamic fields
 				const params = {};
 				switch (action) {
 					case 'openPage':
@@ -15380,6 +15665,13 @@ document.addEventListener('DOMContentLoaded', () => {
 						break;
 					case 'addTransaction':
 						params.defaultType = document.getElementById('vc-tx-type')?.value;
+						params.defaultAccountId = document.getElementById('vc-tx-account')?.value || null;
+						
+						// 🌟 ถ้าเป็นโอนย้าย ให้บันทึกบัญชีปลายทางด้วย
+						if (params.defaultType === 'transfer') {
+							params.defaultToAccountId = document.getElementById('vc-tx-to-account')?.value || null;
+						}
+						
 						params.defaultName = document.getElementById('vc-tx-name')?.value;
 						params.defaultCategory = document.getElementById('vc-tx-category')?.value;
 						params.defaultAmount = parseFloat(document.getElementById('vc-tx-amount')?.value) || 0;
@@ -15398,7 +15690,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					case 'applyTimeFilter':
 						params.period = document.getElementById('vc-time-period')?.value;
 						break;
-					// action อื่น ๆ ไม่มี params
 				}
 
 				const command = {
@@ -15414,15 +15705,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				try {
 					await dbPut(STORE_VOICE_COMMANDS, command);
 					const actionType = idInput.value ? '✏️ แก้ไขคำสั่งเสียง' : '🎤 เพิ่มคำสั่งเสียง';
-					addActivityLog(
-						actionType,
-						`"${text}" → ${action}`,
-						'fa-microphone',
-						'text-blue-600'
-					);
-					closeVoiceCommandModal();
-					renderVoiceCommandsList(); // ต้องมีฟังก์ชันนี้อยู่แล้ว
-					showToast('บันทึกคำสั่งเรียบร้อย', 'success');
+					
+					if (typeof addActivityLog === 'function') {
+						addActivityLog(actionType, `"${text}" → ${action}`, 'fa-microphone', 'text-blue-600');
+					}
+					
+					if (typeof closeVoiceCommandModal === 'function') closeVoiceCommandModal();
+					if (typeof renderVoiceCommandsList === 'function') renderVoiceCommandsList();
+					
+					showToast('บันทึกคำสั่งสำเร็จ!', 'success');
 				} catch (err) {
 					console.error(err);
 					Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
