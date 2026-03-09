@@ -149,153 +149,162 @@
 		</div>
 
     <div id="main-content" class="container mx-auto p-4 md:p-6">
-        <header id="shared-controls-header" class="flex flex-col md:flex-row justify-end items-center mb-6 gap-4" style="display: none;">
-            <div class="flex flex-wrap justify-center md:justify-end items-center gap-3 bg-white p-4 rounded-xl shadow-lg">
-                <select id="view-mode-select" class="form-select text-lg text-gray-700 bg-gray-50 border-0 rounded-lg focus:ring-purple-500 focus:border-purple-500">
+        <header id="shared-controls-header" class="flex flex-col md:flex-row justify-end items-center mb-3 gap-2" style="display: none;">
+            <div class="flex flex-wrap justify-center md:justify-end items-center gap-1.5 bg-white p-2 rounded-xl shadow-sm w-full md:w-auto">
+                <select id="view-mode-select" class="form-select text-sm text-gray-700 bg-gray-50 border-0 rounded-lg focus:ring-purple-500 focus:border-purple-500 py-1.5 px-2 h-[34px]">
                     <option value="all">ดูทั้งหมด</option>
                     <option value="month">ดูรายเดือน</option>
                     <option value="year">ดูรายปี</option>
                 </select>
-                <div id="month-controls" class="flex items-center gap-1">
-                    <button id="month-prev" class="px-4 py-3 bg-gray-200 hover:bg-purple-200 rounded-lg"><i class="fa-solid fa-chevron-left"></i></button>
-                    <input type="month" id="month-picker" class="form-input text-lg text-gray-700 bg-gray-50 border-0 rounded-lg focus:ring-purple-500 focus:border-purple-500 w-auto">
-                    <button id="month-next" class="px-4 py-3 bg-gray-200 hover:bg-purple-200 rounded-lg"><i class="fa-solid fa-chevron-right"></i></button>
+                <div id="month-controls" class="flex items-center gap-1 h-[34px]">
+                    <button id="month-prev" class="px-3 py-1 h-full bg-gray-100 hover:bg-purple-200 rounded-lg text-xs text-gray-600"><i class="fa-solid fa-chevron-left"></i></button>
+                    <input type="month" id="month-picker" class="form-input text-sm text-gray-700 bg-gray-50 border-0 rounded-lg focus:ring-purple-500 focus:border-purple-500 w-auto h-full py-1 px-2 text-center">
+                    <button id="month-next" class="px-3 py-1 h-full bg-gray-100 hover:bg-purple-200 rounded-lg text-xs text-gray-600"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
-                <div id="year-controls" class="flex items-center gap-1 hidden">
-                    <button id="year-prev" class="px-4 py-3 bg-gray-200 hover:bg-purple-200 rounded-lg"><i class="fa-solid fa-chevron-left"></i></button>
-                    <input type="number" id="year-picker" class="form-input text-lg text-gray-700 bg-gray-50 border-0 rounded-lg focus:ring-purple-500 focus:border-purple-500 w-28 text-center" placeholder="YYYY">
-                    <button id="year-next" class="px-4 py-3 bg-gray-200 hover:bg-purple-200 rounded-lg"><i class="fa-solid fa-chevron-right"></i></button>
+                <div id="year-controls" class="flex items-center gap-1 h-[34px] hidden">
+                    <button id="year-prev" class="px-3 py-1 h-full bg-gray-100 hover:bg-purple-200 rounded-lg text-xs text-gray-600"><i class="fa-solid fa-chevron-left"></i></button>
+                    <input type="number" id="year-picker" class="form-input text-sm text-gray-700 bg-gray-50 border-0 rounded-lg focus:ring-purple-500 focus:border-purple-500 w-20 text-center h-full py-1 px-2" placeholder="YYYY">
+                    <button id="year-next" class="px-3 py-1 h-full bg-gray-100 hover:bg-purple-200 rounded-lg text-xs text-gray-600"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </div>
         </header>
         
         <div id="page-wrapper" class="page-container">
             <div id="page-home" class="app-page">
-                <div id="summary-cards-container" class="grid grid-cols-3 gap-2 md:gap-6 mb-6">
-                    <div id="summary-income-card" class="bg-green-100 p-3 md:p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition duration-200">
-                        <h2 class="text-sm md:text-lg font-semibold text-green-800 mb-1 md:mb-2">รายรับ</h2>
-                        <p id="total-income" class="text-base md:text-2xl font-bold text-green-700">฿0.00</p>
+                <div id="summary-cards-container" class="grid grid-cols-3 gap-2 md:gap-4 mb-4">
+                    <div id="summary-income-card" class="bg-green-100 p-2.5 md:p-4 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition duration-200">
+                        <h2 class="text-[11px] md:text-sm font-semibold text-green-800 mb-0.5">รายรับ</h2>
+                        <p id="total-income" class="text-sm md:text-lg font-bold text-green-700 truncate">฿0.00</p>
                     </div>
-                    <div id="summary-expense-card" class="bg-red-100 p-3 md:p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition duration-200">
-                        <h2 class="text-sm md:text-lg font-semibold text-red-800 mb-1 md:mb-2">รายจ่าย</h2>
-                        <p id="total-expense" class="text-base md:text-2xl font-bold text-red-700">฿0.00</p>
+                    <div id="summary-expense-card" class="bg-red-100 p-2.5 md:p-4 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition duration-200">
+                        <h2 class="text-[11px] md:text-sm font-semibold text-red-800 mb-0.5">รายจ่าย</h2>
+                        <p id="total-expense" class="text-sm md:text-lg font-bold text-red-700 truncate">฿0.00</p>
                     </div>
-                    <div id="summary-balance-card" class="bg-blue-100 p-3 md:p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition duration-200">
-                        <h2 class="text-sm md:text-lg font-semibold text-blue-800 mb-1 md:mb-2">คงเหลือ(เงินสด/ออมทรัพย์)</h2>
-                        <p id="total-balance" class="text-base md:text-2xl font-bold text-blue-800">฿0.00</p>
+                    <div id="summary-balance-card" class="bg-blue-100 p-2.5 md:p-4 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition duration-200">
+                        <h2 class="text-[11px] md:text-sm font-semibold text-blue-800 mb-0.5">คงเหลือ(เงินสด/ออมทรัพย์)</h2>
+                        <p id="total-balance" class="text-sm md:text-lg font-bold text-blue-800 truncate">฿0.00</p>
                     </div>
                 </div>
-				
-				<div id="home-budget-widget" class="bg-white p-5 md:p-6 rounded-xl shadow-lg mb-6 hidden">
-					<div class="flex justify-between items-center mb-4">
-						<h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-							<i class="fa-solid fa-bullseye text-red-500"></i> งบประมาณรายจ่าย (เดือนนี้)
-						</h2>
-						<button id="btn-go-budget-settings" class="text-sm text-purple-600 hover:underline">เพิ่มรายการ</button>
-					</div>
-					<div id="budget-list-container" class="space-y-4">
-						</div>
-				</div>
+                
+                <div id="home-budget-widget" class="bg-white p-3 md:p-4 rounded-xl shadow-sm mb-4 hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-bullseye text-red-500"></i> งบประมาณ
+                        </h2>
+                        <button id="btn-go-budget-settings" class="text-[10px] bg-purple-50 hover:bg-purple-100 text-purple-600 px-2 py-1 rounded font-medium transition">จัดการงบ</button>
+                    </div>
+                    <div id="budget-list-container" class="space-y-1.5">
+                        </div>
+                </div>
 
-                <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg mb-6">
+                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-4">
                     <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="home-accounts-content">
-                        <h2 class="text-xl font-bold text-purple-600">สรุปบัญชีทั้งหมด</h2>
+                        <h2 class="text-base md:text-lg font-bold text-purple-600">สรุปบัญชีทั้งหมด</h2>
                         <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
                     </div>
 
-                    <div id="home-accounts-content" class="mt-4 transition-all">
-                        <div id="all-accounts-summary" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                            <p class="text-gray-500">กำลังโหลดบัญชี...</p>
+                    <div id="home-accounts-content" class="mt-3 transition-all">
+                        <div id="all-accounts-summary" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
+                            <p class="text-gray-500 text-sm">กำลังโหลดบัญชี...</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6"> 
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4"> 
 
-                    <div class="lg:col-span-1 bg-white p-3 md:p-6 rounded-xl shadow-lg flex flex-col justify-center lg:order-1">
-						<h2 class="text-lg md:text-xl font-bold text-purple-600 mb-2 md:mb-4">เพิ่มรายการ</h2>
-						<p class="text-base md:text-lg text-gray-700 mb-4 md:mb-6">ระบบจะจำราคาและหมวดหมู่ให้อัตโนมัติ</p>
-						
-						<button id="add-tx-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 md:py-3 px-4 rounded-xl shadow-lg transition duration-300 text-base md:text-lg">
-							<i class="fa-solid fa-plus mr-2"></i> เพิ่มธุรกรรมใหม่
-						</button>
+                    <div class="lg:col-span-1 bg-white p-4 md:p-6 rounded-xl shadow-sm flex flex-col lg:order-1 h-full">
+                        <div class="flex justify-between items-end mb-3 md:mb-4">
+                            <h2 class="text-base md:text-xl font-bold text-purple-600">เมนูจัดการ</h2>
+                            <p class="text-[10px] md:text-sm text-gray-500">ระบบจำหมวดหมู่อัตโนมัติ</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 md:gap-3 flex-grow">
+                            <button id="add-tx-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
+                                <i class="fa-solid fa-plus text-xl md:text-2xl"></i>
+                                <span class="text-xs md:text-sm">เพิ่มธุรกรรม</span>
+                            </button>
 
-						<button id="add-img-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 md:py-3 px-4 rounded-xl shadow-lg transition duration-300 text-base md:text-lg mt-3 md:mt-4">
-							<i class="fa-solid fa-image mr-2"></i> เพิ่มด้วยรูปภาพ
-						</button>
-						<input type="file" id="home-receipt-input" accept="image/*" class="hidden">
+                            <button id="add-img-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
+                                <i class="fa-solid fa-image text-xl md:text-2xl"></i>
+                                <span class="text-xs md:text-sm">รูปภาพ/สลิป</span>
+                            </button>
+                            <input type="file" id="home-receipt-input" accept="image/*" class="hidden">
 
-						<button id="voice-add-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 md:py-3 px-4 rounded-xl shadow-lg transition duration-300 text-base md:text-lg mt-3 md:mt-4">
-							<i class="fa-solid fa-microphone mr-2"></i> เพิ่มด้วยเสียง
-						</button>
-						<button onclick="openQuickDraftModal()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 md:py-3 px-4 rounded-xl shadow-lg transition duration-300 text-base md:text-lg mt-3 md:mt-4 mb-4">
-							<i class="fa-solid fa-bolt mr-2"></i> จดด่วน (Draft)
-						</button>
-					</div>
-                    
-                    <div class="lg:col-span-2 bg-white p-3 md:p-6 rounded-xl shadow-lg lg:order-2 flex flex-col h-full">
-                        <h2 class="text-lg md:text-xl font-bold text-purple-600 mb-2 md:mb-4 flex-shrink-0">สรุปภาพรวม</h2>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full flex-grow items-stretch">
+                            <button id="voice-add-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
+                                <i class="fa-solid fa-microphone text-xl md:text-2xl"></i>
+                                <span class="text-xs md:text-sm">สั่งด้วยเสียง</span>
+                            </button>
                             
-                            <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-4 min-h-[300px] md:min-h-[350px] flex flex-col transition-colors duration-200 w-full h-full">
-                                <h3 class="text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2 flex-shrink-0 justify-center">
+                            <button onclick="openQuickDraftModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
+                                <i class="fa-solid fa-bolt text-xl md:text-2xl"></i>
+                                <span class="text-xs md:text-sm">จดด่วน (Draft)</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm lg:order-2 flex flex-col h-full">
+                        <h2 class="text-base md:text-lg font-bold text-purple-600 mb-3 flex-shrink-0">สรุปภาพรวม</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full flex-grow items-stretch">
+                            
+                            <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-colors duration-200 w-full h-full">
+                                <h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
                                     <i class="fa-solid fa-scale-balanced text-blue-500"></i> สัดส่วนรายรับ / รายจ่าย
                                 </h3>
-                                <div class="relative w-full flex-grow min-h-[220px]">
+                                <div class="relative w-full flex-grow min-h-[160px]">
                                     <canvas id="transaction-chart"></canvas>
-                                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-sm">ไม่มีข้อมูล</p>
+                                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-xs">ไม่มีข้อมูล</p>
                                 </div>
                             </div>
 
-                            <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-4 min-h-[300px] md:min-h-[350px] flex flex-col transition-colors duration-200 w-full h-full">
-                                <h3 class="text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2 flex-shrink-0 justify-center">
+                            <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-colors duration-200 w-full h-full">
+                                <h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
                                     <i class="fa-solid fa-ranking-star text-orange-500"></i> สรุปรายจ่ายตามรายการ (Top 10)
                                 </h3>
-                                <div class="relative w-full flex-grow min-h-[220px]">
+                                <div class="relative w-full flex-grow min-h-[160px]">
                                     <canvas id="expense-category-chart"></canvas>
-                                    <p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-sm">ไม่มีข้อมูลรายจ่าย</p>
+                                    <p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-xs">ไม่มีข้อมูลรายจ่าย</p>
                                 </div>
                             </div>
                             
                         </div>
                     </div>
                 </div> 
-				
-				<div id="home-drafts-container" class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-xl shadow-lg mb-6 hidden border-l-8 border-yellow-400 dark:border-yellow-500 transition-colors duration-300">
-					<h2 class="text-lg font-bold text-yellow-700 dark:text-yellow-400 mb-3 flex items-center">
-						<i class="fa-solid fa-clipboard-list mr-2"></i> รายการที่รอจัดการ (Drafts)
-					</h2>
-					<div id="drafts-list" class="space-y-2"></div>
-				</div>
-				
-				<div id="home-transaction-list-container" class="bg-white p-5 md:p-6 rounded-xl shadow-lg mt-6"> 
+                
+                <div id="home-drafts-container" class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 hidden border-l-4 md:border-l-8 border-yellow-400 dark:border-yellow-500 transition-colors duration-300">
+                    <h2 class="text-base md:text-lg font-bold text-yellow-700 dark:text-yellow-400 mb-2 flex items-center">
+                        <i class="fa-solid fa-clipboard-list mr-2"></i> รายการที่รอจัดการ (Drafts)
+                    </h2>
+                    <div id="drafts-list" class="space-y-1.5"></div>
+                </div>
+                
+                <div id="home-transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-sm mt-4"> 
                     <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="home-transactions-content">
-                        <h2 class="text-xl font-bold text-purple-600">รายการธุรกรรมล่าสุด</h2>
-                        <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 text-xl"></i>
+                        <h2 class="text-base md:text-lg font-bold text-purple-600">รายการธุรกรรมล่าสุด</h2>
+                        <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 text-lg md:text-xl"></i>
                     </div>
 
-                    <div id="home-transactions-content" class="mt-4 transition-all">
-                        <div class="flex flex-col md:flex-row gap-4 mb-4">
-                            <div class="flex-shrink-0">
-                                <select id="home-items-per-page-select" class="form-select text-lg text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:ring-purple-500 focus:border-purple-500 py-3 px-4 h-full">
+                    <div id="home-transactions-content" class="mt-3 transition-all">
+                        <div class="flex flex-col sm:flex-row gap-2.5 mb-3 items-start sm:items-center justify-between">
+                            <div class="flex-shrink-0 w-full sm:w-auto">
+                                <select id="home-items-per-page-select" class="form-select text-xs md:text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:ring-purple-500 focus:border-purple-500 py-1.5 px-2 w-full sm:w-auto h-[32px]">
                                     <option value="10">แสดง 10</option>
                                     <option value="20">แสดง 20</option>
                                     <option value="50">แสดง 50</option>
                                 </select>
                             </div>
-                            <div class="flex-shrink-0 flex gap-2 justify-center md:justify-start" id="home-filter-buttons">
-                                <button class="home-filter-btn bg-purple-500 text-white px-5 py-3 text-base rounded-xl" data-filter="all">ทั้งหมด</button>
-                                <button class="home-filter-btn bg-gray-200 text-gray-700 px-5 py-3 text-base rounded-xl" data-filter="income">รายรับ</button>
-                                <button class="home-filter-btn bg-gray-200 text-gray-700 px-5 py-3 text-base rounded-xl" data-filter="expense">รายจ่าย</button>
-                                <button class="home-filter-btn bg-gray-200 text-gray-700 px-5 py-3 text-base rounded-xl" data-filter="transfer">โอนย้าย</button>
+                            
+                            <div class="flex flex-wrap gap-1 w-full sm:w-auto justify-start sm:justify-end bg-gray-100 p-1 rounded-lg" id="home-filter-buttons">
+                                <button class="home-filter-btn bg-purple-500 text-white px-2.5 py-1 text-[11px] md:text-xs font-medium rounded-md shadow-sm transition-colors flex-1 sm:flex-none" data-filter="all">ทั้งหมด</button>
+                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-[11px] md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="income">รายรับ</button>
+                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-[11px] md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="expense">รายจ่าย</button>
+                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-[11px] md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="transfer">โอนย้าย</button>
                             </div>
                         </div>
                         <div id="home-table-placeholder" class="overflow-x-auto"></div>
-                        <div id="home-pagination-controls" class="flex justify-center items-center gap-2 mt-4"></div>
+                        <div id="home-pagination-controls" class="flex justify-center items-center gap-1.5 mt-3"></div>
                     </div>
                 </div>
-            </div> 
+            </div>
         
             <div id="page-list" class="app-page hidden">
 				<div id="transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-lg pb-24"> <h2 class="text-xl font-bold text-purple-600 mb-4 flex items-center">
@@ -1419,9 +1428,19 @@
 							<th class="p-2 font-semibold text-center">จัดการ</th>
 						</tr>
 					</thead>
-                    <tbody id="account-detail-modal-body">
-                        <tr><td colspan="5" class="p-6 text-center text-gray-500">กำลังโหลดรายการ...</td></tr>
-                    </tbody>
+                    <table class="w-full text-left border-collapse">
+						<thead class="hidden md:table-header-group bg-gray-50 dark:bg-gray-800/50">
+							<tr class="border-b border-gray-200 dark:border-gray-700">
+								<th class="py-2 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold whitespace-nowrap">วันที่ / เวลา</th>
+								<th class="py-2 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold">รายการ</th>
+								<th class="py-2 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold">หมวดหมู่</th>
+								<th class="py-2 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold text-right whitespace-nowrap">จำนวนเงิน</th>
+								<th class="py-2 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold text-center">จัดการ</th>
+							</tr>
+						</thead>
+						<tbody id="account-detail-modal-body" class="block md:table-row-group w-full">
+							</tbody>
+					</table>
                 </table>
             </div>
         </div>
@@ -2220,11 +2239,12 @@
 
     <script>
 		if ('serviceWorker' in navigator) {
-            window.pendingUpdateWorker = null;
+			window.pendingUpdateWorker = null;
 			
 			const showUpdatePrompt = async (worker) => {
-			const isLater = localStorage.getItem('force_later_update') === 'true';
-                window.pendingUpdateWorker = worker;
+				// 🛠️ [แก้จุดที่ 2] เปลี่ยนชื่อ Key ให้ตรงกัน
+				const isLater = localStorage.getItem('fmpro_later_update') === 'true';
+				window.pendingUpdateWorker = worker;
 				
 				// ถ้าผู้ใช้เลือก "ไว้ภายหลัง" ไว้ ให้แอบเพิ่มที่กระดิ่ง (แต่ไม่ต้องเด้ง Modal)
 				if (isLater) {
@@ -2234,186 +2254,170 @@
 					}
 					return; // ❗️จบการทำงาน ไม่ต้องแสดง Modal
 				}
-                
-                let newVer = 'ล่าสุด';
-                let updateNotes = window.APP_UPDATE_NOTES || 'อัปเดตระบบเพื่อเพิ่มประสิทธิภาพการทำงาน';
-                
-                try {
-                    const cacheNames = await caches.keys();
-                    
-                    // [แก้ปัญหาข้ามเวอร์ชัน] ดึงเอาแคชของแอปทั้งหมด ที่ 'ไม่ใช่' เวอร์ชันปัจจุบันออกมา
-                    const updateCaches = cacheNames.filter(name => name.startsWith('finance-manager-') && name !== 'finance-manager-' + window.APP_VERSION);
-                    
-                    if (updateCaches.length > 0) {
-                        // เลือกกล่องที่ถูกสร้างล่าสุดเสมอ (ตัวท้ายสุดของ Array) แทนการใช้ตัวแรก
-                        const newCacheName = updateCaches[updateCaches.length - 1];
-                        
-                        newVer = newCacheName.replace('finance-manager-', '');
-                        
-                        const cache = await caches.open(newCacheName);
-                        const reqs = await cache.keys();
-                        const versionReq = reqs.find(req => req.url.includes('version.js'));
-                        
-                        if (versionReq) {
-                            const res = await cache.match(versionReq);
-                            const text = await res.text();
-                            
-                            const matchNotes = text.match(/var\s+APP_UPDATE_NOTES\s*=\s*`([\s\S]*?)`/);
-                            if (matchNotes && matchNotes[1]) {
-                                updateNotes = matchNotes[1].trim().replace(/\n/g, '<br>');
-                            } else {
-                                const matchNotesFallback = text.match(/var\s+APP_UPDATE_NOTES\s*=\s*['"](.*?)['"]/);
-                                if (matchNotesFallback && matchNotesFallback[1]) {
-                                    updateNotes = matchNotesFallback[1];
-                                }
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.log('ไม่สามารถดึงข้อมูลเวอร์ชันใหม่จากแคชได้', e);
-                }
+				
+				let newVer = 'ล่าสุด';
+				let updateNotes = window.APP_UPDATE_NOTES || 'อัปเดตระบบเพื่อเพิ่มประสิทธิภาพการทำงาน';
+				
+				try {
+					const cacheNames = await caches.keys();
+					const updateCaches = cacheNames.filter(name => name.startsWith('finance-manager-') && name !== 'finance-manager-' + window.APP_VERSION);
+					
+					if (updateCaches.length > 0) {
+						const newCacheName = updateCaches[updateCaches.length - 1];
+						newVer = newCacheName.replace('finance-manager-', '');
+						
+						const cache = await caches.open(newCacheName);
+						const reqs = await cache.keys();
+						const versionReq = reqs.find(req => req.url.includes('version.js'));
+						
+						if (versionReq) {
+							const res = await cache.match(versionReq);
+							const text = await res.text();
+							
+							const matchNotes = text.match(/var\s+APP_UPDATE_NOTES\s*=\s*`([\s\S]*?)`/);
+							if (matchNotes && matchNotes[1]) {
+								updateNotes = matchNotes[1].trim().replace(/\n/g, '<br>');
+							} else {
+								const matchNotesFallback = text.match(/var\s+APP_UPDATE_NOTES\s*=\s*['"](.*?)['"]/);
+								if (matchNotesFallback && matchNotesFallback[1]) {
+									updateNotes = matchNotesFallback[1];
+								}
+							}
+						}
+					}
+				} catch (e) {
+					console.log('ไม่สามารถดึงข้อมูลเวอร์ชันใหม่จากแคชได้', e);
+				}
 
-                const currentVerEl = document.getElementById('display-current-version');
-                const newVerEl = document.getElementById('display-new-version');
-                const notesEl = document.getElementById('display-update-notes');
-                
-                if (currentVerEl) currentVerEl.innerText = window.APP_VERSION || 'ไม่ทราบ';
-                if (newVerEl) newVerEl.innerText = newVer;
-                if (notesEl) notesEl.innerHTML = updateNotes;
+				const currentVerEl = document.getElementById('display-current-version');
+				const newVerEl = document.getElementById('display-new-version');
+				const notesEl = document.getElementById('display-update-notes');
+				
+				if (currentVerEl) currentVerEl.innerText = window.APP_VERSION || 'ไม่ทราบ';
+				if (newVerEl) newVerEl.innerText = newVer;
+				if (notesEl) notesEl.innerHTML = updateNotes;
 
-                const modal = document.getElementById('update-alert-modal');
-                if(modal) modal.classList.remove('hidden');
+				const modal = document.getElementById('update-alert-modal');
+				if(modal) modal.classList.remove('hidden');
 			};
 
-            document.addEventListener('DOMContentLoaded', () => {
-				
-				// 1. โชว์ความสำเร็จ + เพิ่มลงกระดิ่งแจ้งเตือนทันที เมื่ออัปเดตเสร็จ
-                if (localStorage.getItem('fmpro_just_updated') === 'true') {
-                    localStorage.removeItem('fmpro_just_updated');
+			document.addEventListener('DOMContentLoaded', () => {
+				if (localStorage.getItem('fmpro_just_updated') === 'true') {
+					localStorage.removeItem('fmpro_just_updated');
 					localStorage.removeItem('fmpro_later_update');
-                    const isDark = document.body.classList.contains('dark');
-                    
-                    setTimeout(() => {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'อัปเดตเสร็จสมบูรณ์!',
-                            html: `แอปพลิเคชันได้รับการอัปเดตเป็น <b>${window.APP_VERSION}</b> เรียบร้อยแล้ว`,
-                            confirmButtonColor: '#9333ea',
-                            customClass: { popup: isDark ? 'swal2-popup' : '' },
-                            background: isDark ? '#1a1a1a' : '#fff',
-                            color: isDark ? '#e5e7eb' : '#545454'
-                        });
-                        
-                        if (typeof window.addActivityLog === 'function') {
-                            window.addActivityLog(
-                                '🚀 อัปเดตระบบสำเร็จ',
-                                `แอปพลิเคชันอัปเดตเป็นเวอร์ชัน ${window.APP_VERSION} พร้อมใช้งานแล้ว`,
-                                'fa-arrow-up-right-dots',
-                                'text-green-600'
-                            );
-                        }
-                    }, 800); 
-                }
+					const isDark = document.body.classList.contains('dark');
+					
+					setTimeout(() => {
+						Swal.fire({
+							icon: 'success',
+							title: 'อัปเดตเสร็จสมบูรณ์!',
+							html: `แอปพลิเคชันได้รับการอัปเดตเป็น <b>${window.APP_VERSION}</b> เรียบร้อยแล้ว`,
+							confirmButtonColor: '#9333ea',
+							customClass: { popup: isDark ? 'swal2-popup' : '' },
+							background: isDark ? '#1a1a1a' : '#fff',
+							color: isDark ? '#e5e7eb' : '#545454'
+						});
+						
+						if (typeof window.addActivityLog === 'function') {
+							window.addActivityLog(
+								'🚀 อัปเดตระบบสำเร็จ',
+								`แอปพลิเคชันอัปเดตเป็นเวอร์ชัน ${window.APP_VERSION} พร้อมใช้งานแล้ว`,
+								'fa-arrow-up-right-dots',
+								'text-green-600'
+							);
+						}
+					}, 800); 
+				}
 
-                // 2. ดักจับการกดปุ่ม "ไว้ภายหลัง"
-                const btnCancelUpdate = document.getElementById('btn-cancel-update');
-                if (btnCancelUpdate) {
-                    btnCancelUpdate.addEventListener('click', () => {
-						// 🌟 บันทึกสถานะ "ไว้ภายหลัง"
+				const btnCancelUpdate = document.getElementById('btn-cancel-update');
+				if (btnCancelUpdate) {
+					btnCancelUpdate.addEventListener('click', () => {
 						localStorage.setItem('fmpro_later_update', 'true');
-                        document.getElementById('update-alert-modal').classList.add('hidden');
-                        
-                        if (typeof window.addActivityLog === 'function') {
-                            const newVerEl = document.getElementById('display-new-version');
-                            const newVer = newVerEl ? newVerEl.innerText : 'ใหม่ล่าสุด';
-                            
-                            window.addActivityLog(
-                                'แจ้งเตือนอัปเดตใหม่',
-                                `พบแอปพลิเคชันเวอร์ชันใหม่ (${newVer}) รอการติดตั้ง 👆 คลิกที่นี่เพื่ออัปเดต`,
-                                'fa-cloud-arrow-down',
-                                'text-blue-500' 
-                            );
-                        }
-                    });
-                }
+						document.getElementById('update-alert-modal').classList.add('hidden');
+						
+						if (typeof window.addActivityLog === 'function') {
+							const newVerEl = document.getElementById('display-new-version');
+							const newVer = newVerEl ? newVerEl.innerText : 'ใหม่ล่าสุด';
+							window.addActivityLog(
+								'แจ้งเตือนอัปเดตใหม่',
+								`พบแอปพลิเคชันเวอร์ชันใหม่ (${newVer}) รอการติดตั้ง 👆 คลิกที่นี่เพื่ออัปเดต`,
+								'fa-cloud-arrow-down',
+								'text-blue-500' 
+							);
+						}
+					});
+				}
 
-                // 3. ดักจับการคลิกที่กล่องกระดิ่งแจ้งเตือน (คลิกเพื่อเด้งอัปเดต)
-                document.body.addEventListener('click', (e) => {
-                    let el = e.target;
-                    let isMatch = false;
-                    
-                    for(let i=0; i<5; i++) {
-                        if(!el || el === document.body) break;
-                        
-                        if(el.textContent && el.textContent.length < 300 && 
-                           el.textContent.includes('แจ้งเตือนอัปเดตใหม่') && 
-                           el.textContent.includes('รอการติดตั้ง')) {
-                            isMatch = true;
-                            break;
-                        }
-                        el = el.parentElement;
-                    }
+				document.body.addEventListener('click', (e) => {
+					let el = e.target;
+					let isMatch = false;
+					
+					for(let i=0; i<5; i++) {
+						if(!el || el === document.body) break;
+						if(el.textContent && el.textContent.length < 300 && 
+						   el.textContent.includes('แจ้งเตือนอัปเดตใหม่') && 
+						   el.textContent.includes('รอการติดตั้ง')) {
+							isMatch = true;
+							break;
+						}
+						el = el.parentElement;
+					}
 
-                    if(isMatch) {
-                        const modal = document.getElementById('update-alert-modal');
-                        if (modal && window.pendingUpdateWorker) {
-                            modal.classList.remove('hidden');
-                        } else if (typeof window.checkForUpdate === 'function') {
-                            window.checkForUpdate();
-                        }
-                    }
-                });
+					if(isMatch) {
+						const modal = document.getElementById('update-alert-modal');
+						if (modal && window.pendingUpdateWorker) {
+							modal.classList.remove('hidden');
+						} else if (typeof window.checkForUpdate === 'function') {
+							window.checkForUpdate();
+						}
+					}
+				});
 
-                // 4. ดักจับการกดปุ่ม "อัปเดตทันที"
-                const btnConfirmUpdate = document.getElementById('btn-confirm-update');
-                if (btnConfirmUpdate) {
-                    btnConfirmUpdate.addEventListener('click', () => {
-						// 🌟 ลบสถานะ "ไว้ภายหลัง" (ถ้ามี)
+				const btnConfirmUpdate = document.getElementById('btn-confirm-update');
+				if (btnConfirmUpdate) {
+					btnConfirmUpdate.addEventListener('click', () => {
 						localStorage.removeItem('fmpro_later_update');
-                        if (window.pendingUpdateWorker) {
-                            document.getElementById('update-alert-modal').classList.add('hidden');
-                            
-                            const isDark = document.body.classList.contains('dark');
-                            Swal.fire({
-                                title: 'กำลังติดตั้งอัปเดต...',
-                                allowOutsideClick: false,
-                                didOpen: () => { Swal.showLoading(); },
-                                customClass: { popup: isDark ? 'swal2-popup' : '' },
-                                background: isDark ? '#1a1a1a' : '#fff',
-                                color: isDark ? '#e5e7eb' : '#545454'
-                            });
+						if (window.pendingUpdateWorker) {
+							document.getElementById('update-alert-modal').classList.add('hidden');
+							
+							const isDark = document.body.classList.contains('dark');
+							Swal.fire({
+								title: 'กำลังติดตั้งอัปเดต...',
+								allowOutsideClick: false,
+								didOpen: () => { Swal.showLoading(); },
+								customClass: { popup: isDark ? 'swal2-popup' : '' },
+								background: isDark ? '#1a1a1a' : '#fff',
+								color: isDark ? '#e5e7eb' : '#545454'
+							});
 
-                            localStorage.setItem('fmpro_just_updated', 'true');
-                            window.pendingUpdateWorker.postMessage({ action: 'skipWaiting' });
-                        }
-                    });
-                }
-            });
+							localStorage.setItem('fmpro_just_updated', 'true');
+							window.pendingUpdateWorker.postMessage({ action: 'skipWaiting' });
+						}
+					});
+				}
+			});
 
 			window.addEventListener('load', () => {
-                navigator.serviceWorker.getRegistrations().then((registrations) => {
-                    for (let reg of registrations) {
-                        if (reg.active && reg.active.scriptURL.includes('?v=')) {
-                            reg.unregister();
-                        }
-                    }
-                });
+				navigator.serviceWorker.getRegistrations().then((registrations) => {
+					for (let reg of registrations) {
+						if (reg.active && reg.active.scriptURL.includes('?v=')) {
+							reg.unregister();
+						}
+					}
+				});
 
-				navigator.serviceWorker.register('./sw.js')
+				// 🛠️ [แก้จุดที่ 1] สั่งห้ามเบราว์เซอร์แคชไฟล์ sw.js
+				navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
 					.then((registration) => {
 						console.log('Service Worker Registered');
-
-						// 🌟 ตรวจสอบทันทีว่ามี worker รออยู่หรือไม่
+						
 						if (registration.waiting) {
-							// ถ้ามี flag "ไว้ภายหลัง" ให้ซ่อน modal (โดยไม่ต้องแสดง)
 							if (localStorage.getItem('fmpro_later_update') === 'true') {
 								console.log('มีอัปเดตรออยู่ (โหมดภายหลัง)');
-								// แจ้งไปที่กระดิ่งอย่างเดียว (ไม่เด้ง modal)
 								if (typeof window.addActivityLog === 'function') {
 									window.addActivityLog('แจ้งเตือนอัปเดตใหม่', 'พบแอปพลิเคชันเวอร์ชันใหม่รอการติดตั้ง 👆 คลิกที่นี่เพื่ออัปเดต', 'fa-cloud-arrow-down', 'text-blue-500');
 								}
 							} else {
-								// ถ้าไม่มี flag ให้แสดง modal ตามปกติ
 								showUpdatePrompt(registration.waiting);
 							}
 						}
@@ -2429,9 +2433,17 @@
 							}
 						});
 
+						// ตรวจสอบอัปเดตทุกๆ 1 ชั่วโมง
 						setInterval(() => {
 							registration.update().catch(err => console.log('Auto update check failed:', err));
 						}, 3600000); 
+
+						// 🛠️ [แก้จุดที่ 3] ตรวจสอบอัปเดตทันที เมื่อผู้ใช้สลับหน้าจอกลับมาที่แอป
+						document.addEventListener('visibilitychange', () => {
+							if (document.visibilityState === 'visible') {
+								registration.update().catch(err => console.log('Visibility update check failed:', err));
+							}
+						});
 
 						window.checkForUpdate = () => {
 							const isDark = document.body.classList.contains('dark');

@@ -5029,46 +5029,150 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
     function renderAllAccountSummary(balances) {
-        const container = document.getElementById('all-accounts-summary');
-        container.innerHTML = ''; 
-        
-        const sortedAccounts = getSortedAccounts(); 
+		const container = document.getElementById('all-accounts-summary');
+		const parentContent = document.getElementById('home-accounts-content');
+		
+		// เช็คสถานะว่ากำลัง "กางทั้งหมด" หรือ "ย่อ 6 บัญชี" (ค่าเริ่มต้นคือ false = ย่อ)
+		const isExpanded = parentContent.dataset.expanded === 'true';
+		
+		// ตั้งค่า Container คลาสตามโหมดที่เลือก
+		if (isExpanded) {
+			// โหมดกางทั้งหมด: เป็น Grid 3 คอลัมน์ยาวลงมาเลย
+			container.className = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 w-full';
+			container.style.scrollbarWidth = '';
+			container.style.msOverflowStyle = '';
+		} else {
+			// โหมดย่อ (ค่าเริ่มต้น): เป็น Flex เลื่อนซ้ายขวาแบบ Snap
+			container.className = 'flex overflow-x-auto snap-x snap-mandatory pb-1 md:pb-0 md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 md:gap-4 md:overflow-visible w-full';
+			container.style.scrollbarWidth = 'none'; 
+			container.style.msOverflowStyle = 'none'; 
+			if (!document.getElementById('hide-scroll-style-acc')) {
+				document.head.insertAdjacentHTML('beforeend', '<style id="hide-scroll-style-acc">#all-accounts-summary::-webkit-scrollbar { display: none; }</style>');
+			}
 
-        if (sortedAccounts.length === 0) { 
-            container.innerHTML = `<p class="text-gray-500 col-span-full text-center">ยังไม่มีบัญชี
-            <button id="nav-settings-shortcut" class="text-purple-600 hover:underline">สร้างบัญชีใหม่ในหน้าตั้งค่า</button>
-            </p>`;
-            document.getElementById('nav-settings-shortcut').addEventListener('click', () => showPage('page-accounts'));
-            return;
-        }
-        
-        sortedAccounts.forEach(acc => { 
-            // [เพิ่ม] ถ้าถูกปิดสวิตช์ ไม่ต้องแสดงการ์ดนี้
-            if (acc.isVisible === false) return;
+			// ป้องกันการ Swipe เปลี่ยนหน้าจอหลัก เมื่อใช้นิ้วเลื่อนดูบัญชี
+			if (!container.dataset.touchFixed) {
+				container.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+				container.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+				container.addEventListener('touchend', (e) => e.stopPropagation(), { passive: true });
+				container.dataset.touchFixed = 'true';
+			}
+		}
 
-            const balance = balances[acc.id] || 0;
-            let balanceClass = 'balance-zero';
-            if (balance > 0) balanceClass = 'balance-positive';
-            if (balance < 0) balanceClass = 'balance-negative';
-            
-            const currentIcon = acc.iconName || acc.icon || 'fa-wallet';
+		container.innerHTML = ''; 
+		
+		// ดึงบัญชีที่เปิดแสดงผลอยู่
+		const sortedAccounts = getSortedAccounts().filter(acc => acc.isVisible !== false);
 
-            const cardHtml = `
-                <div class="bg-gray-50 p-3 rounded-xl shadow-md border border-gray-200 compact-account-card cursor-pointer" data-id="${acc.id}">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid ${currentIcon} text-purple-600 text-lg"></i>
-                        <h3 class="text-base font-semibold text-gray-800 truncate">${escapeHTML(acc.name)}</h3>
-                    </div>
-                    <div class="w-full mt-2">
-                        <p class="text-lg font-bold text-right ${balanceClass} truncate">${formatCurrency(balance)}</p>
-                        <p class="text-xs text-gray-500 text-right">${acc.type === 'credit' ? 'บัตรเครดิต' : (acc.type === 'liability' ? 'หนี้สิน' : 'เงินสด')}</p>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', cardHtml);
-        });
-    }
-	
+		if (sortedAccounts.length === 0) { 
+			container.innerHTML = `<div class="w-full text-center py-2 col-span-full"><p class="text-gray-500 text-sm">ยังไม่มีบัญชี
+			<button id="nav-settings-shortcut" class="text-purple-600 hover:underline">สร้างบัญชีใหม่ในหน้าตั้งค่า</button>
+			</p></div>`;
+			setTimeout(() => {
+				const btn = document.getElementById('nav-settings-shortcut');
+				if(btn) btn.addEventListener('click', () => showPage('page-accounts'));
+			}, 0);
+			return;
+		}
+
+		let fullHtml = '';
+
+		if (isExpanded) {
+			// --- กรณี: กางดูทั้งหมด (เรียง Grid ลงมาเรื่อยๆ) ---
+			sortedAccounts.forEach(acc => {
+				const balance = balances[acc.id] || 0;
+				let balanceClass = 'balance-zero';
+				if (balance > 0) balanceClass = 'balance-positive';
+				if (balance < 0) balanceClass = 'balance-negative';
+				const currentIcon = acc.iconName || acc.icon || 'fa-wallet';
+
+				fullHtml += `
+					<div class="bg-gradient-to-br from-white to-purple-50/40 dark:from-gray-800 dark:to-gray-800/80 py-2 px-1.5 md:p-3 rounded-xl border border-gray-100 dark:border-gray-700 border-t-2 border-t-purple-400 shadow-sm hover:shadow-md compact-account-card cursor-pointer flex flex-col justify-center items-center transition-all w-full relative overflow-hidden group" data-id="${acc.id}">
+						<div class="absolute -right-3 -top-3 w-10 h-10 bg-purple-500/5 dark:bg-purple-500/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+						<i class="fa-solid ${currentIcon} text-purple-600 text-sm md:text-base mb-1 relative z-10 drop-shadow-sm"></i>
+						<h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-center leading-tight relative z-10">${escapeHTML(acc.name)}</h3>
+						<p class="text-sm md:text-base font-bold ${balanceClass} truncate w-full text-center leading-tight mt-0.5 relative z-10">${formatCurrency(balance)}</p>
+					</div>
+				`;
+			});
+		} else {
+			// --- กรณี: ย่อส่วน (จับมัดกลุ่มละ 6 บัญชี) ---
+			const chunkSize = 6;
+			const chunks = [];
+			for (let i = 0; i < sortedAccounts.length; i += chunkSize) {
+				chunks.push(sortedAccounts.slice(i, i + chunkSize));
+			}
+
+			chunks.forEach(chunk => {
+				fullHtml += `<div class="min-w-full flex-shrink-0 snap-center grid grid-cols-3 gap-2 md:contents">`;
+				
+				chunk.forEach(acc => {
+					const balance = balances[acc.id] || 0;
+					let balanceClass = 'balance-zero';
+					if (balance > 0) balanceClass = 'balance-positive';
+					if (balance < 0) balanceClass = 'balance-negative';
+					const currentIcon = acc.iconName || acc.icon || 'fa-wallet';
+
+					// ดีไซน์การ์ดพรีเมียม: ขอบมน โทนสีละมุน มีเส้นขีดบนสีม่วง
+					fullHtml += `
+						<div class="bg-gradient-to-br from-white to-purple-50/40 dark:from-gray-800 dark:to-gray-800/80 py-2 px-1.5 md:p-3 rounded-xl border border-gray-100 dark:border-gray-700 border-t-2 border-t-purple-400 shadow-sm hover:shadow-md compact-account-card cursor-pointer flex flex-col justify-center items-center transition-all w-full relative overflow-hidden group" data-id="${acc.id}">
+							<div class="absolute -right-3 -top-3 w-10 h-10 bg-purple-500/5 dark:bg-purple-500/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+							<i class="fa-solid ${currentIcon} text-purple-600 text-sm md:text-base mb-1 relative z-10 drop-shadow-sm"></i>
+							<h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-center leading-tight relative z-10">${escapeHTML(acc.name)}</h3>
+							<p class="text-sm md:text-base font-bold ${balanceClass} truncate w-full text-center leading-tight mt-0.5 relative z-10">${formatCurrency(balance)}</p>
+						</div>
+					`;
+				});
+
+				fullHtml += `</div>`;
+			});
+		}
+
+		container.innerHTML = fullHtml;
+
+		// --- ส่วนควบคุม: สร้างสัญลักษณ์เลื่อน และปุ่มกดดูทั้งหมด ---
+		let accountControls = document.getElementById('account-toggle-controls');
+		if (!accountControls) {
+			accountControls = document.createElement('div');
+			accountControls.id = 'account-toggle-controls';
+			accountControls.className = 'mt-3 flex justify-between items-center w-full px-1';
+			parentContent.appendChild(accountControls);
+		}
+
+		let controlsHtml = '';
+		
+		// ฝั่งซ้าย: สัญลักษณ์แจ้งให้รู้ว่าเลื่อนซ้าย-ขวาได้ (แสดงเฉพาะเมื่อมีบัญชี > 6 และอยู่ในโหมดย่อ)
+		if (!isExpanded && sortedAccounts.length > 6) {
+			controlsHtml += `
+				<div class="text-[10px] md:hidden text-purple-500 flex items-center gap-1.5 animate-pulse bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-full font-medium">
+					<i class="fa-solid fa-angles-left"></i> เลื่อนดูบัญชี <i class="fa-solid fa-angles-right"></i>
+				</div>
+			`;
+		} else {
+			controlsHtml += `<div></div>`; // กล่องเปล่าเพื่อดึงให้ปุ่มด้านขวาอยู่ชิดขวา
+		}
+
+		// ฝั่งขวา: ปุ่มกดย่อ/ขยาย (แสดงเฉพาะเมื่อมีบัญชี > 6)
+		if (sortedAccounts.length > 6) {
+			const btnText = isExpanded ? 'ย่อบัญชี <i class="fa-solid fa-chevron-up ml-1"></i>' : 'ดูทั้งหมด <i class="fa-solid fa-chevron-down ml-1"></i>';
+			controlsHtml += `
+				<button id="toggle-account-view-btn" class="text-xs text-purple-600 hover:text-purple-800 font-bold bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-800 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
+					${btnText}
+				</button>
+			`;
+		}
+
+		accountControls.innerHTML = controlsHtml;
+
+		// ฝัง Event ให้ปุ่มกดย่อ/ขยาย
+		const toggleBtn = document.getElementById('toggle-account-view-btn');
+		if (toggleBtn) {
+			toggleBtn.addEventListener('click', () => {
+				parentContent.dataset.expanded = isExpanded ? 'false' : 'true';
+				renderAllAccountSummary(balances); // สั่งเรนเดอร์ใหม่ตามโหมด
+			});
+		}
+	}
 	// ============================================
     // [NEW] ฟังก์ชันดึงรายชื่อบัญชีมาใส่ Dropdown ในหน้าค้นหา
     // ============================================
@@ -5405,193 +5509,236 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
     
-    function createTransactionTableHTML(tbodyId) {
-        return `
-        <table class="w-full text-left">
-            <thead>
-                <tr class="border-b border-gray-200">
-                    <th class="p-2 text-lg text-gray-700 font-semibold">วันที่</th>
-                    <th class="p-2 text-lg text-gray-700 font-semibold">ชื่อรายการ/บัญชี</th>
-             <th class="p-2 text-lg text-gray-700 font-semibold">หมวดหมู่</th>
-                    <th class="p-2 text-lg text-gray-700 font-semibold text-right">จำนวนเงิน</th>
-                    <th class="p-2 text-lg text-gray-700 font-semibold text-center">จัดการ</th>
-                </tr>
-            </thead>
-            <tbody id="${tbodyId}">
-                <tr>
-                    <td colspan="5" class="p-6 text-center text-gray-500">ไม่มีรายการ...</td>
-                </tr>
-            </tbody>
-        </table>
-        `;
-    }
+   function createTransactionTableHTML(tbodyId) {
+		return `
+			<table class="w-full text-left border-collapse">
+				<thead class="hidden md:table-header-group bg-gray-50 dark:bg-gray-800/50">
+					<tr class="border-b border-gray-200 dark:border-gray-700">
+						<th class="py-1.5 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold whitespace-nowrap">วันที่ / เวลา</th>
+						<th class="py-1.5 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold">รายการ</th>
+						<th class="py-1.5 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold">หมวดหมู่ / บัญชี</th>
+						<th class="py-1.5 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold text-right whitespace-nowrap">จำนวนเงิน</th>
+						<th class="py-1.5 px-3 text-sm text-gray-600 dark:text-gray-300 font-bold text-center">จัดการ</th>
+					</tr>
+				</thead>
+				<tbody id="${tbodyId}" class="block md:table-row-group">
+					<tr class="block md:table-row">
+						<td colspan="5" class="py-4 px-3 text-center text-gray-500 dark:text-gray-400 block md:table-cell text-sm">ไม่มีรายการ...</td>
+					</tr>
+				</tbody>
+			</table>
+		`;
+	}
 
-    function renderTransactionList(tbodyId, allTransactions, source) {
-        const listBody = document.getElementById(tbodyId);
-			if (!listBody) {
+	function renderTransactionList(tbodyId, allTransactions, source) {
+		const listBody = document.getElementById(tbodyId);
+		if (!listBody) {
 			console.warn(`renderTransactionList: ไม่พบ element #${tbodyId} ข้ามการเรนเดอร์`);
-			return;  // หยุดการทำงานถ้าไม่มี element
+			return; 
 		}
-        listBody.innerHTML = ''; 
-        const isListPage = (source === 'list');
-        const groupBy = isListPage ? state.listGroupBy : 'none'; 
+		listBody.innerHTML = '';
+		const isListPage = (source === 'list');
+		const groupBy = isListPage ? state.listGroupBy : 'none';
 
-        allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+		allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        if (groupBy !== 'none' && isListPage) {
-            const grouped = {};
-            allTransactions.forEach(tx => {
-                let key;
-                const dateObj = new Date(tx.date);
-                if (groupBy === 'day') {
-                    key = tx.date.slice(0, 10);
-                } else { // month
-                    key = tx.date.slice(0, 7); 
-                }
+		if (groupBy !== 'none' && isListPage) {
+			const grouped = {};
+			allTransactions.forEach(tx => {
+				let key;
+				const dateObj = new Date(tx.date);
+				if (groupBy === 'day') {
+					key = tx.date.slice(0, 10);
+				} else { // month
+					key = tx.date.slice(0, 7);
+				}
+				if (!grouped[key]) grouped[key] = { transactions: [], income: 0, expense: 0 };
+				grouped[key].transactions.push(tx);
 
-                if (!grouped[key]) grouped[key] = { transactions: [], income: 0, expense: 0 };
-                grouped[key].transactions.push(tx);
-                if (tx.type === 'income') grouped[key].income += tx.amount;
-                else if (tx.type === 'expense') grouped[key].expense += tx.amount;
-            });
+				if (tx.type === 'income') grouped[key].income += tx.amount;
+				else if (tx.type === 'expense') grouped[key].expense += tx.amount;
+			});
 
-            const sortedGroups = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
-            let fullHtml = '';
+			const sortedGroups = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+			let fullHtml = '';
 
-            sortedGroups.forEach(key => {
-                const groupData = grouped[key];
-                const netBalance = groupData.income - groupData.expense;
-                const netClass = netBalance >= 0 ? 'text-green-600' : 'text-red-600';
-                
-                let title;
-                if (groupBy === 'day') {
-                    title = new Date(key).toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                } else { // month
-                    const [y, m] = key.split('-');
-                    title = new Date(y, m - 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-                }
+			sortedGroups.forEach(key => {
+				const groupData = grouped[key];
+				const netBalance = groupData.income - groupData.expense;
+				const netClass = netBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+				
+				let title;
+				if (groupBy === 'day') {
+					title = new Date(key).toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+				} else { // month
+					const [y, m] = key.split('-');
+					title = new Date(y, m - 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+				}
 
-                fullHtml += `
-                    <tr class="bg-gray-200 dark:bg-gray-700">
-                        <td colspan="5" class="p-3 text-lg font-bold text-gray-800 dark:text-gray-100">
-                            ${title}
-                            <span class="float-right text-base font-medium">
-                                รายรับ: <span class="text-green-600">${formatCurrency(groupData.income)}</span> / 
-                                รายจ่าย: <span class="text-red-600">${formatCurrency(groupData.expense)}</span> / 
-                                สุทธิ: <span class="${netClass}">${formatCurrency(netBalance)}</span>
-                            </span>
-                        </td>
-                    </tr>
-                `;
+				fullHtml += `
+					<tr class="bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700 block md:table-row">
+						<td colspan="5" class="py-1 px-1.5 md:py-1.5 md:px-3 text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 block md:table-cell">
+							<div class="flex flex-col md:flex-row md:justify-between md:items-center gap-0.5 md:gap-0 w-full">
+								<span>${title}</span>
+								<span class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 flex flex-wrap gap-2 md:gap-3 items-center">
+									<span>รับ: <span class="text-green-600 dark:text-green-400">${formatCurrency(groupData.income)}</span></span>
+									<span>จ่าย: <span class="text-red-600 dark:text-red-400">${formatCurrency(groupData.expense)}</span></span>
+									<span class="font-bold border-l border-gray-300 dark:border-gray-600 pl-2 md:pl-3">สุทธิ: <span class="${netClass}">${formatCurrency(netBalance)}</span></span>
+								</span>
+							</div>
+						</td>
+					</tr>
+				`;
 
-                groupData.transactions.forEach(tx => {
-                    fullHtml += createTransactionRowHtml(tx); 
-                });
-            });
+				groupData.transactions.forEach(tx => {
+					fullHtml += createTransactionRowHtml(tx);
+				});
+			});
 
-            listBody.innerHTML = fullHtml;
-            document.getElementById('list-pagination-controls').innerHTML = ''; 
-            return;
-        } 
-        
-        const currentPage = (source === 'home') ? state.homeCurrentPage : state.listCurrentPage;
-        const itemsToShow = (source === 'list') ? state.listItemsPerPage : state.homeItemsPerPage;
-        const totalPages = Math.ceil(allTransactions.length / itemsToShow);
-        const startIndex = (currentPage - 1) * itemsToShow;
-        const endIndex = startIndex + itemsToShow;
-        const paginatedTransactions = allTransactions.slice(startIndex, endIndex);
+			listBody.innerHTML = fullHtml;
+			document.getElementById('list-pagination-controls').innerHTML = '';
+			return;
+		}
 
-        if (allTransactions.length === 0) {
-            listBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500">ไม่มีรายการ...</td></tr>';
-            renderPaginationControls(source, 0, 1);
-            return;
-        }
+		const currentPage = (source === 'home') ? state.homeCurrentPage : state.listCurrentPage;
+		const itemsToShow = (source === 'list') ? state.listItemsPerPage : state.homeItemsPerPage;
+		const totalPages = Math.ceil(allTransactions.length / itemsToShow);
+		const startIndex = (currentPage - 1) * itemsToShow;
+		const endIndex = startIndex + itemsToShow;
+		const paginatedTransactions = allTransactions.slice(startIndex, endIndex);
 
-        paginatedTransactions.forEach(tx => {
-            listBody.insertAdjacentHTML('beforeend', createTransactionRowHtml(tx));
-        });
+		if (allTransactions.length === 0) {
+			listBody.innerHTML = '<tr class="block md:table-row"><td colspan="5" class="py-4 px-3 text-center text-gray-500 dark:text-gray-400 block md:table-cell text-sm">ไม่มีรายการ...</td></tr>';
+			renderPaginationControls(source, 0, 1);
+			return;
+		}
 
-        renderPaginationControls(source, totalPages, currentPage);
-    }
+		paginatedTransactions.forEach(tx => {
+			listBody.insertAdjacentHTML('beforeend', createTransactionRowHtml(tx));
+		});
 
-    function createTransactionRowHtml(tx) {
-        const date = new Date(tx.date);
-        const formattedDate = date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' });
-        const formattedTime = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-        
-        const isFuture = date > new Date();
-        const futureBadge = isFuture ? 
-            `<span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full ml-2 border border-yellow-200">
-                <i class="fa-solid fa-clock mr-1"></i>ล่วงหน้า
-            </span>` : '';
-        const rowOpacity = isFuture ? 'opacity-70' : ''; 
-        
-        let name, category, amount, amountClass, amountSign;
-        
-        // --- แก้ไขการดึงชื่อบัญชี (เอา .toLowerCase() ออก และใส่ค่า Default) ---
-        const fromAccount = state.accounts.find(a => a.id === tx.accountId);
-        const toAccount = state.accounts.find(a => a.id === tx.toAccountId);
-        
-        // ถ้าหาไม่เจอ ให้แสดงชื่อเดิมที่บันทึกไว้ใน tx (ถ้ามี) หรือแสดงคำว่า 'ไม่ระบุ'
-        const fromAccName = fromAccount ? escapeHTML(fromAccount.name) : '<span class="text-red-400">ไม่พบบัญชี</span>';
-        const toAccName = toAccount ? escapeHTML(toAccount.name) : '<span class="text-red-400">ไม่พบบัญชี</span>';
-        // ----------------------------------------------------------------
-        
-        const receiptIcon = tx.receiptBase64 ? 
-            `<button type="button" class="view-receipt-icon text-purple-500 hover:text-purple-700 ml-2 z-10 relative" data-base64="${tx.receiptBase64}" title="คลิกเพื่อดูรูป">
-                <i class="fa-solid fa-receipt"></i>
-            </button>` : '';
+		renderPaginationControls(source, totalPages, currentPage);
+	}
 
-        if (tx.type === 'transfer') {
-            name = `<span class="font-bold text-blue-600">${escapeHTML(tx.name)}</span>${receiptIcon}${futureBadge}`;
-            category = `<div class="text-sm">
-                            <span class="text-gray-500">จาก:</span> ${fromAccName}<br>
-                            <span class="text-gray-500">ไป:</span> ${toAccName}
-                        </div>`;
-            amount = formatCurrency(tx.amount);
-            amountClass = 'text-blue-600';
-            amountSign = '';
-        } else {
-            name = escapeHTML(tx.name) + receiptIcon + futureBadge;
-            category = `<span class="block">${escapeHTML(tx.category)}</span>
-                        <span class="text-sm text-purple-600">${fromAccName}</span>`;
-            amount = formatCurrency(tx.amount);
-            
-            if (tx.type === 'income') {
-                amountClass = 'text-green-600';
-                amountSign = '+';
-            } else {
-                amountClass = 'text-red-600';
-                amountSign = '-';
-            }
-        }
+	function createTransactionRowHtml(tx) {
+		const date = new Date(tx.date);
+		// บีบปีให้เป็นแบบย่อบนมือถือ เพื่อประหยัดพื้นที่แนวนอน
+		const mobileDateStr = date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+		const formattedTime = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+		const isFuture = date > new Date();
+		
+		const futureBadge = isFuture ? `<span class="inline-flex items-center justify-center bg-yellow-100 text-yellow-800 text-xs px-1 py-0.5 rounded ml-1 border border-yellow-200 leading-none"><i class="fa-solid fa-clock mr-0.5"></i>ล่วงหน้า</span>` : '';
+		const rowOpacity = isFuture ? 'opacity-70' : '';
 
-        return `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 ${rowOpacity}">
-                <td class="p-2 text-lg text-gray-700">
-                    ${formattedDate} <span class="block text-base text-gray-500">${formattedTime} น.</span>
-                </td>
-                <td class="p-2 text-lg text-gray-700 font-medium break-word">
-                    ${name}
-                    ${tx.desc ? `<p class="text-base text-gray-500">${escapeHTML(tx.desc)}</p>` : ''}
-                </td>
-                <td class="p-2 text-lg text-gray-700 break-word">${category}</td>
-                <td class="p-2 text-lg ${amountClass} font-semibold text-right whitespace-nowrap">${amountSign}${amount}</td>
-                <td class="p-2 text-lg text-center">
-                    <div class="flex flex-col md:flex-row items-center justify-center">
-                        <button class="edit-btn text-blue-500 hover:text-blue-700 p-2" data-id="${tx.id}">
-                            <i class="fa-solid fa-pencil"></i>
-                        </button>
-                        <button class="delete-btn text-red-500 hover:text-red-700 p-2" data-id="${tx.id}">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }
+		let name, category, amount, amountClass, amountSign;
+		
+		const fromAccount = state.accounts.find(a => a.id === tx.accountId);
+		const toAccount = state.accounts.find(a => a.id === tx.toAccountId);
+		
+		const fromAccName = fromAccount ? escapeHTML(fromAccount.name) : '<span class="text-red-400">ไม่พบบัญชี</span>';
+		const toAccName = toAccount ? escapeHTML(toAccount.name) : '<span class="text-red-400">ไม่พบบัญชี</span>';
 
+		const receiptIcon = tx.receiptBase64 ? `<button type="button" class="view-receipt-icon text-purple-500 hover:text-purple-700 ml-1 z-10 relative" data-base64="${tx.receiptBase64}" title="คลิกเพื่อดูรูป"><i class="fa-solid fa-receipt text-xs"></i></button>` : '';
 
+		let iconHtml = '';
+
+		if (tx.type === 'transfer') {
+			iconHtml = `<div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm"><i class="fa-solid fa-money-bill-transfer text-xs"></i></div>`;
+			name = `<span class="font-bold text-gray-800 dark:text-gray-100 text-sm truncate flex items-center leading-tight">${escapeHTML(tx.name)}${receiptIcon}${futureBadge}</span>`;
+			category = `<div class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-1 leading-tight">
+				<span class="truncate max-w-[60px] sm:max-w-[100px]">${fromAccName}</span> 
+				<i class="fa-solid fa-arrow-right text-xs text-gray-400"></i> 
+				<span class="truncate max-w-[60px] sm:max-w-[100px]">${toAccName}</span>
+			</div>`;
+			amount = formatCurrency(tx.amount);
+			amountClass = 'text-blue-600 dark:text-blue-400';
+			amountSign = '';
+		} else {
+			iconHtml = tx.type === 'income' 
+				? `<div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0 shadow-sm"><i class="fa-solid fa-arrow-down text-xs"></i></div>`
+				: `<div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 shadow-sm"><i class="fa-solid fa-arrow-up text-xs"></i></div>`;
+				
+			name = `<span class="font-bold text-gray-800 dark:text-gray-100 text-sm truncate flex items-center leading-tight">${escapeHTML(tx.name)}${receiptIcon}${futureBadge}</span>`;
+			category = `<div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5 leading-tight">
+						<span class="truncate max-w-[70px] sm:max-w-[110px] inline-block font-medium">${escapeHTML(tx.category)}</span>
+						<span class="text-gray-300 dark:text-gray-600 text-xs">•</span>
+						<span class="text-purple-600 dark:text-purple-400 truncate max-w-[70px] sm:max-w-[110px] inline-block">${fromAccName}</span>
+					</div>`;
+			amount = formatCurrency(tx.amount);
+			if (tx.type === 'income') {
+				amountClass = 'text-green-600 dark:text-green-400';
+				amountSign = '+';
+			} else {
+				amountClass = 'text-red-600 dark:text-red-400';
+				amountSign = '-';
+			}
+		}
+
+		const noteHtml = tx.desc ? `<div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate w-full flex items-center leading-tight"><i class="fa-regular fa-comment-dots mr-1 text-xs"></i><span class="truncate">${escapeHTML(tx.desc)}</span></div>` : '';
+
+		return `
+			<tr class="border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-800 ${rowOpacity} flex flex-col md:table-row py-1.5 px-1.5 md:py-1.5 md:px-3 transition-colors w-full group">
+				
+				<td class="md:hidden block w-full">
+					<div class="flex items-center justify-between gap-1.5 w-full">
+						${iconHtml}
+						<div class="flex-1 min-w-0 flex flex-col justify-center gap-0">
+							${name}
+							${category}
+							${noteHtml}
+						</div>
+						<div class="flex flex-col items-end flex-shrink-0 text-right justify-center gap-0.5">
+							<span class="text-sm font-bold ${amountClass} whitespace-nowrap leading-none">${amountSign}${amount}</span>
+							
+							<div class="flex items-center gap-1.5 mt-0.5">
+								<span class="text-xs text-gray-400 dark:text-gray-500 leading-none">
+									${mobileDateStr} ${formattedTime}
+								</span>
+								<div class="flex items-center gap-1.5 border-l border-gray-200 dark:border-gray-600 pl-1.5 opacity-80">
+									<button class="edit-btn text-blue-500 hover:text-blue-700 p-0" data-id="${tx.id}" title="แก้ไข">
+										<i class="fa-solid fa-pen text-xs"></i>
+									</button>
+									<button class="delete-btn text-red-500 hover:text-red-700 p-0" data-id="${tx.id}" title="ลบ">
+										<i class="fa-solid fa-trash text-xs"></i>
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</td>
+
+				<td class="py-1.5 px-3 text-sm text-gray-600 dark:text-gray-400 hidden md:table-cell align-middle whitespace-nowrap w-[15%]">
+					<div class="font-medium">${date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+					<div class="text-xs text-gray-400">${formattedTime} น.</div>
+				</td>
+				<td class="py-1.5 px-3 hidden md:table-cell align-middle w-[35%] max-w-[200px]">
+					<div class="flex items-center gap-2">
+						${iconHtml}
+						<div class="min-w-0 flex-1 flex flex-col gap-0.5">
+							${name}
+							${noteHtml}
+						</div>
+					</div>
+				</td>
+				<td class="py-1.5 px-3 hidden md:table-cell align-middle w-[25%] max-w-[150px]">
+					${category}
+				</td>
+				<td class="py-1.5 px-3 text-right ${amountClass} font-bold text-base hidden md:table-cell align-middle whitespace-nowrap w-[15%]">
+					${amountSign}${amount}
+				</td>
+				<td class="py-1.5 px-3 text-center hidden md:table-cell align-middle w-[10%]">
+					<div class="flex items-center justify-center gap-1">
+						<button class="edit-btn text-blue-500 hover:text-blue-700 p-1.5 rounded bg-blue-50 dark:bg-blue-900/30 transition" data-id="${tx.id}" title="แก้ไข">
+							<i class="fa-solid fa-pen text-sm"></i>
+						</button>
+						<button class="delete-btn text-red-500 hover:text-red-700 p-1.5 rounded bg-red-50 dark:bg-red-900/30 transition" data-id="${tx.id}" title="ลบ">
+							<i class="fa-solid fa-trash text-sm"></i>
+						</button>
+					</div>
+				</td>
+			</tr>
+		`;
+	}
    function renderPieChart(transactions) {
         // [แก้ไข] กำหนดวันปัจจุบัน (สิ้นสุดวัน)
 		const today = new Date();
@@ -7331,7 +7478,11 @@ document.addEventListener('DOMContentLoaded', () => {
 	
 	// ฟังก์ชันบันทึกการตั้งค่าสำรองข้อมูลอัตโนมัติ
 	async function saveAutoBackupSettings() {
-		await dbPut(STORE_CONFIG, { key: 'autoBackup', value: state.autoBackup });
+		try {
+			await dbPut(STORE_CONFIG, { key: 'autoBackup', value: state.autoBackup });
+		} catch (err) {
+			console.error('Failed to save autoBackup settings:', err);
+		}
 	}
 	
 	async function checkAndRunAutoBackup() {
@@ -7349,6 +7500,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			return `${year}-${month}-${day}`;
 		};
 
+		if (lastBackup) {
+		}
+
 		if (!lastBackup) {
 			shouldBackup = true;
 		} else {
@@ -7360,14 +7514,16 @@ document.addEventListener('DOMContentLoaded', () => {
 					shouldBackup = (todayStr !== lastDateStr);
 					break;
 				case 'weekly':
-					const isMonday = now.getDay() === 1; // 1 = Monday
+					const isMonday = now.getDay() === 1;
 					if (isMonday) {
-						// คำนวณวันจันทร์ของสัปดาห์ที่แล้วและสัปดาห์นี้
 						const lastMonday = new Date(lastBackup);
-						lastMonday.setDate(lastMonday.getDate() - ((lastMonday.getDay() + 6) % 7)); // ปรับให้เป็นวันจันทร์
+						lastMonday.setDate(lastMonday.getDate() - ((lastMonday.getDay() + 6) % 7));
 						const thisMonday = new Date(now);
 						thisMonday.setDate(thisMonday.getDate() - ((thisMonday.getDay() + 6) % 7));
-						shouldBackup = (thisMonday > lastMonday);
+						// Normalize เป็น 00:00:00 ของวันเดียวกัน
+						lastMonday.setHours(0,0,0,0);
+						thisMonday.setHours(0,0,0,0);
+						shouldBackup = (thisMonday > lastMonday);  // ✅ เปรียบเทียบเฉพาะวันที่
 					}
 					break;
 				case 'monthly':
@@ -7378,6 +7534,8 @@ document.addEventListener('DOMContentLoaded', () => {
 						const thisMonth = now.getMonth();
 						const thisYear = now.getFullYear();
 						shouldBackup = (thisYear > lastYear) || (thisYear === lastYear && thisMonth > lastMonth);
+					} else {
+						shouldBackup = false;
 					}
 					break;
 			}
@@ -7385,7 +7543,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		if (shouldBackup) {
 			await runAutoBackup();
-			state.autoBackup.lastBackup = now.toISOString(); // เก็บเป็น ISO string เหมือนเดิม
+			state.autoBackup.lastBackup = now.toISOString();
 			await saveAutoBackupSettings();
 
 			const lastBackupSpan = document.getElementById('last-auto-backup-time');
@@ -7530,7 +7688,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			
 			// บันทึก activity log (optional)
-			addActivityLog('🔄 สำรองข้อมูลอัตโนมัติ', filename, 'fa-cloud-arrow-up', 'text-blue-600');
+			try {
+				await addActivityLog('🔄 สำรองข้อมูลอัตโนมัติ', filename, 'fa-cloud-arrow-up', 'text-blue-600');
+			} catch (logErr) {
+				console.error('Auto backup: addActivityLog failed', logErr);
+			}
 
 			// ลบ addActivityLog ออก (ตามที่ต้องการ)
 
@@ -12065,9 +12227,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// 5. ฟังก์ชันคำนวณและแสดงผล Widget หน้าแรก (รองรับการดูย้อนหลัง)
 				function renderBudgetWidget() {
-					const widget = document.getElementById('home-budget-widget');
 					const container = document.getElementById('budget-list-container');
-					if (!widget || !container) return;
+					const widget = document.getElementById('home-budget-widget');
+					if (!container || !widget) return;
 
 					if (state.budgets.length === 0) {
 						widget.classList.add('hidden');
@@ -12077,11 +12239,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					widget.classList.remove('hidden');
 					container.innerHTML = '';
 
-					// ใช้ state.homeCurrentDate เพื่อให้ดูเดือนที่เลือกอยู่ (ไม่ใช่แค่เดือนปัจจุบัน)
 					const selectedDate = new Date(state.homeCurrentDate);
 					const selectedMonth = selectedDate.getMonth();
 					const selectedYear = selectedDate.getFullYear();
-
 					const now = new Date();
 					const currentRealMonth = now.getMonth();
 					const currentRealYear = now.getFullYear();
@@ -12089,21 +12249,19 @@ document.addEventListener('DOMContentLoaded', () => {
 					const isCurrentMonth = (selectedMonth === currentRealMonth && selectedYear === currentRealYear);
 					const isPastMonth = (selectedYear < currentRealYear) || (selectedYear === currentRealYear && selectedMonth < currentRealMonth);
 
-					// อัปเดตหัวข้อ Widget
-					const monthName = selectedDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+					const monthName = selectedDate.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' });
 					const headerTitle = widget.querySelector('h2');
 					if (headerTitle) {
-						headerTitle.innerHTML = `<i class="fa-solid fa-bullseye text-red-500 mr-2"></i> งบประมาณ (${monthName})`;
+						headerTitle.innerHTML = `<i class="fa-solid fa-bullseye text-red-500 mr-1.5"></i> งบประมาณ (${monthName})`;
 					}
 
 					const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-					
 					let daysRemaining = 0;
 					if (isCurrentMonth) {
 						daysRemaining = daysInMonth - now.getDate();
 					} else if (!isPastMonth) {
 						daysRemaining = daysInMonth;
-					} 
+					}
 
 					const expensesInSelectedMonth = state.transactions.filter(tx => {
 						const d = new Date(tx.date);
@@ -12114,18 +12272,18 @@ document.addEventListener('DOMContentLoaded', () => {
 						const spent = expensesInSelectedMonth
 							.filter(tx => tx.category === budget.category)
 							.reduce((sum, tx) => sum + tx.amount, 0);
-
+						
 						const percent = Math.min((spent / budget.amount) * 100, 100);
 						const remaining = budget.amount - spent;
 						
 						let barColor = 'bg-green-500';
 						let statusText = 'ปกติ';
 						let statusClass = 'text-green-600';
-
+						
 						if (percent >= 100) {
 							barColor = 'bg-red-600';
-							statusText = 'เกินงบแล้ว!';
-							statusClass = 'text-red-600 font-bold'; 
+							statusText = 'เกินงบ!';
+							statusClass = 'text-red-600 font-bold';
 							if (isCurrentMonth) statusClass += ' animate-pulse';
 						} else if (percent >= 80) {
 							barColor = 'bg-red-500';
@@ -12141,83 +12299,79 @@ document.addEventListener('DOMContentLoaded', () => {
 						if (isCurrentMonth) {
 							if (remaining > 0 && daysRemaining > 0) {
 								const dailySafe = remaining / daysRemaining;
-								adviceHtml = `<div class="text-xs text-gray-500 mt-1 flex items-center gap-1">
-									<i class="fa-solid fa-calendar-day text-blue-400"></i> ใช้ได้อีกวันละ <span class="font-bold text-blue-600">${formatCurrency(dailySafe)}</span> (เหลือ ${daysRemaining} วัน)
+								adviceHtml = `<div class="text-[9px] md:text-[10px] text-gray-500 mt-0.5 flex items-center gap-1 leading-none">
+									<i class="fa-solid fa-calendar-day text-blue-400"></i> วันละ <span class="font-bold text-blue-600">${formatCurrency(dailySafe)}</span> (เหลือ ${daysRemaining} วัน)
 								</div>`;
 							} else if (remaining <= 0) {
-								adviceHtml = `<div class="text-xs text-red-500 mt-1 font-bold">งบหมดแล้ว! พยายามลดรายจ่ายนะ</div>`;
+								adviceHtml = `<div class="text-[9px] md:text-[10px] text-red-500 mt-0.5 font-bold leading-none">งบหมดแล้ว!</div>`;
 							}
 						} else if (isPastMonth) {
 							if (remaining >= 0) {
-								adviceHtml = `<div class="text-xs text-green-600 mt-1 flex items-center gap-1">
-									<i class="fa-solid fa-check-circle"></i> ปิดงบเดือนนี้: <span class="font-bold">ประหยัดได้ ${formatCurrency(remaining)}</span> เยี่ยมมาก!
+								adviceHtml = `<div class="text-[9px] md:text-[10px] text-green-600 mt-0.5 flex items-center gap-1 leading-none">
+									<i class="fa-solid fa-check-circle"></i> ปิดงบ: <span class="font-bold">เหลือ ${formatCurrency(remaining)}</span>
 								</div>`;
 							} else {
-								adviceHtml = `<div class="text-xs text-red-500 mt-1 flex items-center gap-1">
-									<i class="fa-solid fa-circle-exclamation"></i> ปิดงบเดือนนี้: <span class="font-bold">เกินงบไป ${formatCurrency(Math.abs(remaining))}</span>
+								adviceHtml = `<div class="text-[9px] md:text-[10px] text-red-500 mt-0.5 flex items-center gap-1 leading-none">
+									<i class="fa-solid fa-circle-exclamation"></i> ปิดงบ: <span class="font-bold">เกิน ${formatCurrency(Math.abs(remaining))}</span>
 								</div>`;
 							}
-						} else {
-							 adviceHtml = `<div class="text-xs text-gray-400 mt-1">วางแผนล่วงหน้า</div>`;
 						}
 
-						// เพิ่ม class 'budget-item-click' เพื่อใช้อ้างอิง
 						const html = `
-							<div class="budget-item-click cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors border border-transparent hover:border-gray-200" data-category="${escapeHTML(budget.category)}">
-								<div class="flex justify-between items-end mb-1">
-									<span class="font-bold text-gray-700 text-sm">${escapeHTML(budget.category)} <i class="fa-solid fa-chevron-right text-gray-300 text-xs ml-1"></i></span>
-									<span class="text-xs ${statusClass}">${statusText} (${Math.round(percent)}%)</span>
-								</div>
-								
-								<div class="w-full bg-gray-200 rounded-full h-3 relative overflow-hidden dark:bg-gray-700">
-									<div class="${barColor} h-3 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.2)]" style="width: ${percent}%"></div>
-								</div>
-
-								<div class="flex justify-between items-center mt-1">
-									<span class="text-xs text-gray-500">${formatCurrency(spent)} / ${formatCurrency(budget.amount)}</span>
-									<span class="text-xs font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'}">
-										${remaining >= 0 ? 'คงเหลือ ' + formatCurrency(remaining) : 'เกิน ' + formatCurrency(Math.abs(remaining))}
-									</span>
-								</div>
-								${adviceHtml}
+						<div class="budget-item-click cursor-pointer hover:bg-gray-50 p-1.5 md:p-2 rounded-lg transition-colors border border-transparent hover:border-gray-200" data-category="${escapeHTML(budget.category)}">
+							<div class="flex justify-between items-end mb-1 leading-none">
+								<span class="font-bold text-gray-700 text-xs flex items-center">${escapeHTML(budget.category)} <i class="fa-solid fa-chevron-right text-gray-300 text-[9px] ml-1"></i></span>
+								<span class="text-[10px] ${statusClass}">${statusText} (${Math.round(percent)}%)</span>
 							</div>
+							<div class="w-full bg-gray-200 rounded-full h-1.5 relative overflow-hidden dark:bg-gray-700 mb-1">
+								<div class="${barColor} h-full rounded-full transition-all duration-1000 ease-out" style="width: ${percent}%"></div>
+							</div>
+							<div class="flex justify-between items-center leading-none">
+								<span class="text-[10px] text-gray-500">${formatCurrency(spent)} / ${formatCurrency(budget.amount)}</span>
+								<span class="text-[10px] font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'}">
+									${remaining >= 0 ? 'เหลือ ' + formatCurrency(remaining) : 'เกิน ' + formatCurrency(Math.abs(remaining))}
+								</span>
+							</div>
+							${adviceHtml}
+						</div>
 						`;
 						container.insertAdjacentHTML('beforeend', html);
 					});
 
-					// [NEW] เพิ่มส่วนคลิกแล้วเด้งไปหน้ารายการ (Advanced Filter)
+					// Event เด้งไปหน้ารายการ
 					container.querySelectorAll('.budget-item-click').forEach(item => {
 						item.addEventListener('click', () => {
 							const category = item.dataset.category;
-							
-							// 1. ตั้งค่า Filter ให้เป็น "รายจ่าย" + "ชื่อหมวดที่กด"
 							state.advFilterType = 'expense';
 							state.advFilterSearch = category;
 							
-							// 2. ตั้งวันที่ให้ตรงกับเดือนที่ดูอยู่บน Dashboard
 							const d = new Date(state.homeCurrentDate);
 							const y = d.getFullYear();
 							const m = d.getMonth();
-							// วันแรกของเดือน - วันสุดท้ายของเดือน
-							state.advFilterStart = new Date(y, m, 1).toISOString().slice(0, 10);
-							state.advFilterEnd = new Date(y, m + 1, 0).toISOString().slice(0, 10);
 							
-							// 3. อัปเดต UI ของตัวกรองหน้า List
-							const startEl = document.getElementById('adv-filter-start');
-							const endEl = document.getElementById('adv-filter-end');
-							const typeEl = document.getElementById('adv-filter-type');
-							const searchEl = document.getElementById('adv-filter-search');
+							// ฟังก์ชันแปลวันที่ Local
+							const formatDate = (date) => {
+								let month = '' + (date.getMonth() + 1), day = '' + date.getDate(), year = date.getFullYear();
+								if (month.length < 2) month = '0' + month;
+								if (day.length < 2) day = '0' + day;
+								return [year, month, day].join('-');
+							};
 							
-							if (startEl) startEl.value = state.advFilterStart;
-							if (endEl) endEl.value = state.advFilterEnd;
-							if (typeEl) typeEl.value = 'expense';
-							if (searchEl) searchEl.value = category;
+							state.advFilterStart = formatDate(new Date(y, m, 1));
+							state.advFilterEnd = formatDate(new Date(y, m + 1, 0));
+							
+							const typeSelect = document.getElementById('adv-filter-type');
+							const searchInput = document.getElementById('adv-filter-search');
+							const startInput = document.getElementById('adv-filter-start');
+							const endInput = document.getElementById('adv-filter-end');
+							
+							if (typeSelect) typeSelect.value = 'expense';
+							if (searchInput) searchInput.value = category;
+							if (startInput) startInput.value = state.advFilterStart;
+							if (endInput) endInput.value = state.advFilterEnd;
 
-							// 4. กระโดดไปหน้า List และสั่งค้นหาทันที
 							showPage('page-list');
-							if (typeof renderListPage === 'function') {
-								renderListPage();
-							}
+							renderListPage();
 						});
 					});
 				}
