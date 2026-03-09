@@ -241,33 +241,114 @@
                         </div>
                     </div>
                     
-                    <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm lg:order-2 flex flex-col h-full">
-                        <h2 class="text-base md:text-lg font-bold text-purple-600 mb-3 flex-shrink-0">สรุปภาพรวม</h2>
+                    <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm lg:order-2 flex flex-col h-full" id="home-charts-section">
+                        <div class="flex justify-between items-center mb-3 flex-shrink-0">
+                            <h2 class="text-base md:text-lg font-bold text-purple-600">สรุปภาพรวม</h2>
+                            <button id="toggle-charts-btn" onclick="toggleHomeCharts()" class="text-xs text-purple-600 hover:text-purple-800 font-bold bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
+                                ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
+                            </button>
+                        </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full flex-grow items-stretch">
+                        <div id="home-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full flex-grow items-stretch transition-all duration-300">
                             
-                            <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-colors duration-200 w-full h-full">
-                                <h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
-                                    <i class="fa-solid fa-scale-balanced text-blue-500"></i> สัดส่วนรายรับ / รายจ่าย
+                            <div class="chart-card bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-all duration-300 w-full h-full">
+                                <h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
+                                    <i class="fa-solid fa-scale-balanced text-blue-500"></i> <span class="chart-title-text">สัดส่วนรายรับ / รายจ่าย</span>
                                 </h3>
-                                <div class="relative w-full flex-grow min-h-[160px]">
+                                <div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
                                     <canvas id="transaction-chart"></canvas>
-                                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-xs">ไม่มีข้อมูล</p>
+                                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-[10px] md:text-xs">ไม่มีข้อมูล</p>
                                 </div>
                             </div>
 
-                            <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-colors duration-200 w-full h-full">
-                                <h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
-                                    <i class="fa-solid fa-ranking-star text-orange-500"></i> สรุปรายจ่ายตามรายการ (Top 10)
+                            <div class="chart-card bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-all duration-300 w-full h-full">
+                                <h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
+                                    <i class="fa-solid fa-ranking-star text-orange-500"></i> <span class="chart-title-text">สรุปรายจ่าย (Top 10)</span>
                                 </h3>
-                                <div class="relative w-full flex-grow min-h-[160px]">
+                                <div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
                                     <canvas id="expense-category-chart"></canvas>
-                                    <p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-xs">ไม่มีข้อมูลรายจ่าย</p>
+                                    <p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-[10px] md:text-xs">ไม่มีข้อมูล</p>
                                 </div>
                             </div>
                             
                         </div>
                     </div>
+
+                    <script>
+                        let isChartsExpanded = true; // สถานะเริ่มต้น
+                        
+                        function toggleHomeCharts() {
+                            isChartsExpanded = !isChartsExpanded;
+                            const btn = document.getElementById('toggle-charts-btn');
+                            const wrapper = document.getElementById('home-charts-wrapper');
+                            const cards = document.querySelectorAll('.chart-card');
+                            const containers = document.querySelectorAll('.chart-canvas-container');
+                            const titles = document.querySelectorAll('.chart-title');
+                            const titleTexts = document.querySelectorAll('.chart-title-text');
+
+                            if (!isChartsExpanded) {
+                                // 🌟 โหมดย่อ: บังคับให้อยู่แถวเดียวกัน (grid-cols-2)
+                                btn.innerHTML = 'ขยายกราฟ <i class="fa-solid fa-expand ml-1.5"></i>';
+                                
+                                wrapper.classList.remove('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
+                                wrapper.classList.add('grid-cols-2', 'gap-1.5', 'md:gap-3');
+                                
+                                cards.forEach(card => {
+                                    card.classList.remove('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[300px]');
+                                    card.classList.add('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
+                                });
+                                
+                                containers.forEach(cont => {
+                                    cont.classList.remove('min-h-[160px]');
+                                    cont.classList.add('min-h-[80px]');
+                                });
+                                
+                                titles.forEach(t => {
+                                    t.classList.remove('text-xs', 'md:text-sm', 'mb-2');
+                                    t.classList.add('text-[9px]', 'md:text-xs', 'mb-1');
+                                });
+                                
+                                // ย่อข้อความไม่ให้ล้น
+                                titleTexts[0].textContent = 'รับ / จ่าย';
+                                titleTexts[1].textContent = 'Top 10';
+
+                            } else {
+                                // 🌟 โหมดขยาย: กลับเป็น 1 คอลัมน์บนมือถือ
+                                btn.innerHTML = 'ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>';
+                                
+                                wrapper.classList.remove('grid-cols-2', 'gap-1.5', 'md:gap-3');
+                                wrapper.classList.add('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
+                                
+                                cards.forEach(card => {
+                                    card.classList.remove('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
+                                    card.classList.add('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[300px]');
+                                });
+                                
+                                containers.forEach(cont => {
+                                    cont.classList.remove('min-h-[80px]');
+                                    cont.classList.add('min-h-[160px]');
+                                });
+                                
+                                titles.forEach(t => {
+                                    t.classList.remove('text-[9px]', 'md:text-xs', 'mb-1');
+                                    t.classList.add('text-xs', 'md:text-sm', 'mb-2');
+                                });
+                                
+                                titleTexts[0].textContent = 'สัดส่วนรายรับ / รายจ่าย';
+                                titleTexts[1].textContent = 'สรุปรายจ่าย (Top 10)';
+                            }
+                            
+                            // สั่งให้ Chart.js วาดกราฟใหม่เพื่อให้พอดีกับกรอบที่เปลี่ยนไป
+                            setTimeout(() => {
+                                if (window.transactionChart && typeof window.transactionChart.resize === 'function') {
+                                    window.transactionChart.resize();
+                                }
+                                if (window.expenseCategoryChart && typeof window.expenseCategoryChart.resize === 'function') {
+                                    window.expenseCategoryChart.resize();
+                                }
+                            }, 300); 
+                        }
+                    </script>
                 </div> 
                 
                 <div id="home-drafts-container" class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 hidden border-l-4 md:border-l-8 border-yellow-400 dark:border-yellow-500 transition-colors duration-300">
@@ -382,28 +463,110 @@
 							</div>
 
 							<div id="analytics-section" class="mt-4 mb-6 hidden w-full">
-								<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full h-full">
+								<div class="flex justify-between items-center mb-3">
+									<h3 class="text-sm md:text-base font-bold text-purple-600"><i class="fa-solid fa-chart-line mr-1"></i> กราฟวิเคราะห์</h3>
+									<button id="toggle-list-charts-btn" onclick="toggleListCharts()" class="text-xs text-purple-600 hover:text-purple-800 font-bold bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-800 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
+										ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
+									</button>
+								</div>
+
+								<div id="list-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full h-full transition-all duration-300">
 									
-									<div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm p-4 min-h-[320px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-colors duration-200 w-full">
-										<h3 class="text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2 flex-shrink-0">
-											<i class="fa-solid fa-chart-pie text-purple-500"></i> สัดส่วนหมวดหมู่
+									<div class="list-chart-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full">
+										<h3 class="list-chart-title text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-1.5 flex-shrink-0 justify-center">
+											<i class="fa-solid fa-chart-pie text-purple-500"></i> <span class="list-chart-title-text">สัดส่วนหมวดหมู่</span>
 										</h3>
-										<div class="relative w-full flex-grow min-h-[250px]">
+										<div class="relative w-full flex-grow min-h-[160px] md:min-h-[250px] list-chart-canvas-container">
 											<canvas id="chart-category"></canvas>
 										</div>
 									</div>
 
-									<div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm p-4 min-h-[320px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-colors duration-200 w-full">
-										<h3 class="text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2 flex-shrink-0">
-											<i class="fa-solid fa-chart-column text-blue-500"></i> แนวโน้มช่วงเวลา
+									<div class="list-chart-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full">
+										<h3 class="list-chart-title text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-1.5 flex-shrink-0 justify-center">
+											<i class="fa-solid fa-chart-column text-blue-500"></i> <span class="list-chart-title-text">แนวโน้มช่วงเวลา</span>
 										</h3>
-										<div class="relative w-full flex-grow min-h-[250px]">
+										<div class="relative w-full flex-grow min-h-[160px] md:min-h-[250px] list-chart-canvas-container">
 											<canvas id="chart-time"></canvas>
 										</div>
 									</div>
 
 								</div>
 							</div>
+
+							<script>
+								let isListChartsExpanded = true;
+								
+								function toggleListCharts() {
+									isListChartsExpanded = !isListChartsExpanded;
+									const btn = document.getElementById('toggle-list-charts-btn');
+									const wrapper = document.getElementById('list-charts-wrapper');
+									const cards = document.querySelectorAll('.list-chart-card');
+									const containers = document.querySelectorAll('.list-chart-canvas-container');
+									const titles = document.querySelectorAll('.list-chart-title');
+									const titleTexts = document.querySelectorAll('.list-chart-title-text');
+
+									if (!isListChartsExpanded) {
+										// โหมดย่อ
+										btn.innerHTML = 'ขยายกราฟ <i class="fa-solid fa-expand ml-1.5"></i>';
+										
+										wrapper.classList.remove('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
+										wrapper.classList.add('grid-cols-2', 'gap-1.5', 'md:gap-3');
+										
+										cards.forEach(card => {
+											card.classList.remove('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[350px]', 'lg:min-h-[420px]');
+											card.classList.add('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
+										});
+										
+										containers.forEach(cont => {
+											cont.classList.remove('min-h-[160px]', 'md:min-h-[250px]');
+											cont.classList.add('min-h-[80px]');
+										});
+										
+										titles.forEach(t => {
+											t.classList.remove('text-sm', 'md:text-base', 'mb-3');
+											t.classList.add('text-[9px]', 'md:text-xs', 'mb-1');
+										});
+										
+										titleTexts[0].textContent = 'หมวดหมู่';
+										titleTexts[1].textContent = 'แนวโน้ม';
+
+									} else {
+										// โหมดขยาย
+										btn.innerHTML = 'ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>';
+										
+										wrapper.classList.remove('grid-cols-2', 'gap-1.5', 'md:gap-3');
+										wrapper.classList.add('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
+										
+										cards.forEach(card => {
+											card.classList.remove('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
+											card.classList.add('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[350px]', 'lg:min-h-[420px]');
+										});
+										
+										containers.forEach(cont => {
+											cont.classList.remove('min-h-[80px]');
+											cont.classList.add('min-h-[160px]', 'md:min-h-[250px]');
+										});
+										
+										titles.forEach(t => {
+											t.classList.remove('text-[9px]', 'md:text-xs', 'mb-1');
+											t.classList.add('text-sm', 'md:text-base', 'mb-3');
+										});
+										
+										titleTexts[0].textContent = 'สัดส่วนหมวดหมู่';
+										titleTexts[1].textContent = 'แนวโน้มช่วงเวลา';
+									}
+									
+									// รีเฟรชขนาดกราฟ
+									setTimeout(() => {
+										if (window.chartCategory && typeof window.chartCategory.resize === 'function') {
+											window.chartCategory.resize();
+										}
+										if (window.chartTime && typeof window.chartTime.resize === 'function') {
+											window.chartTime.resize();
+										}
+									}, 300); 
+								}
+							</script>
 							
 							<div class="grid grid-cols-3 gap-2 text-center divide-x divide-gray-200 w-full bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
 								<div>
