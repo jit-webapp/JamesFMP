@@ -9058,39 +9058,16 @@ document.addEventListener('DOMContentLoaded', () => {
         txRows.reverse(); 
 
 
-        if (txRows.length === 0) {
-            listBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500 text-base">ไม่มีรายการเคลื่อนไหวในรอบที่เลือก</td></tr>';
-            return;
-        }
+        if (relevantTxs.length === 0) {
+			listBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500 text-base">ไม่มีรายการเคลื่อนไหวในรอบที่เลือก</td></tr>';
+			return;
+		}
 
-        listBody.innerHTML = txRows.map(row => {
-            const balanceVal = parseFloat(row.finalBalance.replace(/,/g,""));
-            const balanceClass = balanceVal >= 0 ? 'text-blue-700' : 'text-red-700';
-            
-            const receiptIconHtml = row.receiptBase64 ? 
-                `<button type="button" class="view-receipt-icon text-purple-500 hover:text-purple-700 ml-2 z-10 relative" data-base64="${row.receiptBase64}" title="คลิกเพื่อดูรูป">
-                    <i class="fa-solid fa-receipt"></i>
-                </button>` : '';
-
-            return `
-				<tr class="border-b border-gray-100 hover:bg-gray-50">
-					<td class="p-2 text-sm text-gray-500">${row.desktopDate}</td>
-					<td class="p-2">
-						<div class="font-medium text-gray-800">${row.name}${receiptIconHtml}</div>
-						${row.desc ? `<div class="text-xs text-gray-400 mt-1 italic">${escapeHTML(row.desc)}</div>` : ''}
-						<div class="text-xs text-gray-400 md:hidden">${row.category}</div>
-					</td>
-					<td class="p-2 text-sm text-gray-600 hidden md:table-cell">${row.category}</td>
-					<td class="p-2 text-right ${row.amountClass} font-bold">${row.amountSign}${row.amount}</td>
-					<td class="p-2 text-center">
-						<div class="flex items-center justify-center gap-1">
-							<button class="edit-btn text-blue-500 p-1" data-id="${row.id}"><i class="fa-solid fa-pencil text-xs"></i></button>
-							<button class="delete-btn text-red-500 p-1" data-id="${row.id}"><i class="fa-solid fa-trash text-xs"></i></button>
-						</div>
-					</td>
-				</tr>
-			`;
-        }).join('');
+		let fullHtml = '';
+		relevantTxs.forEach(tx => {
+			fullHtml += createTransactionRowHtml(tx);
+		});
+		listBody.innerHTML = fullHtml;
     }
     // *******************************************************
     
