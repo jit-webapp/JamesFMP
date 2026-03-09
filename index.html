@@ -2294,68 +2294,78 @@
     <script>
 		if ('serviceWorker' in navigator) {
 			window.pendingUpdateWorker = null;
-			
-			const showUpdatePrompt = async (worker) => {
-				// 🛠️ [แก้จุดที่ 2] เปลี่ยนชื่อ Key ให้ตรงกัน
-				const isLater = localStorage.getItem('fmpro_later_update') === 'true';
-				window.pendingUpdateWorker = worker;
-				
-				// ถ้าผู้ใช้เลือก "ไว้ภายหลัง" ไว้ ให้แอบเพิ่มที่กระดิ่ง (แต่ไม่ต้องเด้ง Modal)
-				if (isLater) {
-					console.log('พบอัปเดตใหม่ (โหมดภายหลัง): เพิ่มลงกระดิ่งแล้ว');
-					if (typeof window.addActivityLog === 'function') {
-						window.addActivityLog('แจ้งเตือนอัปเดตใหม่', 'พบแอปพลิเคชันเวอร์ชันใหม่รอการติดตั้ง 👆 คลิกที่นี่เพื่ออัปเดต', 'fa-cloud-arrow-down', 'text-blue-500');
-					}
-					return; // ❗️จบการทำงาน ไม่ต้องแสดง Modal
-				}
-				
-				let newVer = 'ล่าสุด';
-				let updateNotes = window.APP_UPDATE_NOTES || 'อัปเดตระบบเพื่อเพิ่มประสิทธิภาพการทำงาน';
-				
-				try {
-					const cacheNames = await caches.keys();
-					const updateCaches = cacheNames.filter(name => name.startsWith('finance-manager-') && name !== 'finance-manager-' + window.APP_VERSION);
-					
-					if (updateCaches.length > 0) {
-						const newCacheName = updateCaches[updateCaches.length - 1];
-						newVer = newCacheName.replace('finance-manager-', '');
-						
-						const cache = await caches.open(newCacheName);
-						const reqs = await cache.keys();
-						const versionReq = reqs.find(req => req.url.includes('version.js'));
-						
-						if (versionReq) {
-							const res = await cache.match(versionReq);
-							const text = await res.text();
-							
-							const matchNotes = text.match(/var\s+APP_UPDATE_NOTES\s*=\s*`([\s\S]*?)`/);
-							if (matchNotes && matchNotes[1]) {
-								updateNotes = matchNotes[1].trim().replace(/\n/g, '<br>');
-							} else {
-								const matchNotesFallback = text.match(/var\s+APP_UPDATE_NOTES\s*=\s*['"](.*?)['"]/);
-								if (matchNotesFallback && matchNotesFallback[1]) {
-									updateNotes = matchNotesFallback[1];
-								}
-							}
-						}
-					}
-				} catch (e) {
-					console.log('ไม่สามารถดึงข้อมูลเวอร์ชันใหม่จากแคชได้', e);
-				}
+			window.isOpenedFromBell = false;
 
-				const currentVerEl = document.getElementById('display-current-version');
-				const newVerEl = document.getElementById('display-new-version');
-				const notesEl = document.getElementById('display-update-notes');
+			// 1. ฟังก์ชันแสดงหน้าต่างอัปเดต (ปรับปรุงให้รอโหลดเลขเวอร์ชันจริงจาก Cache)
+			const showUpdatePrompt = async (worker, forceShow = false) => {
+				window.pendingUpdateWorker = worker;
+				const isLater = localStorage.getItem('fmpro_later_update') === 'true';
 				
-				if (currentVerEl) currentVerEl.innerText = window.APP_VERSION || 'ไม่ทราบ';
-				if (newVerEl) newVerEl.innerText = newVer;
-				if (notesEl) notesEl.innerHTML = updateNotes;
+				if (isLater && !forceShow) {
+					console.log('พบอัปเดตใหม่ (โหมดภายหลัง): ซ่อน Modal ไว้เบื้องหลัง');
+					return; 
+				}
 
 				const modal = document.getElementById('update-alert-modal');
 				if(modal) modal.classList.remove('hidden');
+
+				const updateUI = (v, n) => {
+					const currentVerEl = document.getElementById('display-current-version');
+					const newVerEl = document.getElementById('display-new-version');
+					const notesEl = document.getElementById('display-update-notes');
+					if (currentVerEl) currentVerEl.innerText = window.APP_VERSION || 'ไม่ทราบ';
+					if (newVerEl) newVerEl.innerText = v;
+					if (notesEl) notesEl.innerHTML = n;
+				};
+
+				updateUI('กำลังตรวจสอบ...', 'กำลังโหลดรายละเอียด...');
+
+				// ดึงข้อมูลเวอร์ชันใหม่จาก Cache (ลองซ้ำเพื่อให้ไฟล์เขียนเสร็จ)
+				const getVersionFromCache = async (retryCount = 0) => {
+					try {
+						const cacheNames = await caches.keys();
+						const updateCaches = cacheNames.filter(name => 
+							name.startsWith('finance-manager-') && name !== 'finance-manager-' + window.APP_VERSION
+						);
+						
+						if (updateCaches.length > 0) {
+							const newCacheName = updateCaches[updateCaches.length - 1];
+							const tempVer = newCacheName.replace('finance-manager-', '');
+							
+							const cache = await caches.open(newCacheName);
+							const reqs = await cache.keys();
+							const versionReq = reqs.find(req => req.url.includes('version.js'));
+							
+							if (versionReq) {
+								const res = await cache.match(versionReq);
+								const text = await res.text();
+								
+								let notes = 'อัปเดตระบบเพื่อเพิ่มประสิทธิภาพการทำงาน';
+								const matchNotes = text.match(/var\s+APP_UPDATE_NOTES\s*=\s*`([\s\S]*?)`/);
+								if (matchNotes && matchNotes[1]) {
+									notes = matchNotes[1].trim().replace(/\n/g, '<br>');
+								}
+								
+								updateUI(tempVer, notes);
+								return true;
+							}
+						}
+						
+						if (retryCount < 5) {
+							setTimeout(() => getVersionFromCache(retryCount + 1), 600);
+						} else {
+							updateUI('ใหม่ล่าสุด', 'มีการปรับปรุงประสิทธิภาพระบบ');
+						}
+					} catch (e) {
+						console.log('Cache fetch error:', e);
+					}
+				};
+
+				await getVersionFromCache();
 			};
 
 			document.addEventListener('DOMContentLoaded', () => {
+				// ตรวจสอบสถานะหลังรีเฟรช
 				if (localStorage.getItem('fmpro_just_updated') === 'true') {
 					localStorage.removeItem('fmpro_just_updated');
 					localStorage.removeItem('fmpro_later_update');
@@ -2365,7 +2375,7 @@
 						Swal.fire({
 							icon: 'success',
 							title: 'อัปเดตเสร็จสมบูรณ์!',
-							html: `แอปพลิเคชันได้รับการอัปเดตเป็น <b>${window.APP_VERSION}</b> เรียบร้อยแล้ว`,
+							html: `แอปพลิเคชันเป็นเวอร์ชัน <b>${window.APP_VERSION}</b> แล้ว`,
 							confirmButtonColor: '#9333ea',
 							customClass: { popup: isDark ? 'swal2-popup' : '' },
 							background: isDark ? '#1a1a1a' : '#fff',
@@ -2373,39 +2383,31 @@
 						});
 						
 						if (typeof window.addActivityLog === 'function') {
-							window.addActivityLog(
-								'🚀 อัปเดตระบบสำเร็จ',
-								`แอปพลิเคชันอัปเดตเป็นเวอร์ชัน ${window.APP_VERSION} พร้อมใช้งานแล้ว`,
-								'fa-arrow-up-right-dots',
-								'text-green-600'
-							);
+							window.addActivityLog('🚀 อัปเดตระบบสำเร็จ', `แอปพลิเคชันอัปเดตเป็นเวอร์ชัน ${window.APP_VERSION} เรียบร้อยแล้ว`, 'fa-arrow-up-right-dots', 'text-green-600');
 						}
 					}, 800); 
 				}
 
+				// ปุ่มยกเลิก/ภายหลัง
 				const btnCancelUpdate = document.getElementById('btn-cancel-update');
 				if (btnCancelUpdate) {
 					btnCancelUpdate.addEventListener('click', () => {
+						const isAlreadyLater = localStorage.getItem('fmpro_later_update') === 'true';
 						localStorage.setItem('fmpro_later_update', 'true');
 						document.getElementById('update-alert-modal').classList.add('hidden');
 						
-						if (typeof window.addActivityLog === 'function') {
-							const newVerEl = document.getElementById('display-new-version');
-							const newVer = newVerEl ? newVerEl.innerText : 'ใหม่ล่าสุด';
-							window.addActivityLog(
-								'แจ้งเตือนอัปเดตใหม่',
-								`พบแอปพลิเคชันเวอร์ชันใหม่ (${newVer}) รอการติดตั้ง 👆 คลิกที่นี่เพื่ออัปเดต`,
-								'fa-cloud-arrow-down',
-								'text-blue-500' 
-							);
+						if ((!isAlreadyLater || window.isOpenedFromBell) && typeof window.addActivityLog === 'function') {
+							const newVer = document.getElementById('display-new-version')?.innerText || 'ใหม่';
+							window.addActivityLog('แจ้งเตือนอัปเดตใหม่', `พบแอปพลิเคชันเวอร์ชันใหม่ (${newVer}) รอการติดตั้ง 👆 คลิกที่นี่เพื่ออัปเดต`, 'fa-cloud-arrow-down', 'text-blue-500');
 						}
+						window.isOpenedFromBell = false;
 					});
 				}
 
+				// ดักจับการคลิกแจ้งเตือนในกระดิ่ง (แบบเจาะจงเฉพาะข้อความอัปเดต)
 				document.body.addEventListener('click', (e) => {
 					let el = e.target;
 					let isMatch = false;
-					
 					for(let i=0; i<5; i++) {
 						if(!el || el === document.body) break;
 						if(el.textContent && el.textContent.length < 300 && 
@@ -2416,24 +2418,23 @@
 						}
 						el = el.parentElement;
 					}
-
 					if(isMatch) {
-						const modal = document.getElementById('update-alert-modal');
-						if (modal && window.pendingUpdateWorker) {
-							modal.classList.remove('hidden');
+						window.isOpenedFromBell = true;
+						if (window.pendingUpdateWorker) {
+							showUpdatePrompt(window.pendingUpdateWorker, true);
 						} else if (typeof window.checkForUpdate === 'function') {
 							window.checkForUpdate();
 						}
 					}
 				});
 
+				// ปุ่มยืนยันอัปเดต
 				const btnConfirmUpdate = document.getElementById('btn-confirm-update');
 				if (btnConfirmUpdate) {
 					btnConfirmUpdate.addEventListener('click', () => {
 						localStorage.removeItem('fmpro_later_update');
 						if (window.pendingUpdateWorker) {
 							document.getElementById('update-alert-modal').classList.add('hidden');
-							
 							const isDark = document.body.classList.contains('dark');
 							Swal.fire({
 								title: 'กำลังติดตั้งอัปเดต...',
@@ -2443,7 +2444,6 @@
 								background: isDark ? '#1a1a1a' : '#fff',
 								color: isDark ? '#e5e7eb' : '#545454'
 							});
-
 							localStorage.setItem('fmpro_just_updated', 'true');
 							window.pendingUpdateWorker.postMessage({ action: 'skipWaiting' });
 						}
@@ -2452,29 +2452,9 @@
 			});
 
 			window.addEventListener('load', () => {
-				navigator.serviceWorker.getRegistrations().then((registrations) => {
-					for (let reg of registrations) {
-						if (reg.active && reg.active.scriptURL.includes('?v=')) {
-							reg.unregister();
-						}
-					}
-				});
-
-				// 🛠️ [แก้จุดที่ 1] สั่งห้ามเบราว์เซอร์แคชไฟล์ sw.js
 				navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
 					.then((registration) => {
-						console.log('Service Worker Registered');
-						
-						if (registration.waiting) {
-							if (localStorage.getItem('fmpro_later_update') === 'true') {
-								console.log('มีอัปเดตรออยู่ (โหมดภายหลัง)');
-								if (typeof window.addActivityLog === 'function') {
-									window.addActivityLog('แจ้งเตือนอัปเดตใหม่', 'พบแอปพลิเคชันเวอร์ชันใหม่รอการติดตั้ง 👆 คลิกที่นี่เพื่ออัปเดต', 'fa-cloud-arrow-down', 'text-blue-500');
-								}
-							} else {
-								showUpdatePrompt(registration.waiting);
-							}
-						}
+						if (registration.waiting) showUpdatePrompt(registration.waiting);
 
 						registration.addEventListener('updatefound', () => {
 							const newWorker = registration.installing;
@@ -2487,22 +2467,18 @@
 							}
 						});
 
-						// ตรวจสอบอัปเดตทุกๆ 1 ชั่วโมง
-						setInterval(() => {
-							registration.update().catch(err => console.log('Auto update check failed:', err));
-						}, 3600000); 
+						setInterval(() => { registration.update().catch(err => {}); }, 3600000); 
 
-						// 🛠️ [แก้จุดที่ 3] ตรวจสอบอัปเดตทันที เมื่อผู้ใช้สลับหน้าจอกลับมาที่แอป
 						document.addEventListener('visibilitychange', () => {
-							if (document.visibilityState === 'visible') {
-								registration.update().catch(err => console.log('Visibility update check failed:', err));
-							}
+							if (document.visibilityState === 'visible') registration.update().catch(err => {});
 						});
 
+						// ฟังก์ชันตรวจสอบอัปเดตด้วยตัวเอง
 						window.checkForUpdate = () => {
 							const isDark = document.body.classList.contains('dark');
 							Swal.fire({
-								title: 'กำลังตรวจสอบอัปเดต...',
+								title: 'กำลังตรวจสอบ...',
+								html: 'ระบบกำลังเช็คข้อมูลบนเซิร์ฟเวอร์',
 								allowOutsideClick: false,
 								didOpen: () => { Swal.showLoading(); },
 								customClass: { popup: isDark ? 'swal2-popup' : '' },
@@ -2514,40 +2490,30 @@
 								setTimeout(() => {
 									if (registration.waiting) {
 										Swal.close();
-										showUpdatePrompt(registration.waiting);
-									} else {
-										caches.keys().then((names) => {
-											for (let name of names) {
-												if (name !== 'finance-manager-' + window.APP_VERSION) caches.delete(name);
+										showUpdatePrompt(registration.waiting, true);
+									} else if (registration.installing) {
+										registration.installing.addEventListener('statechange', (e) => {
+											if (e.target.state === 'installed') {
+												Swal.close();
+												showUpdatePrompt(registration.waiting || e.target, true);
 											}
 										});
-										
+									} else {
 										Swal.fire({
 											icon: 'success',
-											title: 'เป็นเวอร์ชันล่าสุดแล้ว!',
-											html: `แอปของคุณคือ <b>${window.APP_VERSION}</b><br><span class="text-sm text-gray-500"></span>`,
+											title: 'เป็นเวอร์ชันล่าสุดแล้ว',
+											html: `แอปของคุณคือ <b>${window.APP_VERSION}</b>`,
 											confirmButtonColor: '#9333ea',
 											customClass: { popup: isDark ? 'swal2-popup' : '' },
 											background: isDark ? '#1a1a1a' : '#fff',
 											color: isDark ? '#e5e7eb' : '#545454'
 										});
 									}
-								}, 1000);
-							}).catch((err) => {
-								Swal.fire({
-									icon: 'error',
-									title: 'เชื่อมต่อล้มเหลว',
-									text: 'ไม่สามารถตรวจสอบอัปเดตได้ โปรดตรวจสอบอินเทอร์เน็ต',
-									confirmButtonColor: '#9333ea',
-									customClass: { popup: isDark ? 'swal2-popup' : '' },
-									background: isDark ? '#1a1a1a' : '#fff',
-									color: isDark ? '#e5e7eb' : '#545454'
-								});
+								}, 1500); 
+							}).catch(() => {
+								Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' });
 							});
 						};
-					})
-					.catch((err) => {
-						console.log('Service Worker Registration Failed:', err);
 					});
 			});
 
@@ -2558,18 +2524,18 @@
 				refreshing = true;
 			});
 
+			// 💡 แก้ไข: แยกการทำงานของปุ่มอัปเดตและปุ่มล้างกระดิ่งให้เด็ดขาด
 			document.addEventListener('DOMContentLoaded', () => {
-				const updateBtn = document.getElementById('btn-system-update');
-				if (updateBtn) {
-					const newBtn = updateBtn.cloneNode(true);
-					updateBtn.parentNode.replaceChild(newBtn, updateBtn);
-					
-					newBtn.addEventListener('click', (e) => {
+				// ปุ่มอัปเดตในหน้าตั้งค่า
+				const settingsUpdateBtn = document.getElementById('btn-system-update');
+				if (settingsUpdateBtn) {
+					// ใช้การผูก Event แบบระบุตัวตนชัดเจน
+					settingsUpdateBtn.onclick = (e) => {
 						e.preventDefault();
 						if (typeof window.checkForUpdate === 'function') {
 							window.checkForUpdate();
 						}
-					});
+					};
 				}
 			});
 		}
