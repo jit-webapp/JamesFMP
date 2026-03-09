@@ -47,6 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
 	const STORE_VOICE_COMMANDS = 'voiceCommands'; // *** เพิ่ม Store สำหรับคำสั่งเสียงที่เรียนรู้ ***
 	const STORE_ICS_IMPORTS = 'icsImports';      // เก็บข้อมูลกลุ่มไฟล์
 	const STORE_IMPORTED_EVENTS = 'importedEvents'; // เก็บเหตุการณ์แต่ละรายการ
+	
+	const HOME_CHARTS_EXPANDED_KEY = 'homeChartsExpanded';
+	const LIST_CHARTS_EXPANDED_KEY = 'listChartsExpanded';
+	const HOME_ITEMS_PER_PAGE_KEY   = 'homeItemsPerPage';
+	const LIST_ITEMS_PER_PAGE_KEY   = 'listItemsPerPage';
     
     const PAGE_IDS = ['page-home', 'page-list', 'page-calendar', 'page-accounts', 'page-settings', 'page-guide']; // เพิ่ม 'page-accounts'
     // ********** Master Password Config **********
@@ -1417,6 +1422,20 @@ document.addEventListener('DOMContentLoaded', () => {
 			const menuStyleConfig = await dbGet(STORE_CONFIG, 'mobileMenuStyle');
             state.mobileMenuStyle = menuStyleConfig ? menuStyleConfig.value : 'bottom';
 			
+			// ===== [เพิ่ม] โหลดค่าการตั้งค่ากราฟและจำนวนรายการต่อหน้า =====
+			const homeChartExpanded = await dbGet(STORE_CONFIG, HOME_CHARTS_EXPANDED_KEY);
+			state.homeChartsExpanded = homeChartExpanded ? homeChartExpanded.value : true; // default true
+
+			const listChartExpanded = await dbGet(STORE_CONFIG, LIST_CHARTS_EXPANDED_KEY);
+			state.listChartsExpanded = listChartExpanded ? listChartExpanded.value : true;
+
+			const homeItems = await dbGet(STORE_CONFIG, HOME_ITEMS_PER_PAGE_KEY);
+			state.homeItemsPerPage = homeItems ? homeItems.value : 10;
+
+			const listItems = await dbGet(STORE_CONFIG, LIST_ITEMS_PER_PAGE_KEY);
+			state.listItemsPerPage = listItems ? listItems.value : 10;
+			// ==============================================================
+			
 			// +++ สำคัญ: ต้องเรียกใช้ฟังก์ชันปรับ UI ทันทีหลังจากได้ค่า +++
 			applyMobileMenuStyle();
 
@@ -1477,6 +1496,154 @@ document.addEventListener('DOMContentLoaded', () => {
 			renderCustomNotifyList();
 		}
     }
+	
+		// ============================================
+		// ฟังก์ชัน Global สำหรับให้ index.html เรียกใช้
+		// ============================================
+		window.getInitialChartState = function(page) {
+			if (page === 'home') {
+				return state.homeChartsExpanded !== undefined ? state.homeChartsExpanded : true;
+			} else if (page === 'list') {
+				return state.listChartsExpanded !== undefined ? state.listChartsExpanded : true;
+			}
+			return true;
+		};
+
+		window.saveChartState = async function(page, expanded) {
+			try {
+				if (page === 'home') {
+					state.homeChartsExpanded = expanded;
+					await dbPut(STORE_CONFIG, { key: HOME_CHARTS_EXPANDED_KEY, value: expanded });
+				} else if (page === 'list') {
+					state.listChartsExpanded = expanded;
+					await dbPut(STORE_CONFIG, { key: LIST_CHARTS_EXPANDED_KEY, value: expanded });
+				}
+			} catch (err) {
+				console.error('Failed to save chart state:', err);
+			}
+		};
+		
+		// ============================================
+		// ฟังก์ชันปรับขนาดกราฟหน้าแรกตามสถานะ
+		// ============================================
+		window.applyHomeChartState = function(expanded) {
+			const btn = document.getElementById('toggle-charts-btn');
+			const wrapper = document.getElementById('home-charts-wrapper');
+			const cards = document.querySelectorAll('.chart-card');
+			const containers = document.querySelectorAll('.chart-canvas-container');
+			const titles = document.querySelectorAll('.chart-title');
+			const titleTexts = document.querySelectorAll('.chart-title-text');
+
+			if (!btn || !wrapper) return;
+
+			if (!expanded) {
+				btn.innerHTML = 'ขยายกราฟ <i class="fa-solid fa-expand ml-1.5"></i>';
+				wrapper.classList.remove('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
+				wrapper.classList.add('grid-cols-2', 'gap-1.5', 'md:gap-3');
+				cards.forEach(card => {
+					card.classList.remove('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[300px]');
+					card.classList.add('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
+				});
+				containers.forEach(cont => {
+					cont.classList.remove('min-h-[160px]');
+					cont.classList.add('min-h-[80px]');
+				});
+				titles.forEach(t => {
+					t.classList.remove('text-xs', 'md:text-sm', 'mb-2');
+					t.classList.add('text-[9px]', 'md:text-xs', 'mb-1');
+				});
+				titleTexts[0].textContent = 'รับ / จ่าย';
+				titleTexts[1].textContent = 'Top 10';
+			} else {
+				btn.innerHTML = 'ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>';
+				wrapper.classList.remove('grid-cols-2', 'gap-1.5', 'md:gap-3');
+				wrapper.classList.add('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
+				cards.forEach(card => {
+					card.classList.remove('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
+					card.classList.add('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[300px]');
+				});
+				containers.forEach(cont => {
+					cont.classList.remove('min-h-[80px]');
+					cont.classList.add('min-h-[160px]');
+				});
+				titles.forEach(t => {
+					t.classList.remove('text-[9px]', 'md:text-xs', 'mb-1');
+					t.classList.add('text-xs', 'md:text-sm', 'mb-2');
+				});
+				titleTexts[0].textContent = 'สัดส่วนรายรับ / รายจ่าย';
+				titleTexts[1].textContent = 'สรุปรายจ่าย (Top 10)';
+			}
+
+			setTimeout(() => {
+				if (window.transactionChart && typeof window.transactionChart.resize === 'function') {
+					window.transactionChart.resize();
+				}
+				if (window.expenseCategoryChart && typeof window.expenseCategoryChart.resize === 'function') {
+					window.expenseCategoryChart.resize();
+				}
+			}, 300);
+		};
+
+		// ============================================
+		// ฟังก์ชันปรับขนาดกราฟหน้ารายการตามสถานะ
+		// ============================================
+		window.applyListChartState = function(expanded) {
+			const btn = document.getElementById('toggle-list-charts-btn');
+			const wrapper = document.getElementById('list-charts-wrapper');
+			const cards = document.querySelectorAll('.list-chart-card');
+			const containers = document.querySelectorAll('.list-chart-canvas-container');
+			const titles = document.querySelectorAll('.list-chart-title');
+			const titleTexts = document.querySelectorAll('.list-chart-title-text');
+
+			if (!btn || !wrapper) return;
+
+			if (!expanded) {
+				btn.innerHTML = 'ขยายกราฟ <i class="fa-solid fa-expand ml-1.5"></i>';
+				wrapper.classList.remove('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
+				wrapper.classList.add('grid-cols-2', 'gap-1.5', 'md:gap-3');
+				cards.forEach(card => {
+					card.classList.remove('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[350px]', 'lg:min-h-[420px]');
+					card.classList.add('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
+				});
+				containers.forEach(cont => {
+					cont.classList.remove('min-h-[160px]', 'md:min-h-[250px]');
+					cont.classList.add('min-h-[80px]');
+				});
+				titles.forEach(t => {
+					t.classList.remove('text-sm', 'md:text-base', 'mb-3');
+					t.classList.add('text-[9px]', 'md:text-xs', 'mb-1');
+				});
+				titleTexts[0].textContent = 'หมวดหมู่';
+				titleTexts[1].textContent = 'แนวโน้ม';
+			} else {
+				btn.innerHTML = 'ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>';
+				wrapper.classList.remove('grid-cols-2', 'gap-1.5', 'md:gap-3');
+				wrapper.classList.add('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
+				cards.forEach(card => {
+					card.classList.remove('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
+					card.classList.add('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[350px]', 'lg:min-h-[420px]');
+				});
+				containers.forEach(cont => {
+					cont.classList.remove('min-h-[80px]');
+					cont.classList.add('min-h-[160px]', 'md:min-h-[250px]');
+				});
+				titles.forEach(t => {
+					t.classList.remove('text-[9px]', 'md:text-xs', 'mb-1');
+					t.classList.add('text-sm', 'md:text-base', 'mb-3');
+				});
+				titleTexts[0].textContent = 'สัดส่วนหมวดหมู่';
+				titleTexts[1].textContent = 'แนวโน้มช่วงเวลา';
+			}
+
+			setTimeout(() => {
+				if (window.chartCategory && typeof window.chartCategory.resize === 'function') {
+					window.chartCategory.resize();
+				}
+				if (window.chartTime && typeof window.chartTime.resize === 'function') {
+					window.chartTime.resize();
+				}
+			}, 300);
+		};
 	
 		// ============================================
 		// Activity Log (ประวัติการกระทำ)
@@ -1976,6 +2143,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			getEl('nav-home').classList.remove('text-gray-600');
 			getEl('nav-home-mobile').classList.add('text-purple-600'); 
 			getEl('nav-home-mobile').classList.remove('text-gray-600');
+			
+			// ตั้งค่า dropdown ในหน้าแรก
+			const homeSelect = document.getElementById('home-items-per-page-select');
+			if (homeSelect) homeSelect.value = state.homeItemsPerPage;
+
+			// ตั้งค่า dropdown ในหน้ารายการ
+			const listSelect = document.getElementById('items-per-page-select');
+			if (listSelect) listSelect.value = state.listItemsPerPage;
 
 			getEl('shared-controls-header').style.display = 'flex';
 			updateSharedControls('home');
@@ -2441,6 +2616,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		
 		function setupEventListeners() {
+			const getEl = (id) => document.getElementById(id);
 			
 		// +++ เพิ่มโค้ดส่วนนี้: Auto Confirm สำหรับหน้า Lock Screen +++
 					const unlockInput = document.getElementById('unlock-password');
@@ -2505,7 +2681,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		});
 
-        const getEl = (id) => document.getElementById(id);
         getEl('home-table-placeholder').innerHTML = createTransactionTableHTML('home-transaction-list-body');
         getEl('list-table-placeholder').innerHTML = createTransactionTableHTML('transaction-list-body');
 
@@ -2780,15 +2955,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         getEl('home-items-per-page-select').addEventListener('change', (e) => {
-            state.homeItemsPerPage = parseInt(e.target.value, 10);
-            state.homeCurrentPage = 1; 
-            renderAll(); 
-        });
-        getEl('items-per-page-select').addEventListener('change', (e) => {
-            state.listItemsPerPage = parseInt(e.target.value, 10);
-            state.listCurrentPage = 1; 
-            renderListPage();
-        });
+			state.homeItemsPerPage = parseInt(e.target.value, 10);
+			state.homeCurrentPage = 1;
+			renderAll();
+			// ➕ บันทึกค่าลง DB
+			dbPut(STORE_CONFIG, { key: HOME_ITEMS_PER_PAGE_KEY, value: state.homeItemsPerPage })
+				.catch(err => console.error('Failed to save home items per page', err));
+		});
+
+		// หา listener ของ items-per-page-select (list page)
+		getEl('items-per-page-select').addEventListener('change', (e) => {
+			state.listItemsPerPage = parseInt(e.target.value, 10);
+			state.listCurrentPage = 1;
+			renderListPage();
+			// ➕ บันทึกค่าลง DB
+			dbPut(STORE_CONFIG, { key: LIST_ITEMS_PER_PAGE_KEY, value: state.listItemsPerPage })
+				.catch(err => console.error('Failed to save list items per page', err));
+		});
 
         
         const handleViewReceiptClick = (btn) => {
@@ -4890,6 +5073,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderPieChart(visibleTransactions);
         renderExpenseByNameChart(visibleTransactions);
+		if (window.applyHomeChartState) {
+			window.applyHomeChartState(state.homeChartsExpanded);
+		}
 		renderBudgetWidget();
     }
 	
@@ -5304,6 +5490,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof renderAnalyticsChart === 'function') {
 		    renderAnalyticsChart(filtered);
         }
+		
+		if (window.applyListChartState) {
+			window.applyListChartState(state.listChartsExpanded);
+		}
 
 		// 5. แสดงผลรายการ 
         if (typeof renderTransactionList === 'function') {
@@ -12295,7 +12485,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						if (isCurrentMonth) {
 							if (remaining > 0 && daysRemaining > 0) {
 								const dailySafe = remaining / daysRemaining;
-								adviceHtml = `<div class="text-[9px] md:text-[10px] text-gray-500 mt-0.5 flex items-center gap-1 leading-none">
+								adviceHtml = `<div class="text-[0.6rem] md:text-[0.65rem] text-gray-500 mt-0.5 flex items-center gap-1 leading-none">
 									<i class="fa-solid fa-calendar-day text-blue-400"></i> วันละ <span class="font-bold text-blue-600">${formatCurrency(dailySafe)}</span> (เหลือ ${daysRemaining} วัน)
 								</div>`;
 							} else if (remaining <= 0) {
@@ -12317,14 +12507,14 @@ document.addEventListener('DOMContentLoaded', () => {
 						<div class="budget-item-click cursor-pointer hover:bg-gray-50 p-1.5 md:p-2 rounded-lg transition-colors border border-transparent hover:border-gray-200" data-category="${escapeHTML(budget.category)}">
 							<div class="flex justify-between items-end mb-1 leading-none">
 								<span class="font-bold text-gray-700 text-xs flex items-center">${escapeHTML(budget.category)} <i class="fa-solid fa-chevron-right text-gray-300 text-[9px] ml-1"></i></span>
-								<span class="text-[10px] ${statusClass}">${statusText} (${Math.round(percent)}%)</span>
+								<span class="text-[0.65rem] ${statusClass}">${statusText} (${Math.round(percent)}%)</span>
 							</div>
 							<div class="w-full bg-gray-200 rounded-full h-1.5 relative overflow-hidden dark:bg-gray-700 mb-1">
 								<div class="${barColor} h-full rounded-full transition-all duration-1000 ease-out" style="width: ${percent}%"></div>
 							</div>
 							<div class="flex justify-between items-center leading-none">
-								<span class="text-[10px] text-gray-500">${formatCurrency(spent)} / ${formatCurrency(budget.amount)}</span>
-								<span class="text-[10px] font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'}">
+								<span class="text-[0.65rem] text-gray-500">${formatCurrency(spent)} / ${formatCurrency(budget.amount)}</span>
+								<span class="text-[0.65rem] font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'}">
 									${remaining >= 0 ? 'เหลือ ' + formatCurrency(remaining) : 'เกิน ' + formatCurrency(Math.abs(remaining))}
 								</span>
 							</div>

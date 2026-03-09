@@ -173,15 +173,15 @@
             <div id="page-home" class="app-page">
                 <div id="summary-cards-container" class="grid grid-cols-3 gap-2 md:gap-4 mb-4">
                     <div id="summary-income-card" class="bg-green-100 p-2.5 md:p-4 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition duration-200">
-                        <h2 class="text-[11px] md:text-sm font-semibold text-green-800 mb-0.5">รายรับ</h2>
+                        <h2 class="text-xs md:text-sm font-semibold text-green-800 mb-0.5">รายรับ</h2>
                         <p id="total-income" class="text-sm md:text-lg font-bold text-green-700 truncate">฿0.00</p>
                     </div>
                     <div id="summary-expense-card" class="bg-red-100 p-2.5 md:p-4 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition duration-200">
-                        <h2 class="text-[11px] md:text-sm font-semibold text-red-800 mb-0.5">รายจ่าย</h2>
+                        <h2 class="text-xs md:text-sm font-semibold text-red-800 mb-0.5">รายจ่าย</h2>
                         <p id="total-expense" class="text-sm md:text-lg font-bold text-red-700 truncate">฿0.00</p>
                     </div>
                     <div id="summary-balance-card" class="bg-blue-100 p-2.5 md:p-4 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition duration-200">
-                        <h2 class="text-[11px] md:text-sm font-semibold text-blue-800 mb-0.5">คงเหลือ(เงินสด/ออมทรัพย์)</h2>
+                        <h2 class="text-xs md:text-sm font-semibold text-blue-800 mb-0.5">คงเหลือ(เงินสด/ออมทรัพย์)</h2>
                         <p id="total-balance" class="text-sm md:text-lg font-bold text-blue-800 truncate">฿0.00</p>
                     </div>
                 </div>
@@ -274,81 +274,15 @@
                         </div>
                     </div>
 
-                    <script>
-                        let isChartsExpanded = true; // สถานะเริ่มต้น
-                        
-                        function toggleHomeCharts() {
-                            isChartsExpanded = !isChartsExpanded;
-                            const btn = document.getElementById('toggle-charts-btn');
-                            const wrapper = document.getElementById('home-charts-wrapper');
-                            const cards = document.querySelectorAll('.chart-card');
-                            const containers = document.querySelectorAll('.chart-canvas-container');
-                            const titles = document.querySelectorAll('.chart-title');
-                            const titleTexts = document.querySelectorAll('.chart-title-text');
+                   <script>
+						let isChartsExpanded = window.getInitialChartState ? window.getInitialChartState('home') : true;
 
-                            if (!isChartsExpanded) {
-                                // 🌟 โหมดย่อ: บังคับให้อยู่แถวเดียวกัน (grid-cols-2)
-                                btn.innerHTML = 'ขยายกราฟ <i class="fa-solid fa-expand ml-1.5"></i>';
-                                
-                                wrapper.classList.remove('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
-                                wrapper.classList.add('grid-cols-2', 'gap-1.5', 'md:gap-3');
-                                
-                                cards.forEach(card => {
-                                    card.classList.remove('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[300px]');
-                                    card.classList.add('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
-                                });
-                                
-                                containers.forEach(cont => {
-                                    cont.classList.remove('min-h-[160px]');
-                                    cont.classList.add('min-h-[80px]');
-                                });
-                                
-                                titles.forEach(t => {
-                                    t.classList.remove('text-xs', 'md:text-sm', 'mb-2');
-                                    t.classList.add('text-[9px]', 'md:text-xs', 'mb-1');
-                                });
-                                
-                                // ย่อข้อความไม่ให้ล้น
-                                titleTexts[0].textContent = 'รับ / จ่าย';
-                                titleTexts[1].textContent = 'Top 10';
-
-                            } else {
-                                // 🌟 โหมดขยาย: กลับเป็น 1 คอลัมน์บนมือถือ
-                                btn.innerHTML = 'ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>';
-                                
-                                wrapper.classList.remove('grid-cols-2', 'gap-1.5', 'md:gap-3');
-                                wrapper.classList.add('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
-                                
-                                cards.forEach(card => {
-                                    card.classList.remove('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
-                                    card.classList.add('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[300px]');
-                                });
-                                
-                                containers.forEach(cont => {
-                                    cont.classList.remove('min-h-[80px]');
-                                    cont.classList.add('min-h-[160px]');
-                                });
-                                
-                                titles.forEach(t => {
-                                    t.classList.remove('text-[9px]', 'md:text-xs', 'mb-1');
-                                    t.classList.add('text-xs', 'md:text-sm', 'mb-2');
-                                });
-                                
-                                titleTexts[0].textContent = 'สัดส่วนรายรับ / รายจ่าย';
-                                titleTexts[1].textContent = 'สรุปรายจ่าย (Top 10)';
-                            }
-                            
-                            // สั่งให้ Chart.js วาดกราฟใหม่เพื่อให้พอดีกับกรอบที่เปลี่ยนไป
-                            setTimeout(() => {
-                                if (window.transactionChart && typeof window.transactionChart.resize === 'function') {
-                                    window.transactionChart.resize();
-                                }
-                                if (window.expenseCategoryChart && typeof window.expenseCategoryChart.resize === 'function') {
-                                    window.expenseCategoryChart.resize();
-                                }
-                            }, 300); 
-                        }
-                    </script>
+						function toggleHomeCharts() {
+							isChartsExpanded = !isChartsExpanded;
+							window.applyHomeChartState(isChartsExpanded);
+							if (window.saveChartState) window.saveChartState('home', isChartsExpanded);
+						}
+					</script>
                 </div> 
                 
                 <div id="home-drafts-container" class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 hidden border-l-4 md:border-l-8 border-yellow-400 dark:border-yellow-500 transition-colors duration-300">
@@ -375,10 +309,10 @@
                             </div>
                             
                             <div class="flex flex-wrap gap-1 w-full sm:w-auto justify-start sm:justify-end bg-gray-100 p-1 rounded-lg" id="home-filter-buttons">
-                                <button class="home-filter-btn bg-purple-500 text-white px-2.5 py-1 text-[11px] md:text-xs font-medium rounded-md shadow-sm transition-colors flex-1 sm:flex-none" data-filter="all">ทั้งหมด</button>
-                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-[11px] md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="income">รายรับ</button>
-                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-[11px] md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="expense">รายจ่าย</button>
-                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-[11px] md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="transfer">โอนย้าย</button>
+                                <button class="home-filter-btn bg-purple-500 text-white px-2.5 py-1 text-xs md:text-xs font-medium rounded-md shadow-sm transition-colors flex-1 sm:flex-none" data-filter="all">ทั้งหมด</button>
+                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-xs md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="income">รายรับ</button>
+                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-xs md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="expense">รายจ่าย</button>
+                                <button class="home-filter-btn bg-transparent text-gray-600 hover:bg-gray-200 px-2.5 py-1 text-xs md:text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none" data-filter="transfer">โอนย้าย</button>
                             </div>
                         </div>
                         <div id="home-table-placeholder" class="overflow-x-auto"></div>
@@ -494,77 +428,12 @@
 							</div>
 
 							<script>
-								let isListChartsExpanded = true;
-								
+								let isListChartsExpanded = window.getInitialChartState ? window.getInitialChartState('list') : true;
+
 								function toggleListCharts() {
 									isListChartsExpanded = !isListChartsExpanded;
-									const btn = document.getElementById('toggle-list-charts-btn');
-									const wrapper = document.getElementById('list-charts-wrapper');
-									const cards = document.querySelectorAll('.list-chart-card');
-									const containers = document.querySelectorAll('.list-chart-canvas-container');
-									const titles = document.querySelectorAll('.list-chart-title');
-									const titleTexts = document.querySelectorAll('.list-chart-title-text');
-
-									if (!isListChartsExpanded) {
-										// โหมดย่อ
-										btn.innerHTML = 'ขยายกราฟ <i class="fa-solid fa-expand ml-1.5"></i>';
-										
-										wrapper.classList.remove('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
-										wrapper.classList.add('grid-cols-2', 'gap-1.5', 'md:gap-3');
-										
-										cards.forEach(card => {
-											card.classList.remove('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[350px]', 'lg:min-h-[420px]');
-											card.classList.add('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
-										});
-										
-										containers.forEach(cont => {
-											cont.classList.remove('min-h-[160px]', 'md:min-h-[250px]');
-											cont.classList.add('min-h-[80px]');
-										});
-										
-										titles.forEach(t => {
-											t.classList.remove('text-sm', 'md:text-base', 'mb-3');
-											t.classList.add('text-[9px]', 'md:text-xs', 'mb-1');
-										});
-										
-										titleTexts[0].textContent = 'หมวดหมู่';
-										titleTexts[1].textContent = 'แนวโน้ม';
-
-									} else {
-										// โหมดขยาย
-										btn.innerHTML = 'ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>';
-										
-										wrapper.classList.remove('grid-cols-2', 'gap-1.5', 'md:gap-3');
-										wrapper.classList.add('grid-cols-1', 'md:grid-cols-2', 'gap-3', 'md:gap-4');
-										
-										cards.forEach(card => {
-											card.classList.remove('p-1.5', 'md:p-2', 'min-h-[120px]', 'md:min-h-[150px]');
-											card.classList.add('p-3', 'md:p-4', 'min-h-[220px]', 'md:min-h-[350px]', 'lg:min-h-[420px]');
-										});
-										
-										containers.forEach(cont => {
-											cont.classList.remove('min-h-[80px]');
-											cont.classList.add('min-h-[160px]', 'md:min-h-[250px]');
-										});
-										
-										titles.forEach(t => {
-											t.classList.remove('text-[9px]', 'md:text-xs', 'mb-1');
-											t.classList.add('text-sm', 'md:text-base', 'mb-3');
-										});
-										
-										titleTexts[0].textContent = 'สัดส่วนหมวดหมู่';
-										titleTexts[1].textContent = 'แนวโน้มช่วงเวลา';
-									}
-									
-									// รีเฟรชขนาดกราฟ
-									setTimeout(() => {
-										if (window.chartCategory && typeof window.chartCategory.resize === 'function') {
-											window.chartCategory.resize();
-										}
-										if (window.chartTime && typeof window.chartTime.resize === 'function') {
-											window.chartTime.resize();
-										}
-									}, 300); 
+									window.applyListChartState(isListChartsExpanded);
+									if (window.saveChartState) window.saveChartState('list', isListChartsExpanded);
 								}
 							</script>
 							
