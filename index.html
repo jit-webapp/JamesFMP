@@ -80,7 +80,7 @@
         </div>
 
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="text-xl font-bold text-purple-600">
+            <div class="text-lg font-bold text-purple-600">
                 <i class="fa-solid fa-wallet mr-2"></i>
                 <span>ระบบจัดการรายรับ-รายจ่าย</span>
             </div>
@@ -92,7 +92,7 @@
 				</button>
 				<!-- ปุ่มกระดิ่งมือถือ (เพิ่มตรงนี้) -->
 				<button id="notification-bell-mobile" class="relative text-gray-600 hover:text-purple-600 p-2 rounded-lg" title="ประวัติกิจกรรม">
-					<i class="fa-solid fa-bell text-xl"></i>
+					<i class="fa-solid fa-bell text-lg"></i>
 					<span id="notification-badge-mobile" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
 				</button>
 
@@ -116,7 +116,7 @@
                 <button id="nav-settings" class="text-gray-600 hover:text-purple-800 font-medium px-4 py-3 rounded-lg text-lg"><i class="fa-solid fa-gear mr-1"></i> ตั้งค่า</button>
 				<button id="nav-guide" class="text-gray-600 hover:text-purple-800 font-medium px-4 py-3 rounded-lg text-lg"><i class="fa-solid fa-book mr-1"></i> คู่มือ</button>
 				<button id="notification-bell" class="relative text-gray-600 hover:text-purple-600 p-2 rounded-lg" title="ประวัติกิจกรรม">
-					<i class="fa-solid fa-bell text-xl"></i>
+					<i class="fa-solid fa-bell text-lg"></i>
 					<span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
 				</button>
 			</div>
@@ -137,7 +137,7 @@
 			<div class="flex justify-between items-center mb-2 pb-1 border-b border-gray-100 dark:border-gray-700">
 				<h3 class="font-bold text-gray-700 dark:text-gray-200">การแจ้งเตือน</h3>
 				<button id="popover-close-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-					<i class="fa-solid fa-times text-xl"></i>
+					<i class="fa-solid fa-times text-lg"></i>
 				</button>
 			</div>
 			<div id="popover-notification-list" class="space-y-2 max-h-64 overflow-y-auto">
@@ -214,28 +214,28 @@
 
                     <div class="lg:col-span-1 bg-white p-4 md:p-6 rounded-xl shadow-sm flex flex-col lg:order-1 h-full">
                         <div class="flex justify-between items-end mb-3 md:mb-4">
-                            <h2 class="text-base md:text-xl font-bold text-purple-600">เมนูจัดการ</h2>
+                            <h2 class="text-base md:text-lg font-bold text-purple-600">เมนูจัดการ</h2>
                             <p class="text-[10px] md:text-sm text-gray-500">ระบบจำหมวดหมู่อัตโนมัติ</p>
                         </div>
                         <div class="grid grid-cols-2 gap-2 md:gap-3 flex-grow">
                             <button id="add-tx-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
-                                <i class="fa-solid fa-plus text-xl md:text-2xl"></i>
+                                <i class="fa-solid fa-plus text-lg md:text-2xl"></i>
                                 <span class="text-xs md:text-sm">เพิ่มธุรกรรม</span>
                             </button>
 
                             <button id="add-img-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
-                                <i class="fa-solid fa-image text-xl md:text-2xl"></i>
+                                <i class="fa-solid fa-image text-lg md:text-2xl"></i>
                                 <span class="text-xs md:text-sm">รูปภาพ/สลิป</span>
                             </button>
                             <input type="file" id="home-receipt-input" accept="image/*" class="hidden">
 
                             <button id="voice-add-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
-                                <i class="fa-solid fa-microphone text-xl md:text-2xl"></i>
+                                <i class="fa-solid fa-microphone text-lg md:text-2xl"></i>
                                 <span class="text-xs md:text-sm">สั่งด้วยเสียง</span>
                             </button>
                             
                             <button onclick="openQuickDraftModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
-                                <i class="fa-solid fa-bolt text-xl md:text-2xl"></i>
+                                <i class="fa-solid fa-bolt text-lg md:text-2xl"></i>
                                 <span class="text-xs md:text-sm">จดด่วน (Draft)</span>
                             </button>
                         </div>
@@ -295,7 +295,7 @@
                 <div id="home-transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-sm mt-4"> 
                     <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="home-transactions-content">
                         <h2 class="text-base md:text-lg font-bold text-purple-600">รายการธุรกรรมล่าสุด</h2>
-                        <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 text-lg md:text-xl"></i>
+                        <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 text-lg md:text-lg"></i>
                     </div>
 
                     <div id="home-transactions-content" class="mt-3 transition-all">
@@ -322,7 +322,7 @@
             </div>
         
             <div id="page-list" class="app-page hidden">
-				<div id="transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-lg pb-24"> <h2 class="text-xl font-bold text-purple-600 mb-4 flex items-center">
+				<div id="transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-lg pb-24"> <h2 class="text-lg font-bold text-purple-600 mb-4 flex items-center">
 						<i class="fa-solid fa-filter mr-2"></i> ค้นหาและวิเคราะห์ (Advanced Filter)
 					</h2>
 
@@ -476,7 +476,7 @@
             
           <div id="page-calendar" class="app-page hidden">
 			<div class="bg-white p-5 md:p-6 rounded-xl shadow-lg">
-				<h1 class="text-xl md:text-2xl font-bold text-purple-600 mb-4">ปฏิทินการเงินและกิจกรรม</h1>
+				<h1 class="text-lg md:text-2xl font-bold text-purple-600 mb-4">ปฏิทินการเงินและกิจกรรม</h1>
 				
 				<!-- ตัวเลือกการแสดงผล + ปุ่มจัดการ (อยู่แถวเดียวกัน) -->
 				<div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4">
@@ -543,13 +543,13 @@
 		</div>
 
             <div id="page-accounts" class="app-page hidden">
-                <h1 class="text-xl font-bold text-purple-600 mb-6"><i class="fa-solid fa-wallet mr-2"></i>จัดการบัญชีและหมวดหมู่</h1>
+                <h1 class="text-lg font-bold text-purple-600 mb-6"><i class="fa-solid fa-wallet mr-2"></i>จัดการบัญชีและหมวดหมู่</h1>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                     <div class="flex flex-col gap-6">
                         <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg">
                             <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-accounts-content">
-                                <h2 class="text-xl font-bold text-purple-600"><i class="fa-solid fa-wallet mr-2"></i>จัดการบัญชี</h2>
+                                <h2 class="text-lg font-bold text-purple-600"><i class="fa-solid fa-wallet mr-2"></i>จัดการบัญชี</h2>
                                 <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
                             </div>
                             
@@ -575,7 +575,7 @@
                                             <div class="relative mt-1">
                                                 <input type="text" id="input-account-balance" inputmode="decimal" placeholder="0.00 หรือ 50+20" value="0" class="flex-grow form-input text-lg py-3 px-4 text-gray-700 bg-white border border-gray-200 rounded-xl focus:ring-purple-500 focus:border-purple-500 w-full pr-12" required>
                                                 <button type="button" id="toggle-account-calc-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 text-purple-600 hover:text-purple-800 p-1 rounded-lg">
-                                                    <i class="fa-solid fa-calculator text-xl"></i>
+                                                    <i class="fa-solid fa-calculator text-lg"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -588,7 +588,7 @@
 
                         <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg">
                             <div class="flex justify-between items-center cursor-pointer" id="btn-manage-recurring">
-                                <h2 class="text-xl font-bold text-purple-600"><i class="fa-solid fa-clock-rotate-left mr-2"></i> รายการประจำ (Recurring)</h2>
+                                <h2 class="text-lg font-bold text-purple-600"><i class="fa-solid fa-clock-rotate-left mr-2"></i> รายการประจำ (Recurring)</h2>
                                 <i class="fa-solid fa-chevron-down text-green-500"></i>
                             </div>
                             
@@ -605,7 +605,7 @@
 
                         <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg">
                             <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-budget-content">
-                                <h2 class="text-xl font-bold text-purple-600"><i class="fa-solid fa-sack-dollar mr-2"></i>ตั้งค่างบประมาณ (รายเดือน)</h2>
+                                <h2 class="text-lg font-bold text-purple-600"><i class="fa-solid fa-sack-dollar mr-2"></i>ตั้งค่างบประมาณ (รายเดือน)</h2>
                                 <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
                             </div>
 
@@ -638,7 +638,7 @@
                         
                         <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg">
                             <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-manual-content">
-                                <h2 class="text-xl font-bold text-purple-600"><i class="fa-solid fa-keyboard mr-2"></i>รายการที่บันทึกไว้ (Manual)</h2>
+                                <h2 class="text-lg font-bold text-purple-600"><i class="fa-solid fa-keyboard mr-2"></i>รายการที่บันทึกไว้ (Manual)</h2>
                                 <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
                             </div>
                             <div id="settings-manual-content" class="mt-4 transition-all">
@@ -653,7 +653,7 @@
 
                         <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg">
                             <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-income-content">
-                                <h2 class="text-xl font-bold text-purple-600"><i class="fa-solid fa-hand-holding-dollar mr-2"></i>หมวดหมู่รายรับ</h2>
+                                <h2 class="text-lg font-bold text-purple-600"><i class="fa-solid fa-hand-holding-dollar mr-2"></i>หมวดหมู่รายรับ</h2>
                                 <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
                             </div>
                             <div id="settings-income-content" class="mt-4 transition-all">
@@ -667,7 +667,7 @@
 
                         <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg">
                             <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-expense-content">
-                                <h2 class="text-xl font-bold text-purple-600"><i class="fa-solid fa-cart-shopping mr-2"></i>หมวดหมู่รายจ่าย</h2>
+                                <h2 class="text-lg font-bold text-purple-600"><i class="fa-solid fa-cart-shopping mr-2"></i>หมวดหมู่รายจ่าย</h2>
                                 <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
                             </div>
                             <div id="settings-expense-content" class="mt-4 transition-all">
@@ -684,7 +684,7 @@
             </div>
 
           <div id="page-settings" class="app-page hidden">
-				<h1 class="text-xl md:text-2xl font-bold text-purple-600 dark:text-purple-400 mb-6 flex items-center">
+				<h1 class="text-lg md:text-2xl font-bold text-purple-600 dark:text-purple-400 mb-6 flex items-center">
 					<i class="fa-solid fa-gear mr-3"></i>ตั้งค่าระบบ
 				</h1>
 
@@ -1211,7 +1211,7 @@
     <div id="form-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-[60]">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
             <div class="flex justify-between items-center mb-4">
-                <h2 id="modal-title" class="text-xl font-bold text-purple-600">เพิ่มรายการใหม่</h2>
+                <h2 id="modal-title" class="text-lg font-bold text-purple-600">เพิ่มรายการใหม่</h2>
                 <button id="modal-close-btn" class="text-gray-400 hover:text-red-500 text-4xl w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all absolute top-2 right-2 md:static md:w-auto md:h-auto md:hover:bg-transparent">
                     
                 </button>
@@ -1263,13 +1263,13 @@
                         <label for="tx-name" class="block text-lg text-gray-700 font-medium mb-0">ชื่อรายการ <span class="text-red-500">*</span></label>
                         <div class="flex items-center gap-2">
                             <button type="button" id="modal-attach-btn" class="text-teal-500 hover:text-teal-700 p-1 rounded-lg" title="แนบรูปภาพ">
-								<i class="fa-solid fa-image text-xl"></i>
+								<i class="fa-solid fa-image text-lg"></i>
 							</button>
 							<button type="button" id="modal-voice-btn" class="text-blue-500 hover:text-blue-700 p-1 rounded-lg" title="พูดเพื่อกรอกข้อมูล">
-                                <i class="fa-solid fa-microphone text-xl"></i>
+                                <i class="fa-solid fa-microphone text-lg"></i>
                             </button>
                             <button type="button" id="toggle-favorite-btn" class="text-gray-400 hover:text-yellow-500 p-1 rounded-lg" title="รายการโปรด">
-                                <i class="fa-solid fa-star text-xl"></i>
+                                <i class="fa-solid fa-star text-lg"></i>
                             </button>
                         </div>
                         </div>
@@ -1289,7 +1289,7 @@
                      <div class="flex justify-between items-center mb-2">
                         <label for="tx-amount" class="block text-lg text-gray-700 font-medium mb-0">จำนวนเงิน (บาท) <span class="text-red-500">*</span></label>
                         <button type="button" id="toggle-calc-btn" class="text-purple-600 hover:text-purple-800 p-1 rounded-lg">
-                            <i class="fa-solid fa-calculator text-xl"></i>
+                            <i class="fa-solid fa-calculator text-lg"></i>
                         </button>
                     </div>
                     <input type="text" id="tx-amount" inputmode="decimal" placeholder="0.00 หรือ 50+20" class="w-full form-input text-lg text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:ring-purple-500 focus:border-purple-500" required>
@@ -1312,7 +1312,7 @@
                             hover:file:bg-purple-100"
                         >
                         <button type="button" id="clear-receipt-btn" class="text-red-500 hover:text-red-700 p-2 hidden">
-                            <i class="fa-solid fa-circle-xmark text-xl"></i>
+                            <i class="fa-solid fa-circle-xmark text-lg"></i>
                         </button>
                     </div>
                     <div id="receipt-preview-container" class="mt-3 hidden">
@@ -1365,7 +1365,7 @@
     <div id="account-form-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-[60]">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
             <div class="flex justify-between items-center mb-4">
-                <h2 id="account-modal-title" class="text-xl font-bold text-purple-600">แก้ไขบัญชี</h2>
+                <h2 id="account-modal-title" class="text-lg font-bold text-purple-600">แก้ไขบัญชี</h2>
                 <button id="account-modal-close-btn" class="text-gray-400 hover:text-red-500 text-4xl w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all absolute top-2 right-2 md:static md:w-auto md:h-auto md:hover:bg-transparent">
                     
                 </button>
@@ -1390,7 +1390,7 @@
                     <div class="relative">
                         <input type="text" id="edit-account-balance" inputmode="decimal" value="0" class="w-full form-input text-lg text-gray-700 bg-gray-50 border border-gray-200 rounded-xl pr-12" required>
                         <button type="button" id="toggle-edit-account-calc-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 text-purple-600 hover:text-purple-800 p-1 rounded-lg">
-                            <i class="fa-solid fa-calculator text-xl"></i>
+                            <i class="fa-solid fa-calculator text-lg"></i>
                         </button>
                     </div>
                     
@@ -1404,7 +1404,7 @@
                     <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
                         <div class="flex justify-between items-center mb-3">
                             <span class="text-sm text-gray-600">ยอดเงินปัจจุบัน:</span>
-                            <span id="modal-current-balance-display" class="font-bold text-xl text-blue-600">0.00</span>
+                            <span id="modal-current-balance-display" class="font-bold text-lg text-blue-600">0.00</span>
                         </div>
                         
                         <div class="flex gap-2 mb-3">
@@ -1503,7 +1503,7 @@
     <div id="icon-form-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-[60]">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto relative">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h2 class="text-xl font-bold text-purple-600">เลือกไอคอนสำหรับบัญชี <span id="icon-acc-name"></span></h2>
+                <h2 class="text-lg font-bold text-purple-600">เลือกไอคอนสำหรับบัญชี <span id="icon-acc-name"></span></h2>
                 <button id="icon-modal-close-btn" class="text-gray-400 hover:text-red-500 text-4xl w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all absolute top-2 right-2 md:static md:w-auto md:h-auto md:hover:bg-transparent">
                     
                 </button>
@@ -1529,7 +1529,7 @@
     <div id="recurring-form-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-[65]">
 		<div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
 			<div class="flex justify-between items-center mb-4">
-				<h2 class="text-xl font-bold text-purple-600">ตั้งค่ารายการประจำ</h2>
+				<h2 class="text-lg font-bold text-purple-600">ตั้งค่ารายการประจำ</h2>
 				<button id="rec-modal-close-btn" class="text-gray-400 hover:text-red-500 text-4xl w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-100 absolute top-2 right-2 md:static md:w-auto md:h-auto"></button>
 			</div>
 			
@@ -1594,7 +1594,7 @@
 	<div id="calculator-popover" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden transition-opacity duration-300" onclick="if(event.target === this) this.classList.add('hidden')">
         <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-[360px] mx-4 overflow-hidden transform transition-all scale-100 border border-gray-100 dark:border-gray-700">
             <div class="bg-purple-600 p-4 flex justify-between items-center">
-                <h3 class="text-white text-xl font-bold"><i class="fa-solid fa-calculator mr-2"></i>เครื่องคิดเลข</h3>
+                <h3 class="text-white text-lg font-bold"><i class="fa-solid fa-calculator mr-2"></i>เครื่องคิดเลข</h3>
                 <button type="button" onclick="document.getElementById('calculator-popover').classList.add('hidden')" class="text-white hover:text-purple-200 transition p-1">
                     <i class="fa-solid fa-xmark text-3xl"></i>
                 </button>
@@ -1637,7 +1637,7 @@
     <div id="account-calculator-popover" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden transition-opacity duration-300" onclick="if(event.target === this) this.classList.add('hidden')">
         <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-[360px] mx-4 overflow-hidden transform transition-all scale-100 border border-gray-100 dark:border-gray-700">
             <div class="bg-green-600 p-4 flex justify-between items-center">
-                <h3 class="text-white text-xl font-bold"><i class="fa-solid fa-wallet mr-2"></i>คำนวณยอดเงิน</h3>
+                <h3 class="text-white text-lg font-bold"><i class="fa-solid fa-wallet mr-2"></i>คำนวณยอดเงิน</h3>
                 <button type="button" onclick="document.getElementById('account-calculator-popover').classList.add('hidden')" class="text-white hover:text-green-200 transition p-1">
                     <i class="fa-solid fa-xmark text-3xl"></i>
                 </button>
@@ -1680,7 +1680,7 @@
     <div id="edit-account-calculator-popover" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden transition-opacity duration-300" onclick="if(event.target === this) this.classList.add('hidden')">
         <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-[360px] mx-4 overflow-hidden transform transition-all scale-100 border border-gray-100 dark:border-gray-700">
             <div class="bg-blue-600 p-4 flex justify-between items-center">
-                <h3 class="text-white text-xl font-bold"><i class="fa-solid fa-pen-to-square mr-2"></i>แก้ไขยอดเงิน</h3>
+                <h3 class="text-white text-lg font-bold"><i class="fa-solid fa-pen-to-square mr-2"></i>แก้ไขยอดเงิน</h3>
                 <button type="button" onclick="document.getElementById('edit-account-calculator-popover').classList.add('hidden')" class="text-white hover:text-blue-200 transition p-1">
                     <i class="fa-solid fa-xmark text-3xl"></i>
                 </button>
@@ -1736,7 +1736,7 @@
 				</div>
 
 			<div class="p-6 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
-				<button id="btn-notify-ack" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg transition transform active:scale-95">
+				<button id="btn-notify-ack" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-lg font-bold py-4 px-6 rounded-2xl shadow-lg transition transform active:scale-95">
 					รับทราบ
 				</button>
 				<button id="btn-notify-ignore" class="flex-1 bg-white border-2 border-gray-300 text-gray-500 hover:bg-gray-100 text-lg font-bold py-4 px-6 rounded-2xl transition">
@@ -1778,11 +1778,11 @@
 				<div>
 					<label class="block text-gray-700 dark:text-gray-300 font-bold mb-2 text-lg">กันลืม (Note)</label>
 					<input type="text" id="draft-note" 
-						   class="w-full py-3 px-4 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-xl text-xl focus:border-yellow-500 dark:focus:border-yellow-500 outline-none transition-all placeholder-gray-400" 
+						   class="w-full py-3 px-4 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-xl text-lg focus:border-yellow-500 dark:focus:border-yellow-500 outline-none transition-all placeholder-gray-400" 
 						   placeholder="ค่าอะไร...">
 				</div>
 				
-				<button onclick="saveQuickDraft()" class="w-full bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white font-black py-4 rounded-xl shadow-lg text-xl transition-transform active:scale-95 mt-2">
+				<button onclick="saveQuickDraft()" class="w-full bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white font-black py-4 rounded-xl shadow-lg text-lg transition-transform active:scale-95 mt-2">
 					บันทึกไว้ก่อน
 				</button>
 			</div>
@@ -1811,7 +1811,7 @@
 					<div class="relative">
 						<input type="text" id="voice-command-text" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 pr-12" placeholder="เช่น เปิดบัญชี, เปลี่ยนรหัสผ่าน" required>
 						<button type="button" id="btn-voice-command-mic" class="absolute inset-y-0 right-0 flex items-center pr-3 text-purple-600 hover:text-purple-800 dark:text-purple-400">
-							<i class="fa-solid fa-microphone text-xl"></i>
+							<i class="fa-solid fa-microphone text-lg"></i>
 						</button>
 					</div>
 					<p class="text-xs text-gray-400 mt-1">ผู้ใช้ต้องพูดตรงกับคำนี้ ระบบถึงจะทำตาม</p>
@@ -1881,7 +1881,7 @@
 	<div class="fixed bottom-28 right-5 z-[999]">
 		<button id="smart-voice-btn" onclick="activateGlobalVoice()" 
 				class="w-14 h-14 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-110 active:scale-90 border-2 border-white voice-ring group">
-			<i class="fa-solid fa-microphone text-xl group-hover:animate-pulse"></i>
+			<i class="fa-solid fa-microphone text-lg group-hover:animate-pulse"></i>
 		</button>
 	</div>
 	
@@ -1918,7 +1918,7 @@
 		<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6">
 			
             <div class="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-gray-800 z-10 pb-2 border-b border-gray-200 dark:border-gray-700">
-				<h3 class="text-xl font-bold text-purple-600">📂 กิจกรรมที่นำเข้า</h3>
+				<h3 class="text-lg font-bold text-purple-600">📂 กิจกรรมที่นำเข้า</h3>
 				
                 <div class="flex items-center gap-4">
                     <button id="btn-import-ics-modal" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm">
@@ -2006,7 +2006,7 @@
 	<div id="custom-notify-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 hidden z-[85] backdrop-blur-sm">
 		<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
 			<div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
-				<h2 class="text-xl font-bold text-purple-600 dark:text-purple-400 flex items-center gap-2">
+				<h2 class="text-lg font-bold text-purple-600 dark:text-purple-400 flex items-center gap-2">
 					<i class="fa-solid fa-bell"></i>
 					<span id="custom-notify-modal-title">ตั้งค่าการแจ้งเตือนพิเศษ</span>
 				</h2>
@@ -2198,7 +2198,7 @@
 				statusDisplay.innerText = "ข้อมูลเก็บในเครื่องนี้เท่านั้น";
 				statusDisplay.className = "text-xs md:text-sm text-gray-500 dark:text-gray-400 block";
 				
-				avatar.innerHTML = `<i class="fas fa-user text-gray-500 dark:text-gray-400 text-xl"></i>`;
+				avatar.innerHTML = `<i class="fas fa-user text-gray-500 dark:text-gray-400 text-lg"></i>`;
 				avatar.classList.add('bg-gray-200', 'dark:bg-gray-700');
 
 				btnLogin.style.display = 'inline-flex';
@@ -2256,7 +2256,7 @@
             <div class="w-16 h-16 md:w-20 md:h-20 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center mx-auto mb-4 text-purple-600 dark:text-purple-400 text-3xl md:text-4xl shadow-inner">
                 <i class="fa-solid fa-cloud-arrow-down animate-bounce"></i>
             </div>
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-2">มีอัปเดตใหม่!</h2>
+            <h2 class="text-lg md:text-2xl font-bold text-gray-800 dark:text-white mb-2">มีอัปเดตใหม่!</h2>
             <p class="text-[13px] md:text-sm text-gray-500 dark:text-gray-400 mb-5">กรุณาอัปเดตเพื่อให้การใช้งานลื่นไหลและสมบูรณ์ที่สุดครับ</p>
             
 			<div class="bg-gray-50 dark:bg-gray-900/30 p-3 md:p-4 rounded-xl mb-4 flex justify-between items-center border border-gray-100 dark:border-gray-700 shadow-sm">
@@ -2264,10 +2264,10 @@
                     <span class="block text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1.5">เวอร์ชันปัจจุบัน</span>
                     <span id="display-current-version" class="inline-block bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg text-sm md:text-base font-bold min-w-[70px]">-</span>
                 </div>
-                <div class="text-purple-400 mx-2 text-xl md:text-2xl"><i class="fa-solid fa-arrow-right-long"></i></div>
+                <div class="text-purple-400 mx-2 text-lg md:text-2xl"><i class="fa-solid fa-arrow-right-long"></i></div>
                 <div class="text-center w-full">
                     <span class="block text-xs md:text-sm text-purple-500 dark:text-purple-400 uppercase tracking-wider font-bold mb-1.5">เวอร์ชันใหม่</span>
-                    <span id="display-new-version" class="inline-block bg-purple-200 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-lg text-lg md:text-xl font-bold min-w-[70px] animate-pulse">-</span>
+                    <span id="display-new-version" class="inline-block bg-purple-200 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-lg text-lg md:text-lg font-bold min-w-[70px] animate-pulse">-</span>
                 </div>
             </div>
 

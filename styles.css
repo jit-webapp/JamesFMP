@@ -459,6 +459,14 @@ body.dark #notification-popover {
     --font-size-2xl: 1.875rem; /* หัวข้อหลัก (Title) */
     --font-size-3xl: 2.25rem;  /* ตัวเลขยอดเงิน */
     --font-size-4xl: 3rem;     /* ตัวเลขเน้นพิเศษ (ขยายเพิ่ม) */
+	@media (max-width: 640px) {
+		:root {
+			--font-size-base: 1rem;  /* ลดลงบนมือถือ */
+			--font-size-lg: 1.125rem;
+			/* ... */
+		}
+	}
+	
 }
 
 /* บังคับคลาสข้อความทั้งหมดในแอป ให้ดึงค่าจากศูนย์กลางควบคุม (Override คลาสเดิม) */
@@ -474,6 +482,34 @@ body.dark #notification-popover {
 /* ควบคุมระยะห่างบรรทัดให้สมดุลเสมอไม่ว่าฟอนต์จะขยายใหญ่แค่ไหน */
 body {
     line-height: 1.5 !important;
+}
+
+/* ปรับหัวข้อในแต่ละส่วน */
+h1, .h1, .page-header {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+h2, .h2, .section-title {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+/* ตัวเลขยอดเงินให้ดูเด่น */
+.amount-large, .balance-number {
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+/* ปรับระยะห่างในการ์ด */
+.card {
+    padding: 1.25rem;
+}
+
+/* ปรับขนาดปุ่มให้สัมพันธ์กัน */
+.btn {
+    font-size: var(--font-size-sm);
+    padding: 0.75rem 1.5rem;
 }
 
 /* =========================================

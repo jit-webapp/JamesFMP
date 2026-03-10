@@ -3918,21 +3918,37 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. ปุ่มสแกนหน้า Lock Screen
 		const bioUnlockBtn = document.getElementById('btn-bio-unlock');
 		if (bioUnlockBtn) {
+			// [แก้ไขขั้นเด็ดขาด] บังคับเปลี่ยนชนิดปุ่มไม่ให้เป็นปุ่ม Submit ฟอร์ม เพื่อป้องกันการแจ้งเตือนรหัสผ่านผิด
+			bioUnlockBtn.setAttribute('type', 'button'); 
+			
 			bioUnlockBtn.addEventListener('click', async (e) => {
-				// [แก้ไข] เพิ่ม e.preventDefault() เพื่อระงับการ Submit Form อัตโนมัติที่ทำให้ขึ้นว่ารหัสผ่านผิด
-				if (e) e.preventDefault(); 
+				if (e) {
+					e.preventDefault();
+					e.stopPropagation();
+				}
 				
-				const success = await verifyBiometricIdentity();
-				if (success) {
-					unlockAppSuccess();
-				} else {
-					Swal.fire({
-						icon: 'error',
-						title: 'ไม่ผ่าน',
-						text: 'ไม่สามารถยืนยันตัวตนได้',
-						timer: 1500,
-						showConfirmButton: false
-					});
+				// เปลี่ยนไอคอนเป็นกำลังโหลดขณะรอสแกน
+				const originalHtml = bioUnlockBtn.innerHTML;
+				bioUnlockBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+				
+				try {
+					const success = await verifyBiometricIdentity();
+					if (success) {
+						unlockAppSuccess();
+					} else {
+						Swal.fire({
+							icon: 'error',
+							title: 'ไม่ผ่าน',
+							text: 'ไม่สามารถยืนยันตัวตนได้',
+							timer: 1500,
+							showConfirmButton: false
+						});
+					}
+				} catch (err) {
+					console.error("Biometric error:", err);
+				} finally {
+					// คืนค่าไอคอนเดิม
+					bioUnlockBtn.innerHTML = originalHtml;
 				}
 			});
 		}
@@ -4762,21 +4778,31 @@ document.addEventListener('DOMContentLoaded', () => {
 						checkAndProcessRecurring();
 					}
 					
-					// [แก้ไข] เพิ่มระบบ Auto Scan Biometric เมื่อสลับแอปกลับมาและหน้าจอล็อคอยู่
+					// [แก้ไข] จัดการระบบ Auto Scan Biometric เมื่อสลับแอปกลับมาและหน้าจอล็อคอยู่
 					const lockScreen = document.getElementById('app-lock-screen');
 					if (lockScreen && !lockScreen.classList.contains('hidden') && state.biometricId) {
-						// เรียกใช้ async function ทันทีที่แอปกลับมา Active
-						(async () => {
+						// ต้องหน่วงเวลาเล็กน้อยให้เบราว์เซอร์มือถือพร้อมทำงานหลังสลับแอป
+						setTimeout(async () => {
 							try {
 								console.log("App resumed: Attempting auto-biometric scan...");
+								// พยายามเรียก Auto Scan (อาจถูกบล็อกได้ในมือถือบางรุ่นถ้าไม่มีการแตะหน้าจอก่อน)
 								const success = await verifyBiometricIdentity();
 								if (success) {
 									unlockAppSuccess();
 								}
 							} catch (err) {
-								console.warn("Auto scan on resume blocked:", err);
+								console.warn("Auto scan on resume blocked by mobile browser security:", err);
+								// หากถูกเบราว์เซอร์บล็อก (เนื่องจากข้อกำหนดต้องเอานิ้วแตะจอก่อน) 
+								// ให้ปุ่มสแกนนิ้วกระพริบเตือนให้กดเบาๆ เพื่อเรียกร้องความสนใจ
+								const bioBtn = document.getElementById('btn-bio-unlock');
+								if (bioBtn) {
+									bioBtn.classList.add('animate-bounce', 'ring-4', 'ring-purple-500', 'rounded-full');
+									setTimeout(() => {
+										bioBtn.classList.remove('animate-bounce', 'ring-4', 'ring-purple-500', 'rounded-full');
+									}, 3000);
+								}
 							}
-						})();
+						}, 300);
 					}
 				}
 			});
@@ -18162,5 +18188,105 @@ document.addEventListener('DOMContentLoaded', () => {
 			// =========================================================================
 			window.renderListPage = renderListPage;
 			window.updateAccountDropdown = updateAccountDropdown;
+			
+			// ==========================================
+			// [ปรับปรุง] ระบบปุ่มลบข้อความ (X) ในช่องกรอกข้อมูลต่างๆ
+			// ==========================================
+			(function addClearButtons() {
+				// รายการ ID ของช่อง Input ที่ต้องการให้มีปุ่ม X (รวบรวมจากทั้งระบบ)
+				const targetInputIds = [
+					// ฟอร์มเพิ่ม/แก้ไขธุรกรรม
+					'tx-name',        // ชื่อรายการ
+					'tx-amount',      // จำนวนเงิน
+					'tx-desc',        // คำอธิบาย/หมายเหตุ
+
+					// ฟอร์มเพิ่ม/แก้ไขบัญชี
+					'input-account-name',
+					'input-account-balance',
+					'edit-account-name',
+					'edit-account-balance',
+
+					// หมวดหมู่และรายการที่ใช้บ่อย
+					'input-income-cat',
+					'input-expense-cat',
+					'input-frequent-item',
+
+					// ตั้งค่า LINE
+					'input-line-nickname',
+					'input-line-user-id',
+
+					// คำสั่งเสียง (สอนคำสั่ง)
+					//'voice-command-text',
+
+					// การแจ้งเตือนพิเศษ
+					'modal-custom-notify-msg',
+
+					// จดด่วน (Quick Draft)
+					'draft-amount',
+					'draft-note',
+
+					// รายการประจำ (Recurring)
+					'rec-name',
+					'rec-amount',
+
+					// หน้าล็อค (unlock)
+					'unlock-password'
+				];
+
+				targetInputIds.forEach(id => {
+					const input = document.getElementById(id);
+					if (!input) return;                     // ไม่มี element ข้ามไป
+					if (input.hasAttribute('data-clearable')) return; // ป้องกันการสร้างซ้ำ
+
+					// สร้าง wrapper
+					const wrapper = document.createElement('div');
+					wrapper.className = 'relative flex items-center w-full';
+
+					// ย้าย input เข้า wrapper
+					input.parentNode.insertBefore(wrapper, input);
+					wrapper.appendChild(input);
+
+					// เผื่อที่ว่างด้านขวาสำหรับปุ่ม X
+					input.style.paddingRight = '2.5rem';
+
+					// สร้างปุ่ม X
+					const clearBtn = document.createElement('button');
+					clearBtn.type = 'button';
+					clearBtn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+					clearBtn.className = 'absolute right-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hidden transition-colors outline-none';
+					clearBtn.style.zIndex = '10';
+
+					wrapper.appendChild(clearBtn);
+					input.setAttribute('data-clearable', 'true'); // mark ว่าสร้างแล้ว
+
+					// ฟังก์ชันแสดง/ซ่อนปุ่ม
+					const toggleClearBtn = () => {
+						if (input.value && input.value.toString().length > 0) {
+							clearBtn.classList.remove('hidden');
+						} else {
+							clearBtn.classList.add('hidden');
+						}
+					};
+
+					// ตรวจจับการพิมพ์
+					input.addEventListener('input', toggleClearBtn);
+
+					// ตรวจสอบค่าปัจจุบัน (เผื่อมีข้อมูลอยู่แล้ว)
+					setTimeout(toggleClearBtn, 500);
+
+					// เมื่อกดปุ่ม X
+					clearBtn.addEventListener('click', (e) => {
+						e.preventDefault();
+						input.value = '';
+						clearBtn.classList.add('hidden');
+						input.focus();
+
+						// กระตุ้น event เพื่อให้ระบบอื่นรู้ว่าค่าเปลี่ยน
+						input.dispatchEvent(new Event('input', { bubbles: true }));
+						input.dispatchEvent(new Event('change', { bubbles: true }));
+					});
+				});
+			})();
+			
 
         });
