@@ -159,6 +159,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // เปลี่ยนที่ html tag เพื่อให้ทั้งแอปขยายตาม
         document.documentElement.style.fontSize = fontSettings[index].size;
         localStorage.setItem('appFontIndex', index);
+		
+		// [แก้ไข] บังคับให้กราฟ (Chart.js) ใช้ขนาดตัวอักษรมาตรฐานเดียวกัน และอัปเดตตามหน้าตั้งค่า
+		if (typeof Chart !== 'undefined') {
+			Chart.defaults.font.size = parseInt(fontSettings[index].size);
+			Chart.defaults.font.family = "'Prompt', sans-serif";
+		}
     }
 	
 	function formatLocalDate(date) {
@@ -5899,8 +5905,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			iconHtml = `<div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm"><i class="fa-solid fa-money-bill-transfer text-xs"></i></div>`;
 			name = `<span class="font-bold text-gray-800 dark:text-gray-100 text-sm truncate flex items-center leading-tight">${escapeHTML(tx.name)}${receiptIcon}${futureBadge}</span>`;
 			category = `<div class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-1 leading-tight">
-				<span class="truncate max-w-[60px] sm:max-w-[100px]">${fromAccName}</span> 
-				<i class="fa-solid fa-arrow-right text-xs text-gray-400"></i> 
+				<span class="truncate max-w-[60px] sm:max-w-[100px]">${fromAccName}</span>&nbsp;
+				<i class="fa-solid fa-arrow-right text-xs text-gray-400"></i>&nbsp;
 				<span class="truncate max-w-[60px] sm:max-w-[100px]">${toAccName}</span>
 			</div>`;
 			amount = formatCurrency(tx.amount);
@@ -5914,7 +5920,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			name = `<span class="font-bold text-gray-800 dark:text-gray-100 text-sm truncate flex items-center leading-tight">${escapeHTML(tx.name)}${receiptIcon}${futureBadge}</span>`;
 			category = `<div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5 leading-tight">
 						<span class="truncate max-w-[70px] sm:max-w-[110px] inline-block font-medium">${escapeHTML(tx.category)}</span>
-						<span class="text-gray-300 dark:text-gray-600 text-xs">•</span>
+						<span class="text-gray-300 dark:text-gray-600 text-xs">&bull;</span>
 						<span class="text-purple-600 dark:text-purple-400 truncate max-w-[70px] sm:max-w-[110px] inline-block">${fromAccName}</span>
 					</div>`;
 			amount = formatCurrency(tx.amount);
@@ -5940,23 +5946,23 @@ document.addEventListener('DOMContentLoaded', () => {
 							${category}
 							${noteHtml}
 						</div>
-						<div class="flex flex-col items-end flex-shrink-0 text-right justify-center gap-0.5">
+						
+						<div class="flex flex-col items-end flex-shrink-0 text-right justify-center gap-1">
 							<span class="text-sm font-bold ${amountClass} whitespace-nowrap leading-none">${amountSign}${amount}</span>
-							
-							<div class="flex items-center gap-1.5 mt-0.5">
-								<span class="text-xs text-gray-400 dark:text-gray-500 leading-none">
-									${mobileDateStr} ${formattedTime}
-								</span>
-								<div class="flex items-center gap-1.5 border-l border-gray-200 dark:border-gray-600 pl-1.5 opacity-80">
-									<button class="edit-btn text-blue-500 hover:text-blue-700 p-0" data-id="${tx.id}" title="แก้ไข">
-										<i class="fa-solid fa-pen text-xs"></i>
-									</button>
-									<button class="delete-btn text-red-500 hover:text-red-700 p-0" data-id="${tx.id}" title="ลบ">
-										<i class="fa-solid fa-trash text-xs"></i>
-									</button>
-								</div>
-							</div>
+							<span class="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 leading-none">
+								${mobileDateStr} ${formattedTime}
+							</span>
 						</div>
+
+						<div class="flex flex-col items-center justify-center gap-2 border-l border-gray-200 dark:border-gray-600 pl-2 ml-1 opacity-80 shrink-0">
+							<button class="edit-btn text-blue-500 hover:text-blue-700 p-0.5" data-id="${tx.id}" title="แก้ไข">
+								<i class="fa-solid fa-pen text-[11px]"></i>
+							</button>
+							<button class="delete-btn text-red-500 hover:text-red-700 p-0.5" data-id="${tx.id}" title="ลบ">
+								<i class="fa-solid fa-trash text-[11px]"></i>
+							</button>
+						</div>
+						
 					</div>
 				</td>
 
@@ -5992,6 +5998,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			</tr>
 		`;
 	}
+	
    function renderPieChart(transactions) {
         // [แก้ไข] กำหนดวันปัจจุบัน (สิ้นสุดวัน)
 		const today = new Date();
@@ -6860,13 +6867,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			// [ปรับปรุง] Map index เดิมมาใช้ตอนลบและแก้ไข
 			const dailyNotif = (state.customNotifications || [])
-                .map((n, index) => ({ ...n, originalIndex: index }))
-                .filter(n => {
-				    if (typeof isNotificationDue === 'function') {
-					    return isNotificationDue(n, dateStr);
-				    }
-				    return n.date === dateStr;
-			    });
+				.map((n, index) => ({ ...n, originalIndex: index }))
+				.filter(n => {
+					if (typeof isNotificationDue === 'function') {
+						return isNotificationDue(n, dateStr);
+					}
+					return n.date === dateStr;
+				});
 			
 			if (dailyImported.length === 0 && dailyNotif.length === 0) {
 				let emptyHtml = `
@@ -6887,6 +6894,13 @@ document.addEventListener('DOMContentLoaded', () => {
 					showConfirmButton: false,
 					showCloseButton: true,
 					didOpen: () => {
+						// [แก้ไข 1] บังคับลบ X และใส่คำว่า "ปิด" แทนที่ด้วย JavaScript
+						const closeBtn = Swal.getCloseButton();
+						if (closeBtn) {
+							closeBtn.innerHTML = 'ปิด';
+							closeBtn.className = 'swal2-close !w-auto !h-auto !text-sm !font-bold !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-700 dark:hover:!bg-gray-600 !text-gray-700 dark:!text-gray-200 !px-4 !py-1.5 !rounded-lg !shadow-sm !border !border-gray-200 dark:!border-gray-600 !mt-2 !mr-2';
+						}
+
 						const btnNotifyEmpty = document.getElementById('cal-imported-add-notify-btn-empty');
 						if (btnNotifyEmpty) {
 							btnNotifyEmpty.addEventListener('click', () => {
@@ -6899,7 +6913,9 @@ document.addEventListener('DOMContentLoaded', () => {
 							});
 						}
 					},
-					customClass: { popup: state.isDarkMode ? 'swal2-popup' : '' },
+					customClass: { 
+						popup: state.isDarkMode ? 'swal2-popup' : ''
+					},
 					background: state.isDarkMode ? '#1a1a1a' : '#fff',
 					color: state.isDarkMode ? '#e5e7eb' : '#545454'
 				});
@@ -6919,17 +6935,17 @@ document.addEventListener('DOMContentLoaded', () => {
 					html += `
 						<li class="flex justify-between items-center bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-100 dark:border-orange-800/50 text-sm shadow-sm gap-2 transition-all">
 							<div class="flex-1 min-w-0">
-                                <span class="font-bold text-orange-800 dark:text-orange-200 block truncate">${escapeHTML(n.message)}</span>
-                                <div class="mt-1">${timeBadge}</div>
-                            </div>
-                            <div class="flex items-center gap-1 shrink-0">
-                                <button onclick="editNotifyFromCal('${dateStr}', ${n.originalIndex})" class="text-blue-500 hover:text-blue-700 bg-blue-100 dark:bg-blue-900/40 p-2 rounded-md transition hover:scale-110" title="แก้ไข">
-                                    <i class="fa-solid fa-pen text-xs"></i>
-                                </button>
-                                <button onclick="deleteNotifyFromCal(${n.originalIndex})" class="text-red-500 hover:text-red-700 bg-red-100 dark:bg-red-900/40 p-2 rounded-md transition hover:scale-110" title="ลบ">
-                                    <i class="fa-solid fa-trash text-xs"></i>
-                                </button>
-                            </div>
+								<span class="font-bold text-orange-800 dark:text-orange-200 block truncate">${escapeHTML(n.message)}</span>
+								<div class="mt-1">${timeBadge}</div>
+							</div>
+							<div class="flex items-center gap-1 shrink-0">
+								<button onclick="editNotifyFromCal('${dateStr}', ${n.originalIndex})" class="text-blue-500 hover:text-blue-700 bg-blue-100 dark:bg-blue-900/40 p-2 rounded-md transition hover:scale-110" title="แก้ไข">
+									<i class="fa-solid fa-pen text-xs"></i>
+								</button>
+								<button onclick="deleteNotifyFromCal(${n.originalIndex})" class="text-red-500 hover:text-red-700 bg-red-100 dark:bg-red-900/40 p-2 rounded-md transition hover:scale-110" title="ลบ">
+									<i class="fa-solid fa-trash text-xs"></i>
+								</button>
+							</div>
 						</li>`;
 				});
 				html += '</ul></div>';
@@ -6978,6 +6994,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				showConfirmButton: false,
 				showCloseButton: true,
 				didOpen: () => {
+					// [แก้ไข 2] บังคับลบ X และใส่คำว่า "ปิด" สำหรับกรณีมีกิจกรรม
+					const closeBtn = Swal.getCloseButton();
+					if (closeBtn) {
+						closeBtn.innerHTML = 'ปิด';
+						closeBtn.className = 'swal2-close !w-auto !h-auto !text-sm !font-bold !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-700 dark:hover:!bg-gray-600 !text-gray-700 dark:!text-gray-200 !px-4 !py-1.5 !rounded-lg !shadow-sm !border !border-gray-200 dark:!border-gray-600 !mt-2 !mr-2';
+					}
+
 					const btnNotify = document.getElementById('cal-imported-add-notify-btn');
 					if (btnNotify) {
 						btnNotify.addEventListener('click', () => {
@@ -7224,69 +7247,76 @@ document.addEventListener('DOMContentLoaded', () => {
         if (netTotal < 0) netClass = 'text-red-700';
 
         Swal.fire({
-            title: '', 
-            html: headerHtml + html, 
-            footer: `
-                <div class="grid grid-cols-4 gap-2 text-center text-lg">
-                    <div>
-                        <div class="text-sm font-semibold text-green-700">รายรับ</div>
-                        <div class="font-bold text-green-600">${formatCurrency(totalIncome)}</div>
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold text-red-700">รายจ่าย</div>
-                        <div class="font-bold text-red-600">${formatCurrency(totalExpense)}</div>
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold text-blue-700">โอนย้าย</div>
-                        <div class="font-bold text-blue-600">${formatCurrency(totalTransfer)}</div>
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold text-gray-800">คงเหลือ</div>
-                        <div class="font-bold ${netClass}">${formatCurrency(netTotal)}</div>
-                    </div>
-                </div>
-            `,
-            width: 600,
-            showConfirmButton: false, 
-            showCloseButton: true,
-            didOpen: () => {
-                const btnAdd = document.getElementById('cal-add-tx-btn');
-                if(btnAdd) {
-                    btnAdd.addEventListener('click', () => {
-                        Swal.close(); 
-                        openModal(null, null, date); 
-                    });
-                }
-                
-                const btnNotify = document.getElementById('cal-add-notify-btn');
-                if(btnNotify) {
-                    btnNotify.addEventListener('click', () => {
-                        Swal.close(); 
-                        setTimeout(() => {
-                            openCustomNotifyModal(date); 
-                        }, 300);
-                    });
-                }
-                
-                document.querySelectorAll('.view-receipt-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const base64 = e.currentTarget.dataset.base64;
-                        if (base64) {
-                            Swal.fire({
-                                imageUrl: base64,
-                                imageAlt: 'Receipt Image',
-                                showCloseButton: true,
-                                showConfirmButton: false,
-                                customClass: {
-                                    image: 'max-w-full max-h-[80vh] object-contain',
-                                    popup: state.isDarkMode ? 'swal2-popup' : ''
-                                }
-                            });
-                        }
-                    });
-                });
-            }
-        });
+			title: '',
+			html: headerHtml + html,
+			footer: `
+				<div class="grid grid-cols-4 gap-2 text-center text-lg w-full">
+					<div>
+						<div class="text-sm font-semibold text-green-700">รายรับ</div>
+						<div class="font-bold text-green-600">${formatCurrency(totalIncome)}</div>
+					</div>
+					<div>
+						<div class="text-sm font-semibold text-red-700">รายจ่าย</div>
+						<div class="font-bold text-red-600">${formatCurrency(totalExpense)}</div>
+					</div>
+					<div>
+						<div class="text-sm font-semibold text-blue-700">โอนย้าย</div>
+						<div class="font-bold text-blue-600">${formatCurrency(totalTransfer)}</div>
+					</div>
+					<div>
+						<div class="text-sm font-semibold text-gray-800">คงเหลือ</div>
+						<div class="font-bold ${netClass}">${formatCurrency(netTotal)}</div>
+					</div>
+				</div>
+			`,
+			width: 600,
+			showConfirmButton: false,
+			showCloseButton: true,
+			closeButtonHtml: 'ปิด',
+			customClass: {
+				closeButton: '!w-auto !h-auto !text-sm !font-bold !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-700 dark:hover:!bg-gray-600 !text-gray-700 dark:!text-gray-200 !px-4 !py-1.5 !rounded-lg !shadow-sm !border !border-gray-200 dark:!border-gray-600 !mt-2 !mr-2',
+				popup: state.isDarkMode ? 'swal2-popup' : ''
+			},
+			didOpen: () => {
+				const btnAdd = document.getElementById('cal-add-tx-btn');
+				if(btnAdd) {
+					btnAdd.addEventListener('click', () => {
+						Swal.close();
+						openModal(null, null, date);
+					});
+				}
+				
+				const btnNotify = document.getElementById('cal-add-notify-btn');
+				if(btnNotify) {
+					btnNotify.addEventListener('click', () => {
+						Swal.close();
+						setTimeout(() => {
+							openCustomNotifyModal(date);
+						}, 300);
+					});
+				}
+				
+				document.querySelectorAll('.view-receipt-btn').forEach(btn => {
+					btn.addEventListener('click', (e) => {
+						const base64 = e.currentTarget.dataset.base64;
+						if (base64) {
+							Swal.fire({
+								imageUrl: base64,
+								imageAlt: 'Receipt Image',
+								showCloseButton: true,
+								closeButtonHtml: 'ปิด',
+								showConfirmButton: false,
+								customClass: {
+									closeButton: '!w-auto !h-auto !text-sm !font-bold !bg-gray-100 hover:!bg-gray-200 dark:!bg-gray-700 dark:hover:!bg-gray-600 !text-gray-700 dark:!text-gray-200 !px-4 !py-1.5 !rounded-lg !shadow-sm !border !border-gray-200 dark:!border-gray-600 !mt-2 !mr-2',
+									image: 'max-w-full max-h-[80vh] object-contain',
+									popup: state.isDarkMode ? 'swal2-popup' : ''
+								}
+							});
+						}
+					});
+				});
+			}
+		});
     }
 
 	function renderAccountsPage() {

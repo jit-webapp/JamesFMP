@@ -444,3 +444,69 @@ body.dark #notification-popover {
 .fc-event.money-event[style*="background-color: #3b82f6"] {
     /* อาจเพิ่มลูกศรหรือไอคอน */
 }
+
+/* =========================================
+   [แก้ไข] ระบบศูนย์กลางควบคุมขนาดตัวอักษร (Proportional Typography Scale)
+   ให้สัมพันธ์กับการตั้งค่า Slider โดยรักษาระดับความเล็ก-ใหญ่ของหัวข้อไว้
+   ========================================= */
+:root {
+    /* ขยับสเกลทุกระดับให้ใหญ่ขึ้น 1 ขั้น เพื่อให้ค่า 'ปกติ' อ่านง่ายขึ้น */
+    --font-size-xs: 0.875rem;  /* ขยับจากเดิม 0.75 (เล็กมาก -> เล็ก) */
+    --font-size-sm: 1rem;      /* ขยับจากเดิม 0.875 (เล็ก -> ปกติเดิม) */
+    --font-size-base: 1.125rem;/* ขนาดมาตรฐานใหม่ ใหญ่ขึ้นชัดเจนเต็มตา */
+    --font-size-lg: 1.25rem;   /* ขนาดใหญ่ */
+    --font-size-xl: 1.5rem;    /* หัวข้อรอง */
+    --font-size-2xl: 1.875rem; /* หัวข้อหลัก (Title) */
+    --font-size-3xl: 2.25rem;  /* ตัวเลขยอดเงิน */
+    --font-size-4xl: 3rem;     /* ตัวเลขเน้นพิเศษ (ขยายเพิ่ม) */
+}
+
+/* บังคับคลาสข้อความทั้งหมดในแอป ให้ดึงค่าจากศูนย์กลางควบคุม (Override คลาสเดิม) */
+.text-xs { font-size: var(--font-size-xs) !important; }
+.text-sm { font-size: var(--font-size-sm) !important; }
+.text-base { font-size: var(--font-size-base) !important; }
+.text-lg { font-size: var(--font-size-lg) !important; }
+.text-xl { font-size: var(--font-size-xl) !important; }
+.text-2xl { font-size: var(--font-size-2xl) !important; }
+.text-3xl { font-size: var(--font-size-3xl) !important; }
+.text-4xl { font-size: var(--font-size-4xl) !important; }
+
+/* ควบคุมระยะห่างบรรทัดให้สมดุลเสมอไม่ว่าฟอนต์จะขยายใหญ่แค่ไหน */
+body {
+    line-height: 1.5 !important;
+}
+
+/* =========================================
+   [แก้ไข] บังคับเปลี่ยนปุ่ม X ในส่วนหัวของหน้าต่างทุก Modal ให้เป็นปุ่ม "ปิด" อัตโนมัติ
+   ========================================= */
+[id$="-close-btn"], [id$="-close"], button[onclick*="closeQuickDraftModal"] {
+    background-color: #f3f4f6 !important;
+    color: #374151 !important;
+    padding: 0.375rem 1.25rem !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* สำหรับ Dark Mode */
+body.dark [id$="-close-btn"], body.dark [id$="-close"], body.dark button[onclick*="closeQuickDraftModal"] {
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+    border-color: #4b5563 !important;
+}
+
+/* ซ่อนไอคอนกากบาท (X) ของเดิมทิ้ง */
+[id$="-close-btn"] i, [id$="-close"] i, button[onclick*="closeQuickDraftModal"] i {
+    display: none !important;
+}
+
+/* ใส่ข้อความคำว่า "ปิด" ลงไปแทนที่ */
+[id$="-close-btn"]::after, [id$="-close"]::after, button[onclick*="closeQuickDraftModal"]::after {
+    content: "ปิด";
+}
+
