@@ -2179,13 +2179,58 @@ document.addEventListener('DOMContentLoaded', () => {
 				// 1. ซ่อนหน้าจอ Lock Screen
 				document.getElementById('app-lock-screen').classList.add('hidden'); 
 				document.getElementById('smart-voice-btn')?.classList.remove('hidden');
-				// 2. ถ้าเป็นการเปิดครั้งแรก (ยังไม่มีหน้าไหนแสดง) ให้ไปหน้า Home และเรียก onAppStart
-				if (document.getElementById('page-home').style.display === 'none' && 
-					document.getElementById('page-list').style.display === 'none') {
-						document.getElementById('page-home').style.display = 'block';
-						currentPage = 'home';
-						onAppStart(); 
-						history.replaceState({ pageId: 'page-home' }, null, '#home');
+				
+				// [แก้ไข] 2. ตรวจสอบสถานะว่าเปิดแอปครั้งแรก หรือ ปลดล็อคจากการพักหน้าจอ
+				if (!window.hasAppStartedFlag) {
+					// กรณีเปิดแอปครั้งแรก (เข้าสู่ระบบครั้งแรกของ Session)
+					window.hasAppStartedFlag = true;
+					document.getElementById('page-home').style.display = 'block';
+					currentPage = 'home';
+					onAppStart(); 
+					history.replaceState({ pageId: 'page-home' }, null, '#home');
+				} else {
+					// กรณีปลดล็อคจากระบบ Auto Lock (แอปเคยโหลดมาแล้ว)
+					// ให้กลับไปหน้าเดิมที่ค้างไว้ก่อนถูกล็อค
+					document.getElementById('page-' + currentPage).style.display = 'block';
+					
+					// บังคับอัปเดตสีของไอคอน Bottom Nav ให้แอคทีฟตรงกับหน้าปัจจุบัน
+					if (typeof updateBottomNavActive === 'function') {
+						updateBottomNavActive('page-' + currentPage);
+					}
+					
+					// อัปเดตสีเมนู Sidebar และ Navbar บนมือถือ/PC ให้ตรงกันด้วย
+					const getEl = (id) => document.getElementById(id);
+					const navButtons = [
+						getEl('nav-home'), getEl('nav-list'), getEl('nav-calendar'), getEl('nav-accounts'), getEl('nav-settings'), getEl('nav-guide')
+					];
+					navButtons.forEach(btn => {
+						if(btn) {
+							btn.classList.remove('text-purple-600');
+							btn.classList.add('text-gray-600');
+						}
+					});
+
+					const mobileNavButtons = {
+						'page-home': getEl('nav-home-mobile'), 'page-list': getEl('nav-list-mobile'), 'page-calendar': getEl('nav-calendar-mobile'),
+						'page-accounts': getEl('nav-accounts-mobile'), 'page-settings': getEl('nav-settings-mobile'), 'page-guide': getEl('nav-guide-mobile')
+					};
+					Object.values(mobileNavButtons).forEach(btn => {
+						if(btn) {
+							btn.classList.remove('text-purple-600');
+							btn.classList.add('text-gray-600');
+						}
+					});
+
+					const currentNavEl = getEl('nav-' + currentPage);
+					if (currentNavEl) {
+						currentNavEl.classList.add('text-purple-600');
+						currentNavEl.classList.remove('text-gray-600');
+					}
+					const currentMobileNavEl = mobileNavButtons['page-' + currentPage];
+					if (currentMobileNavEl) {
+						currentMobileNavEl.classList.add('text-purple-600');
+						currentMobileNavEl.classList.remove('text-gray-600');
+					}
 				}
 				
 				// 3. รีเซ็ตค่ารหัสผ่านและปุ่ม
@@ -2203,7 +2248,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// [ใหม่] 6. หน่วงเวลา 2 วินาที แล้วค่อยเช็คการแจ้งเตือน
 				setTimeout(() => {
-					checkNotifications();
+					if(typeof checkNotifications === 'function') {
+						checkNotifications();
+					}
 				}, 2000);
 
 			}, 100);
@@ -3863,23 +3910,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 2. ปุ่มสแกนหน้า Lock Screen
-        const bioUnlockBtn = document.getElementById('btn-bio-unlock');
-        if (bioUnlockBtn) {
-            bioUnlockBtn.addEventListener('click', async () => {
-                const success = await verifyBiometricIdentity();
-                if (success) {
-                    unlockAppSuccess(); 
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ไม่ผ่าน',
-                        text: 'ไม่สามารถยืนยันตัวตนได้',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                }
-            });
-        }
+		const bioUnlockBtn = document.getElementById('btn-bio-unlock');
+		if (bioUnlockBtn) {
+			bioUnlockBtn.addEventListener('click', async (e) => {
+				// [แก้ไข] เพิ่ม e.preventDefault() เพื่อระงับการ Submit Form อัตโนมัติที่ทำให้ขึ้นว่ารหัสผ่านผิด
+				if (e) e.preventDefault(); 
+				
+				const success = await verifyBiometricIdentity();
+				if (success) {
+					unlockAppSuccess();
+				} else {
+					Swal.fire({
+						icon: 'error',
+						title: 'ไม่ผ่าน',
+						text: 'ไม่สามารถยืนยันตัวตนได้',
+						timer: 1500,
+						showConfirmButton: false
+					});
+				}
+			});
+		}
 		
 		// Line User ID
 		const btnSaveLineId = getEl('btn-save-line-id');
@@ -4704,6 +4754,23 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (document.visibilityState === 'visible') {
 					if (typeof checkAndProcessRecurring === 'function') {
 						checkAndProcessRecurring();
+					}
+					
+					// [แก้ไข] เพิ่มระบบ Auto Scan Biometric เมื่อสลับแอปกลับมาและหน้าจอล็อคอยู่
+					const lockScreen = document.getElementById('app-lock-screen');
+					if (lockScreen && !lockScreen.classList.contains('hidden') && state.biometricId) {
+						// เรียกใช้ async function ทันทีที่แอปกลับมา Active
+						(async () => {
+							try {
+								console.log("App resumed: Attempting auto-biometric scan...");
+								const success = await verifyBiometricIdentity();
+								if (success) {
+									unlockAppSuccess();
+								}
+							} catch (err) {
+								console.warn("Auto scan on resume blocked:", err);
+							}
+						})();
 					}
 				}
 			});
