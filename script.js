@@ -14910,6 +14910,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		// ตัวแปรสำหรับ tooltip (เมื่อกระดิก)
 		let wiggleTooltip = null;
 		const WIGGLE_MESSAGES = [
+			"คุณสามารถสอนฉันได้นะ",
 			"ลองพูด 'เปิดหน้าแรก' สิ",
 			"พูด 'รายจ่ายวันนี้' ให้ฉันสรุปให้",
 			"ฉันช่วยคุณค้นหารายการได้นะ",
