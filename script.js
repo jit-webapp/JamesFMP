@@ -2020,6 +2020,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		
 		async function initApp() {
 			try {
+				// ✅ ลงทะเบียน ChartDataLabels เพียงครั้งเดียว (ป้องกัน error _listened)
+				if (typeof ChartDataLabels !== 'undefined' && Chart && !Chart.registry.plugins.get('datalabels')) {
+					Chart.register(ChartDataLabels);
+				}
 				// [2] โหลดขนาดตัวอักษรที่บันทึกไว้
 				let savedFontIndex = localStorage.getItem('appFontIndex');
 				if (savedFontIndex === null) savedFontIndex = 2; // *** แก้เป็น 2 (ปกติ) ***
@@ -14140,11 +14144,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				if(container) container.classList.remove('hidden');
 
-				// ลงทะเบียน Plugin ถ้ามี (ป้องกัน error)
-				if (typeof ChartDataLabels !== 'undefined') {
-					Chart.register(ChartDataLabels);
-				}
-
 				// 1. เตรียมข้อมูล
 				// ------------------------------------------
 				const catMap = {};
@@ -14936,7 +14935,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			"ลองพูด 'ตั้งค่างบประมาณ'",
 			"ฉันช่วยคุณลืมรหัสผ่าน พูด 'ช่วยเหลือ'",
 			"พูด'บันทึก' เพื่อยืนยันรายการ",
-			"ลองพูด'โอนเงินเข้าบัญชีออมทรัพย์'",
 			"พูด'รายจ่าย' เพื่อดูสถิติ",
 			"ลองพูด'ปิดหน้าต่าง' เพื่อยกเลิก",
 			"พูด'ย้อนกลับ' เพื่อ undo รายการ"
@@ -14995,7 +14993,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			tooltip.style.left = left + 'px';
 			tooltip.style.top = targetY + 'px';
 			tooltip.style.transform = 'none';
-			tooltip.style.opacity = '1';
+			tooltip.style.opacity = '0.5';
 
 			if (tooltipHideTimer) clearTimeout(tooltipHideTimer);
 			tooltipHideTimer = setTimeout(() => {

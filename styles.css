@@ -569,4 +569,5 @@ body.dark [id$="-close-btn"], body.dark [id$="-close"], body.dark button[onclick
 .smart-voice-wiggle {
     animation: wiggle 0.6s ease-in-out infinite;
     transform-origin: center center;
+    opacity: 0.75; /* ปุ่มจะจางลงตลอดเวลาที่กระดิก */
 }
