@@ -8925,60 +8925,210 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openAccountModal(accountId = null, closeOnly = false) {
-        const modal = document.getElementById('account-form-modal');
-        if (closeOnly) {
-            modal.classList.add('hidden');
-            document.getElementById('edit-account-calculator-popover').classList.add('hidden');
-            return;
-        }
-        
-        document.getElementById('account-calculator-popover').classList.add('hidden');
+		const modal = document.getElementById('account-form-modal');
+		if (closeOnly) {
+			modal.classList.add('hidden');
+			document.getElementById('edit-account-calculator-popover').classList.add('hidden');
+			return;
+		}
+		document.getElementById('account-calculator-popover').classList.add('hidden');
+		const form = document.getElementById('account-form');
+		form.reset();
+		const getEl = (id) => document.getElementById(id);
+		const acc = state.accounts.find(a => a.id === accountId);
+		if (!acc) {
+			Swal.fire('ข้อผิดพลาด', 'ไม่พบบัญชีที่ต้องการแก้ไข', 'error');
+			return;
+		}
+		getEl('account-modal-title').textContent = 'แก้ไขบัญชี';
+		getEl('edit-account-id').value = acc.id;
+		getEl('edit-account-name').value = acc.name;
+		getEl('edit-account-type').value = acc.type;
+		getEl('edit-account-balance').value = acc.initialBalance;
+		getEl('edit-acc-calc-preview').textContent = '';
+		getEl('edit-account-calculator-popover').classList.add('hidden');
 
-        const form = document.getElementById('account-form');
-        form.reset();
-        const getEl = (id) => document.getElementById(id);
-        
-        const acc = state.accounts.find(a => a.id === accountId);
-        if (!acc) {
-            Swal.fire('ข้อผิดพลาด', 'ไม่พบบัญชีที่ต้องการแก้ไข', 'error');
-            return;
-        }
-        
-        getEl('account-modal-title').textContent = 'แก้ไขบัญชี';
-        getEl('edit-account-id').value = acc.id;
-        getEl('edit-account-name').value = acc.name;
-        getEl('edit-account-type').value = acc.type;
-        getEl('edit-account-balance').value = acc.initialBalance;
-        getEl('edit-acc-calc-preview').textContent = ''; 
-        getEl('edit-account-calculator-popover').classList.add('hidden');
-		
-		// [NEW] ส่วนที่เพิ่ม: ดึงยอดเงินปัจจุบันมาโชว์ และรีเซ็ตฟอร์มปรับปรุงยอด
-        const currentBal = getAccountBalances(state.transactions)[acc.id] || 0;
-        const balDisplay = document.getElementById('modal-current-balance-display');
-        if (balDisplay) {
-            balDisplay.innerText = formatCurrency(currentBal);
-            // ถ้าเงินติดลบให้เป็นสีแดง
-            balDisplay.className = `font-bold text-xl ${currentBal >= 0 ? 'text-blue-600' : 'text-red-600'}`;
-        }
-        
-        // รีเซ็ตค่าในช่องกรอกให้ว่างเปล่า
-        if (document.getElementById('adjust-tx-amount')) {
-            document.getElementById('adjust-tx-amount').value = '';
-            document.getElementById('adjust-tx-desc').value = '';
-            document.getElementById('adjust-tx-type').value = 'income';
-            
-            // รีเซ็ตสีปุ่มให้กลับมาเป็นค่าเริ่มต้น (ปุ่มเพิ่มสีเขียว)
-            const btnInc = document.getElementById('btn-adj-type-inc');
-            const btnExp = document.getElementById('btn-adj-type-exp');
-            
-            if (btnInc && btnExp) {
-                btnInc.className = 'flex-1 py-2 px-3 rounded-lg border bg-green-500 text-white border-green-600 shadow-sm transition-all text-sm font-bold';
-                btnExp.className = 'flex-1 py-2 px-3 rounded-lg border bg-white text-gray-600 border-gray-300 shadow-sm transition-all text-sm hover:bg-gray-50';
-            }
-        }
+		// ดึงยอดปัจจุบันมาแสดง
+		const currentBal = getAccountBalances(state.transactions)[acc.id] || 0;
+		const balDisplay = document.getElementById('modal-current-balance-display');
+		if (balDisplay) {
+			balDisplay.innerText = typeof formatCurrency === 'function' ? formatCurrency(currentBal) : currentBal;
+			balDisplay.className = `text-xl font-bold ${currentBal >= 0 ? 'text-blue-600' : 'text-red-600'} dark:${currentBal >= 0 ? 'text-blue-400' : 'text-red-400'}`;
+			balDisplay.dataset.rawValue = currentBal; 
+		}
 
-        modal.classList.remove('hidden');
-    }
+		// รีเซ็ตช่องกรอก Smart Calculator (ระบบใหม่)
+		const smartInputNew = document.getElementById('smart-input-new');
+		const smartInputDesc = document.getElementById('smart-input-desc');
+		const smartDisplayDiff = document.getElementById('smart-display-diff');
+		const hiddenAmt = document.getElementById('adjust-tx-amount');
+		const hiddenType = document.getElementById('adjust-tx-type');
+		const hiddenDesc = document.getElementById('adjust-tx-desc');
+
+		if (smartInputNew) {
+			// ใช้ cloneNode เพื่อล้าง Event Listener เก่าทิ้ง ป้องกันการคำนวณซ้อน
+			const newSmartInput = smartInputNew.cloneNode(true);
+			smartInputNew.parentNode.replaceChild(newSmartInput, smartInputNew);
+			newSmartInput.value = '';
+			
+			// คำนวณส่วนต่างอัตโนมัติเมื่อพิมพ์ตัวเลข
+			newSmartInput.addEventListener('input', () => {
+				const current = parseFloat(balDisplay.dataset.rawValue || 0);
+				const newVal = parseFloat(newSmartInput.value);
+				
+				if (isNaN(newVal)) {
+					if (smartDisplayDiff) smartDisplayDiff.classList.add('hidden');
+					if (hiddenAmt) hiddenAmt.value = '';
+					return;
+				}
+
+				const diff = newVal - current;
+				if (smartDisplayDiff) smartDisplayDiff.classList.remove('hidden');
+
+				const formatMoney = (val) => typeof formatCurrency === 'function' ? formatCurrency(val) : parseFloat(val).toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' ฿';
+
+				if (diff > 0) {
+					if (smartDisplayDiff) {
+						smartDisplayDiff.innerHTML = `<i class="fa-solid fa-arrow-trend-up mr-1"></i> ปรับยอดเพิ่ม ${formatMoney(diff)} <span class="text-xs font-normal">(บันทึกเป็นรายรับ)</span>`;
+						smartDisplayDiff.className = 'mb-3 p-3 rounded-xl text-center text-sm font-semibold text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30 border border-green-200 dark:border-green-800 transition-all';
+					}
+					if (hiddenType) hiddenType.value = 'income';
+					if (hiddenAmt) hiddenAmt.value = Math.abs(diff);
+				} else if (diff < 0) {
+					if (smartDisplayDiff) {
+						smartDisplayDiff.innerHTML = `<i class="fa-solid fa-arrow-trend-down mr-1"></i> ปรับยอดลด ${formatMoney(Math.abs(diff))} <span class="text-xs font-normal">(บันทึกเป็นรายจ่าย)</span>`;
+						smartDisplayDiff.className = 'mb-3 p-3 rounded-xl text-center text-sm font-semibold text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30 border border-red-200 dark:border-red-800 transition-all';
+					}
+					if (hiddenType) hiddenType.value = 'expense';
+					if (hiddenAmt) hiddenAmt.value = Math.abs(diff);
+				} else {
+					if (smartDisplayDiff) {
+						smartDisplayDiff.innerHTML = 'ยอดเงินตรงกัน (ไม่มีการเปลี่ยนแปลง)';
+						smartDisplayDiff.className = 'mb-3 p-3 rounded-xl text-center text-sm font-semibold text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-all';
+					}
+					if (hiddenAmt) hiddenAmt.value = '';
+				}
+			});
+		}
+
+		if (smartInputDesc) {
+			const newSmartDesc = smartInputDesc.cloneNode(true);
+			smartInputDesc.parentNode.replaceChild(newSmartDesc, smartInputDesc);
+			newSmartDesc.value = '';
+			newSmartDesc.addEventListener('input', () => {
+				 if (hiddenDesc) hiddenDesc.value = newSmartDesc.value;
+			});
+		}
+
+		if (smartDisplayDiff) {
+			smartDisplayDiff.classList.add('hidden');
+			smartDisplayDiff.innerHTML = '';
+		}
+		if (hiddenAmt) hiddenAmt.value = '';
+		if (hiddenType) hiddenType.value = '';
+		if (hiddenDesc) hiddenDesc.value = '';
+
+		modal.classList.remove('hidden');
+	}
+
+	async function handleEditAccountSubmit(e) {
+		e.preventDefault();
+		const getEl = (id) => document.getElementById(id);
+		document.getElementById('edit-account-calculator-popover').classList.add('hidden');
+
+		const accountId = getEl('edit-account-id').value;
+		const name = getEl('edit-account-name').value.trim();
+		const type = getEl('edit-account-type').value;
+
+		const rawBalance = getEl('edit-account-balance').value;
+		let initialBalance = typeof safeCalculate === 'function' ? safeCalculate(rawBalance) : parseFloat(rawBalance);
+		if (initialBalance === null || isNaN(initialBalance)) {
+			Swal.fire('ข้อมูลไม่ถูกต้อง', 'ยอดเริ่มต้นไม่ถูกต้อง', 'warning');
+			return;
+		}
+		initialBalance = parseFloat(initialBalance.toFixed(2));
+
+		if (!name || !accountId) {
+			Swal.fire('ข้อผิดพลาด', 'ข้อมูลไม่ถูกต้อง', 'error');
+			return;
+		}
+
+		const accountIndex = state.accounts.findIndex(a => a.id === accountId);
+		if (accountIndex === -1) {
+			Swal.fire('ข้อผิดพลาด', 'ไม่พบบัญชี', 'error');
+			return;
+		}
+
+		const oldAccount = JSON.parse(JSON.stringify(state.accounts[accountIndex]));
+
+		const defaultIconName = type === 'credit' ? 'fa-credit-card' : (type === 'liability' ? 'fa-file-invoice-dollar' : 'fa-wallet');
+
+		const updatedAccount = {
+			...state.accounts[accountIndex],
+			name: name,
+			type: type,
+			initialBalance: initialBalance,
+			icon: defaultIconName,
+			iconName: state.accounts[accountIndex].iconName || defaultIconName
+		};
+
+		try {
+			await dbPut(STORE_ACCOUNTS, updatedAccount);
+			state.accounts[accountIndex] = updatedAccount;
+			if (typeof setLastUndoAction === 'function') {
+				setLastUndoAction({ type: 'account-edit', oldData: oldAccount, newData: updatedAccount });
+			}
+
+			// ✅ ADD ACTIVITY LOG สำหรับแก้ไขบัญชี
+			if (typeof addActivityLog === 'function') {
+				addActivityLog('✏️ แก้ไขบัญชี', `${oldAccount.name} → ${updatedAccount.name}`, 'fa-pencil', 'text-blue-600');
+			}
+
+			// บันทึกรายการปรับปรุงยอด (รับค่าจากตัวคำนวณอัตโนมัติที่ซ่อนไว้)
+			const adjAmountVal = getEl('adjust-tx-amount').value;
+			const adjType = getEl('adjust-tx-type').value;
+			const adjDesc = getEl('adjust-tx-desc').value.trim();
+
+			let adjMessage = '';
+			if (adjAmountVal && parseFloat(adjAmountVal) > 0) {
+				const amount = parseFloat(adjAmountVal);
+				const finalName = adjDesc || (adjType === 'income' ? 'ดอกเบี้ยรับ/ปรับยอดเพิ่ม' : 'ค่าธรรมเนียม/ปรับยอดลด');
+				
+				const newTx = {
+					id: `tx-adj-${Date.now()}`,
+					type: adjType,
+					amount: amount,
+					name: finalName,
+					category: 'ปรับปรุงยอดบัญชี',
+					accountId: accountId,
+					date: new Date().toISOString(),
+					desc: 'ปรับปรุงยอดผ่านเมนูแก้ไขบัญชี'
+				};
+				await dbPut(STORE_TRANSACTIONS, newTx);
+				state.transactions.push(newTx);
+				if (typeof sendLineAlert === 'function') sendLineAlert(newTx, 'add');
+				
+				adjMessage = `<br><span class="text-sm text-gray-500">และบันทึกรายการปรับปรุงยอด ${typeof formatCurrency === 'function' ? formatCurrency(amount) : amount.toLocaleString()} เรียบร้อย</span>`;
+
+				// ✅ ADD ACTIVITY LOG สำหรับปรับปรุงยอด
+				if (typeof addActivityLog === 'function') {
+					addActivityLog('💰 ปรับปรุงยอด', `${finalName} ${typeof formatCurrency === 'function' ? formatCurrency(amount) : amount.toLocaleString()} (${updatedAccount.name})`, 'fa-calculator', 'text-orange-600');
+				}
+			}
+
+			if (typeof renderAccountSettingsList === 'function') renderAccountSettingsList();
+			if (typeof currentPage !== 'undefined' && currentPage === 'home' && typeof renderAll === 'function') renderAll();
+			if (typeof openAccountModal === 'function') openAccountModal(null, true);
+			Swal.fire({
+				title: 'สำเร็จ',
+				html: `อัปเดตข้อมูลบัญชีเรียบร้อยแล้ว${adjMessage}`,
+				icon: 'success'
+			});
+		} catch (err) {
+			console.error("Failed to edit account:", err);
+			Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตบัญชีได้', 'error');
+		}
+	}
     
     function closeIconModal() {
         document.getElementById('icon-form-modal').classList.add('hidden');
@@ -9871,105 +10021,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
-    async function handleEditAccountSubmit(e) {
-		e.preventDefault();
-		const getEl = (id) => document.getElementById(id);
-		document.getElementById('edit-account-calculator-popover').classList.add('hidden');
-
-		const accountId = getEl('edit-account-id').value;
-		const name = getEl('edit-account-name').value.trim();
-		const type = getEl('edit-account-type').value;
-
-		const rawBalance = getEl('edit-account-balance').value;
-		let initialBalance = safeCalculate(rawBalance);
-		if (initialBalance === null) {
-			Swal.fire('ข้อมูลไม่ถูกต้อง', 'ยอดเริ่มต้นไม่ถูกต้อง', 'warning');
-			return;
-		}
-		initialBalance = parseFloat(initialBalance.toFixed(2));
-
-		if (!name || !accountId) {
-			Swal.fire('ข้อผิดพลาด', 'ข้อมูลไม่ถูกต้อง', 'error');
-			return;
-		}
-
-		const accountIndex = state.accounts.findIndex(a => a.id === accountId);
-		if (accountIndex === -1) {
-			Swal.fire('ข้อผิดพลาด', 'ไม่พบบัญชี', 'error');
-			return;
-		}
-
-		const oldAccount = JSON.parse(JSON.stringify(state.accounts[accountIndex]));
-
-		const defaultIconName = type === 'credit' ? 'fa-credit-card' : (type === 'liability' ? 'fa-file-invoice-dollar' : 'fa-wallet');
-
-		const updatedAccount = {
-			...state.accounts[accountIndex],
-			name: name,
-			type: type,
-			initialBalance: initialBalance,
-			icon: defaultIconName,
-			iconName: state.accounts[accountIndex].iconName || defaultIconName
-		};
-
-		try {
-			await dbPut(STORE_ACCOUNTS, updatedAccount);
-			state.accounts[accountIndex] = updatedAccount;
-			setLastUndoAction({ type: 'account-edit', oldData: oldAccount, newData: updatedAccount });
-
-			// ✅ ADD ACTIVITY LOG สำหรับแก้ไขบัญชี
-			addActivityLog(
-				'✏️ แก้ไขบัญชี',
-				`${oldAccount.name} → ${updatedAccount.name}`,
-				'fa-pencil',
-				'text-blue-600'
-			);
-
-			// บันทึกรายการปรับปรุงยอด (ถ้ามี)
-			const adjAmountVal = getEl('adjust-tx-amount').value;
-			const adjType = getEl('adjust-tx-type').value;
-			const adjDesc = getEl('adjust-tx-desc').value.trim();
-
-			let adjMessage = '';
-			if (adjAmountVal && parseFloat(adjAmountVal) > 0) {
-				const amount = parseFloat(adjAmountVal);
-				const newTx = {
-					id: `tx-adj-${Date.now()}`,
-					type: adjType,
-					amount: amount,
-					name: adjDesc || (adjType === 'income' ? 'ดอกเบี้ยรับ/ปรับยอดเพิ่ม' : 'ค่าธรรมเนียม/ปรับยอดลด'),
-					category: 'ปรับปรุงยอดบัญชี',
-					accountId: accountId,
-					date: new Date().toISOString(),
-					desc: 'ปรับปรุงยอดผ่านเมนูแก้ไขบัญชี'
-				};
-				await dbPut(STORE_TRANSACTIONS, newTx);
-				state.transactions.push(newTx);
-				sendLineAlert(newTx, 'add');
-				adjMessage = `<br><span class="text-sm text-gray-500">และบันทึกรายการปรับปรุงยอด ${formatCurrency(amount)} เรียบร้อย</span>`;
-
-				// ✅ ADD ACTIVITY LOG สำหรับปรับปรุงยอด
-				addActivityLog(
-					'💰 ปรับปรุงยอด',
-					`${adjDesc || (adjType === 'income' ? 'ดอกเบี้ยรับ' : 'ค่าธรรมเนียม')} ${formatCurrency(amount)} (${updatedAccount.name})`,
-					'fa-calculator',
-					'text-orange-600'
-				);
-			}
-
-			renderAccountSettingsList();
-			if (currentPage === 'home') renderAll();
-			openAccountModal(null, true);
-			Swal.fire({
-				title: 'สำเร็จ',
-				html: `อัปเดตข้อมูลบัญชีเรียบร้อยแล้ว${adjMessage}`,
-				icon: 'success'
-			});
-		} catch (err) {
-			console.error("Failed to edit account:", err);
-			Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตบัญชีได้', 'error');
-		}
-	}
+    
     
     async function handleMoveAccount(accountId, direction) {
         const sortedAccounts = getSortedAccounts();
