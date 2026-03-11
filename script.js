@@ -14913,7 +14913,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			"ลองพูด 'เปิดหน้าแรก' สิ",
 			"พูด 'รายจ่ายวันนี้' ให้ฉันสรุปให้",
 			"ฉันช่วยคุณค้นหารายการได้นะ",
-			"ลองพูด 'เพิ่มรายการ ข้าวมันไก่ 50 บาท'",
+			"ลองพูด 'ข้าวมันไก่ 50 บาท'",
 			"สั่งงานฉันด้วยเสียงได้เลย",
 			"อยากดูปฏิทิน พูด 'ปฏิทิน'",
 			"พูด 'โหมดมืด' เพื่อเปลี่ยนธีม",
@@ -15088,6 +15088,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		function initDraggableVoiceButton() {
 			const container = document.getElementById('smart-voice-container');
 			const btn = document.getElementById('smart-voice-btn');
+
 			if (!container) return;
 
 			// รีเซ็ตสถานะ global
@@ -15137,9 +15138,14 @@ document.addEventListener('DOMContentLoaded', () => {
 					// ไม่ต้องทำอะไร
 				}, 200);
 
-				document.addEventListener(isTouch ? 'touchmove' : 'mousemove', onDrag);
+				// ใส่ { passive: false } ให้ touchmove เพื่อให้ e.preventDefault() ทำงานได้
+				document.addEventListener(isTouch ? 'touchmove' : 'mousemove', onDrag, { passive: false });
 				document.addEventListener(isTouch ? 'touchend' : 'mouseup', stopDrag);
-				e.preventDefault(); // จำเป็นเพื่อไม่ให้ scroll ขณะลาก
+
+				// *** แก้ไข Bug บนมือถือ: ยกเลิก e.preventDefault() สำหรับ touch เพื่อไม่ให้บล็อก click event ***
+				if (!isTouch) {
+					e.preventDefault(); // ใช้สำหรับ Desktop เพื่อป้องกันการคลุมข้อความ/ลากภาพ
+				}
 			};
 
 			const onDrag = (e) => {
@@ -15162,6 +15168,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				if (isDragging) {
+					// *** ป้องกันการเลื่อนหน้าจอขณะกำลังลากปุ่มบนมือถือ ***
+					if (e.cancelable) e.preventDefault();
+
 					let newLeft = dragStartLeft + dx;
 					let newTop = dragStartTop + dy;
 
@@ -15169,8 +15178,8 @@ document.addEventListener('DOMContentLoaded', () => {
 					const winHeight = window.innerHeight;
 					const containerWidth = container.offsetWidth;
 					const containerHeight = container.offsetHeight;
-					const margin = 10;
 
+					const margin = 10;
 					newLeft = Math.max(margin, Math.min(winWidth - containerWidth - margin, newLeft));
 					newTop = Math.max(margin, Math.min(winHeight - containerHeight - margin, newTop));
 
@@ -15201,10 +15210,30 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 					container.style.cursor = '';
 					btn.style.pointerEvents = 'auto';
+					
+					// หน่วงเวลาการรีเซ็ตสถานะ เพื่อป้องกัน click event ที่ลั่นตามมาหลังลากเสร็จ
+					setTimeout(() => {
+						window.isSmartVoiceDragging = false;
+					}, 100);
+				} else {
+					window.isSmartVoiceDragging = false;
+					
+					// *** ฟอลแบคความปลอดภัยมือถือ: หากแค่แตะแล้วปล่อย ให้จำลองการเรียกใช้งานเสียงทันที ***
+					if (e.type === 'touchend') {
+						const touch = e.changedTouches ? e.changedTouches[0] : null;
+						if (touch) {
+							const target = document.elementFromPoint(touch.clientX, touch.clientY);
+							if (target && target.closest('#smart-voice-btn')) {
+								if (e.cancelable) e.preventDefault(); 
+								if (typeof window.activateGlobalVoice === 'function') {
+									window.activateGlobalVoice();
+								}
+							}
+						}
+					}
 				}
 
 				isDragging = false;
-				window.isSmartVoiceDragging = false;
 				startWiggleTimer();
 			};
 
@@ -15217,6 +15246,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				btn.addEventListener('click', (e) => {
 					// ถ้ากำลังลากอยู่ ไม่ต้องทำอะไร
 					if (window.isSmartVoiceDragging) return;
+					
 					// เรียกใช้งานฟังก์ชันเสียง
 					if (typeof window.activateGlobalVoice === 'function') {
 						window.activateGlobalVoice();
@@ -15229,7 +15259,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					startWiggleTimer();
 				};
 				btn.addEventListener('mousedown', resetWiggle);
-				btn.addEventListener('touchstart', resetWiggle);
+				btn.addEventListener('touchstart', resetWiggle, { passive: true });
 			}
 		}
 			
