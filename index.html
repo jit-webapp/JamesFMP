@@ -1878,9 +1878,10 @@
 	</div>
 	
     <!-- GLOBAL FLOATING VOICE BUTTON (NEW) -->
-	<div class="fixed bottom-28 right-5 z-[999]">
+	<div id="smart-voice-container" class="fixed z-[999]" style="left: auto; right: 20px; top: auto; bottom: 112px;">
 		<button id="smart-voice-btn" onclick="activateGlobalVoice()" 
-				class="w-14 h-14 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-110 active:scale-90 border-2 border-white voice-ring group">
+				class="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-110 active:scale-90 border-2 border-white voice-ring group"
+				draggable="false">
 			<i class="fa-solid fa-microphone text-lg group-hover:animate-pulse"></i>
 		</button>
 	</div>
