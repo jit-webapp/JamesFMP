@@ -3938,10 +3938,16 @@ document.addEventListener('DOMContentLoaded', () => {
 				bioUnlockBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 				
 				try {
-					const success = await verifyBiometricIdentity();
-					if (success) {
-						unlockAppSuccess();
+					const result = await verifyBiometricIdentity();
+					
+					if (result === true) {
+						// สแกนผ่านของจริง
+						if (typeof unlockAppSuccess === 'function') unlockAppSuccess();
+					} else if (result === 'aborted') {
+						// กรณี Z-Fold พับจอ หรือผู้ใช้กดยกเลิกเอง -> ให้เงียบไว้ ไม่ต้องด่าว่ารหัสผิด
+						console.log('Biometric prompt was aborted or screen folded.');
 					} else {
+						// สแกนนิ้วไม่ผ่านจริงๆ (รหัสผิด)
 						Swal.fire({
 							icon: 'error',
 							title: 'ไม่ผ่าน',
@@ -12861,9 +12867,16 @@ document.addEventListener('DOMContentLoaded', () => {
 						Swal.fire('เรียบร้อย', 'ยกเลิกการสแกนนิ้วบนเครื่องนี้แล้ว', 'success');
 					}
 				}
+				
 				// 3. ตรวจสอบตัวตน (Verify) - ใช้ตอน Login หรือ Prompt
 				async function verifyBiometricIdentity() {
 					if (!state.biometricId) return false;
+
+					// ถ้าระบบมีการเรียกสแกนค้างไว้ (เช่น จากจอใหญ่) ให้สั่งยกเลิกทิ้งก่อน เพื่อเริ่มใหม่ให้สะอาด
+					if (typeof bioAbortController !== 'undefined' && bioAbortController) {
+						bioAbortController.abort();
+					}
+					window.bioAbortController = new AbortController();
 
 					try {
 						const savedIdBuffer = base64urlToBuffer(state.biometricId);
@@ -12880,15 +12893,27 @@ document.addEventListener('DOMContentLoaded', () => {
 							userVerification: "required"
 						};
 
-						const assertion = await navigator.credentials.get({ publicKey });
+						const assertion = await navigator.credentials.get({ 
+							publicKey,
+							signal: window.bioAbortController.signal // ผูก signal เพื่อให้แอปตัดการทำงานเดิมทิ้งได้เมื่อสลับจอ
+						});
 						
 						if (assertion) {
+							window.bioAbortController = null;
 							return true; // สแกนผ่าน
 						}
 					} catch (err) {
 						console.error("Biometric verify failed:", err);
+						
+						// แยกว่าเป็นการกดยกเลิก/พับจอ (NotAllowedError) หรือ สแกนผิดจริงๆ
+						if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
+							window.bioAbortController = null;
+							return 'aborted'; // ส่งค่าพิเศษบอกว่า "แค่ยกเลิก/พับจอ" 
+						}
 					}
-					return false;
+					
+					window.bioAbortController = null;
+					return false; // สแกนไม่ผ่านจริงๆ
 				}
 				
 				// --- ฟังก์ชันส่งแจ้งเตือน LINE (เวอร์ชันรองรับรายการล่วงหน้า) ---
@@ -15110,39 +15135,80 @@ document.addEventListener('DOMContentLoaded', () => {
 			stopTooltipLoop();
 		}
 
-		// ฟังก์ชันตรวจสอบและปรับตำแหน่งปุ่มเมื่อย่อจอ
+		// ฟังก์ชันดึงปุ่ม Smart Voice กลับเข้าจออัตโนมัติ (รองรับมือถือจอพับ เช่น Z Fold / Flip)
 		function repositionButtonIfOutOfBounds() {
 			const container = document.getElementById('smart-voice-container');
 			if (!container) return;
 
+			// ถ้าปุ่มยังใช้ค่า Default (bottom/right) และยังไม่ได้ถูกลาก ไม่ต้องคำนวณใหม่
+			if (!container.style.left || !container.style.top) return;
+
+			// ดึงขนาดหน้าจอที่มองเห็นได้จริง (รองรับ Visual Viewport)
+			const winWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+			const winHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+			
 			const rect = container.getBoundingClientRect();
-			const winWidth = window.innerWidth;
-			const winHeight = window.innerHeight;
-			const containerWidth = container.offsetWidth;
-			const containerHeight = container.offsetHeight;
+			const margin = 15; // ระยะห่างขอบจอที่ปลอดภัย
+			
+			let newLeft = rect.left;
+			let newTop = rect.top;
+			let isChanged = false;
 
-			let left = container.style.left ? parseFloat(container.style.left) : rect.left;
-			let top = container.style.top ? parseFloat(container.style.top) : rect.top;
-
-			if (isNaN(left)) left = rect.left;
-			if (isNaN(top)) top = rect.top;
-
-			const margin = 10;
-
-			if (left + containerWidth > winWidth - margin) {
-				left = winWidth - containerWidth - margin;
+			// เช็คขอบขวา (ถ้าพับจอเล็กลง แล้วปุ่มหลุดขอบขวา)
+			if (newLeft + rect.width > winWidth - margin) {
+				newLeft = Math.max(margin, winWidth - rect.width - margin);
+				isChanged = true;
 			}
-			if (left < margin) left = margin;
-
-			if (top + containerHeight > winHeight - margin) {
-				top = winHeight - containerHeight - margin;
+			// เช็คขอบซ้าย
+			if (newLeft < margin) {
+				newLeft = margin;
+				isChanged = true;
 			}
-			if (top < margin) top = margin;
+			
+			// เช็คขอบล่าง (เผื่อพื้นที่ให้ Bottom Nav Bar สำหรับมือถือ)
+			const bottomSafeZone = winWidth < 768 ? 90 : margin; 
+			if (newTop + rect.height > winHeight - bottomSafeZone) {
+				newTop = Math.max(margin, winHeight - rect.height - bottomSafeZone);
+				isChanged = true;
+			}
+			// เช็คขอบบน
+			if (newTop < margin) {
+				newTop = margin;
+				isChanged = true;
+			}
 
-			container.style.left = left + 'px';
-			container.style.top = top + 'px';
-			container.style.right = 'auto';
-			container.style.bottom = 'auto';
+			// ถ้าพบว่าปุ่มหลุดจอ ให้ตั้งค่าพิกัดใหม่และเซฟลงเครื่องทันที
+			if (isChanged) {
+				container.style.left = newLeft + 'px';
+				container.style.top = newTop + 'px';
+				container.style.right = 'auto';
+				container.style.bottom = 'auto';
+				
+				localStorage.setItem('smartVoicePos', JSON.stringify({ 
+					left: newLeft + 'px', 
+					top: newTop + 'px' 
+				}));
+			}
+		}
+
+		// ผูก Event ดักจับการเปลี่ยนแปลงของหน้าจอทุกรูปแบบ
+		// 1. ดักจับการ Resize หน้าต่างปกติ
+		window.addEventListener('resize', () => {
+			setTimeout(repositionButtonIfOutOfBounds, 100);
+			setTimeout(repositionButtonIfOutOfBounds, 500); // เผื่อดีเลย์สำหรับ OS ของจอพับ (Z Fold) ที่วาดจอช้า
+		});
+
+		// 2. ดักจับการหมุนจอ (Orientation Change)
+		window.addEventListener('orientationchange', () => {
+			setTimeout(repositionButtonIfOutOfBounds, 200);
+			setTimeout(repositionButtonIfOutOfBounds, 600);
+		});
+
+		// 3. ดักจับ Visual Viewport (แม่นยำสูงสุดเวลามีคีย์บอร์ดเด้ง หรือพับจอ)
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener('resize', () => {
+				setTimeout(repositionButtonIfOutOfBounds, 100);
+			});
 		}
 
 		function initDraggableVoiceButton() {
