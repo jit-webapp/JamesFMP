@@ -14903,34 +14903,43 @@ document.addEventListener('DOMContentLoaded', () => {
 		let wiggleTimer = null;
 		let tooltipShowInterval = null;
 		let tooltipHideTimer = null;
-		const WIGGLE_DELAY = 10000; // 10 วินาที เริ่มกระดิก
+		const WIGGLE_DELAY = 20000; // 20 วินาที เริ่มกระดิก
 		const TOOLTIP_SHOW_INTERVAL = 30000; // 30 วินาที แสดง tooltip ซ้ำ
 		const TOOLTIP_DISPLAY_DURATION = 10000; // 10 วินาที แสดง tooltip แต่ละครั้ง
 
 		// ตัวแปรสำหรับ tooltip (เมื่อกระดิก)
 		let wiggleTooltip = null;
 		const WIGGLE_MESSAGES = [
+			"คุณสามารถลากฉันไปไว้ที่ตำแหน่งไหนก็ได้นะ",
+			"คุณลากฉันไปไว้ที่ตำแหน่งไหนก็ได้นะ",
+			"ฉันอยู่ตรงนี้นะ",
+			"ฉันรอคำสั่งจากคุณอยู่นะ",
+			"ให้ช่วยเหลืออะไร บอกฉันมาได้เลย",
 			"คุณสามารถสอนฉันได้นะ",
-			"ลองพูด 'เปิดหน้าแรก' สิ",
-			"พูด 'รายจ่ายวันนี้' ให้ฉันสรุปให้",
+			"ไปหน้าตั้งค่าเพื่อสอนฉัน",
+			"ลองพูด'เปิดหน้าแรก' สิ",
+			"พูด'รายจ่ายวันนี้' ฉันสรุปให้",
+			"พูด'เพิ่มรายรับเงินเดือน 50000บาท",
 			"ฉันช่วยคุณค้นหารายการได้นะ",
+			"พูด'เพิ่มรายรับ,เพิ่มรายจ่าย,เพิ่มโอนย้าย",
 			"ลองพูด 'ข้าวมันไก่ 50 บาท'",
 			"สั่งงานฉันด้วยเสียงได้เลย",
-			"อยากดูปฏิทิน พูด 'ปฏิทิน'",
-			"พูด 'โหมดมืด' เพื่อเปลี่ยนธีม",
-			"ลองพูด 'สำรองข้อมูล'",
+			"อยากดูปฏิทิน พูด'ปฏิทิน'",
+			"พูด'โหมดมืด' เพื่อเปลี่ยนธีม",
+			"ลองพูด'สำรองข้อมูล'",
 			"ฉันจำคำสั่งคุณได้ด้วยนะ",
-			"พูด 'คู่มือ' เพื่อดูวิธีใช้",
-			"ลองพูด 'ค้นหาค่ากาแฟ'",
-			"พูด 'รายรับเดือนนี้' ดูสรุป",
+			"พูด'คู่มือ'เพื่อดูวิธีใช้",
+			"ลองพูด'ค้นหาค่ากาแฟ'",
+			"พูด'รายรับเดือนนี้' ดูสรุป",
+			"พูด'รายจ่ายปีนี้' ดูสรุป",
+			"พูด'อาหารเดือนนี้' ดูสรุป",
 			"ลองพูด 'ตั้งค่างบประมาณ'",
-			"ฉันช่วยคุณลืมรหัสผ่าน? พูด 'ช่วยเหลือ'",
-			"พูด 'บันทึก' เพื่อยืนยันรายการ",
-			"ลองพูด 'โอนเงินเข้าบัญชีออมทรัพย์'",
-			"พูด 'กราฟรายจ่าย' เพื่อดูสถิติ",
-			"อยากรู้ยอดคงเหลือ? พูด 'ยอดคงเหลือ'",
-			"ลองพูด 'ปิดหน้าต่าง' เพื่อยกเลิก",
-			"พูด 'ย้อนกลับ' เพื่อ undo รายการ"
+			"ฉันช่วยคุณลืมรหัสผ่าน พูด 'ช่วยเหลือ'",
+			"พูด'บันทึก' เพื่อยืนยันรายการ",
+			"ลองพูด'โอนเงินเข้าบัญชีออมทรัพย์'",
+			"พูด'รายจ่าย' เพื่อดูสถิติ",
+			"ลองพูด'ปิดหน้าต่าง' เพื่อยกเลิก",
+			"พูด'ย้อนกลับ' เพื่อ undo รายการ"
 		];
 
 		// ฟังก์ชันสร้าง tooltip (ถ้ายังไม่มี)
@@ -15878,12 +15887,18 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 					}
 				}
+				
+				// ถ้าขึ้นต้นด้วย "เพิ่ม..." ให้ข้ามการนำทางทันที
+				if (lowerText.startsWith('เพิ่ม')) {
+					return false;
+				}
 
 				return false;
 			}
 
 			// ===== ฟังก์ชันใส่ข้อมูลอัจฉริยะ =====
 			function handleSmartDataEntry(text, lowerText) {
+				
 				// จดด่วน - รองรับช่องว่างไม่จำกัด และอาจมี "บาท" อยู่ตรงกลาง
 				const draftMatch = lowerText.match(/^(จดด่วน|จด|โน้ต|บันทึก|note|draft|จดไว|ช่วยจำ)[\s　]*(.+)/i);
 				if (draftMatch) {
@@ -15939,6 +15954,91 @@ document.addEventListener('DOMContentLoaded', () => {
 						speak(`เตรียมเพิ่มหมวดหมู่ ${categoryName} กรุณาเลือกสีและประเภท`);
 					}, 500);
 					return true;
+				}
+				
+				// ===== เพิ่มการตรวจจับคำสั่ง "เพิ่ม..." =====
+				const addTxMatch = lowerText.match(/^(เพิ่มรายรับ|เพิ่มรายจ่าย|เพิ่มโอนย้าย|เพิ่มรายการ)\s*(.*)/);
+				if (addTxMatch) {
+					const commandType = addTxMatch[1]; // เช่น "เพิ่มรายรับ", "เพิ่มรายจ่าย", "เพิ่มโอนย้าย", "เพิ่มรายการ"
+					const restText = addTxMatch[2].trim();
+
+					// กำหนด type ตามคำสั่ง
+					let forcedType = null;
+					if (commandType.includes('รายรับ')) forcedType = 'income';
+					else if (commandType.includes('รายจ่าย')) forcedType = 'expense';
+					else if (commandType.includes('โอนย้าย')) forcedType = 'transfer';
+					// กรณี "เพิ่มรายการ" forcedType = null
+
+					// เปิด modal
+					openModal();
+
+					if (restText) {
+						// มีข้อความต่อท้าย ให้ parse และเติมข้อมูล (เหมือนเดิม)
+						const parsed = parseVoiceInput(restText);
+						if (parsed && (parsed.amount > 0 || parsed.name)) {
+							setTimeout(() => {
+								// ตั้งค่าประเภทถ้ามี (force)
+								if (forcedType) {
+									const radio = document.querySelector(`input[name="tx-type"][value="${forcedType}"]`);
+									if (radio) {
+										radio.checked = true;
+										radio.dispatchEvent(new Event('change', { bubbles: true }));
+									}
+								}
+
+								// เติมชื่อ, จำนวน, หมายเหตุ...
+								if (parsed.name) document.getElementById('tx-name').value = parsed.name;
+								if (parsed.amount) {
+									document.getElementById('tx-amount').value = parsed.amount;
+									document.getElementById('tx-amount').dispatchEvent(new Event('keyup'));
+								}
+								if (parsed.description) {
+									const currentDesc = document.getElementById('tx-desc').value;
+									document.getElementById('tx-desc').value = currentDesc ? currentDesc + ' ' + parsed.description : parsed.description;
+								}
+
+								// หมวดหมู่
+								if (forcedType && forcedType !== 'transfer') {
+									const category = autoSelectCategory(parsed.name || '', forcedType);
+									setTimeout(() => {
+										const catSelect = document.getElementById('tx-category');
+										if (catSelect && catSelect.querySelector(`option[value="${category}"]`)) {
+											catSelect.value = category;
+										}
+									}, 150);
+								}
+							}, 200);
+						} else {
+							// parse ไม่ได้ แต่ยังมี restText (อาจเป็นแค่ข้อความไม่เจอตัวเลข)
+							// อย่างน้อยก็ตั้งค่า type
+							setTimeout(() => {
+								if (forcedType) {
+									const radio = document.querySelector(`input[name="tx-type"][value="${forcedType}"]`);
+									if (radio) {
+										radio.checked = true;
+										radio.dispatchEvent(new Event('change', { bubbles: true }));
+									}
+								}
+								// อาจจะลองเติม restText ลงในช่องชื่อรายการ?
+								document.getElementById('tx-name').value = restText;
+							}, 200);
+						}
+					} else {
+						// **** กรณีไม่มีข้อความต่อท้าย (พูดแค่ "เพิ่มรายการ", "เพิ่มรายรับ") ****
+						// ตั้งค่า type เท่านั้น
+						if (forcedType) {
+							setTimeout(() => {
+								const radio = document.querySelector(`input[name="tx-type"][value="${forcedType}"]`);
+								if (radio) {
+									radio.checked = true;
+									radio.dispatchEvent(new Event('change', { bubbles: true }));
+								}
+							}, 200);
+						}
+						// ไม่ต้องเติมอะไรเพิ่ม (openModal() เปิดไว้แล้ว)
+					}
+
+					return true; // หยุดการประมวลผล
 				}
 				
 				return false;
