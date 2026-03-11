@@ -1651,13 +1651,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			}, 300);
 		};
 	
-		// ============================================
-		// Activity Log (ประวัติการกระทำ)
-		// ============================================
+		// ==========================================
+		// ระบบจัดการแจ้งเตือน และ ประวัติกิจกรรมย้อนหลัง
+		// ==========================================
 
-		// เพิ่ม log ใหม่
+		// เพิ่ม log ใหม่ (ใช้ตัวแปรของกระดิ่งเดิม เพื่อให้ Backup/Sync ขึ้นคลาวด์ได้ 100%)
 		function addActivityLog(action, details, icon = 'fa-bell', color = 'text-gray-500', extraProps = {}) {
-			const device = detectDeviceType(); // ต้องมีฟังก์ชันนี้อยู่แล้ว
+			const device = typeof detectDeviceType === 'function' ? detectDeviceType() : 'Unknown';
 			const log = {
 				id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
 				timestamp: new Date().toISOString(),
@@ -1667,29 +1667,125 @@ document.addEventListener('DOMContentLoaded', () => {
 				color: color,
 				device: device,
 				isRead: false,
-				...extraProps   // รวม property เพิ่มเติม เช่น hasReceipt
+				isClearedFromBell: false, // 💡 ตัวแปรลับ: ใช้เพื่อบอกว่าลบออกจากกระดิ่งแล้ว แต่ยังเก็บในคลังประวัติ
+				...extraProps
 			};
 
 			if (!state.notificationHistory) state.notificationHistory = [];
 			state.notificationHistory.unshift(log);
 
-			if (state.notificationHistory.length > 100) {
-				state.notificationHistory = state.notificationHistory.slice(0, 100);
+			// กรองเก็บไว้ 30 วัน และไม่เกิน 300 รายการ
+			const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+			state.notificationHistory = state.notificationHistory.filter(item => new Date(item.timestamp).getTime() > thirtyDaysAgo);
+
+			if (state.notificationHistory.length > 300) {
+				state.notificationHistory = state.notificationHistory.slice(0, 300);
 			}
 
+			// บันทึกลงฐานข้อมูลหลักของแอป
 			dbPut(STORE_CONFIG, { key: 'notification_history', value: state.notificationHistory })
 				.then(() => {
-					updateNotificationBadge();
-					if (typeof renderNotificationHistory === 'function') {
-						renderNotificationHistory();
-					}
+					if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+					if (typeof renderNotificationHistory === 'function') renderNotificationHistory();
 					const popover = document.getElementById('notification-popover');
 					if (popover && !popover.classList.contains('hidden')) {
-						renderNotificationPopover();
+						if (typeof renderNotificationPopover === 'function') renderNotificationPopover();
 					}
+					const modal = document.getElementById('persistent-log-modal');
+					if (modal && !modal.classList.contains('hidden')) {
+						if (typeof window.renderPersistentLogs === 'function') window.renderPersistentLogs();
+					}
+					
+					// 🚀 สั่ง Sync ขึ้น Firebase คลาวด์อัตโนมัติ
+					if (typeof syncToFirebase === 'function') syncToFirebase();
 				})
 				.catch(err => console.error('Save activity log failed', err));
 		}
+
+		// ==========================================
+		// ฟังก์ชันควบคุมหน้าต่างประวัติระบบ (ตั้งเป็น Global)
+		// ==========================================
+
+		// ฟังก์ชันเปิดหน้าต่างคลังประวัติ
+		window.openPersistentLogModal = function() {
+			if (typeof window.renderPersistentLogs === 'function') window.renderPersistentLogs();
+			const modal = document.getElementById('persistent-log-modal');
+			if (modal) modal.classList.remove('hidden');
+		};
+
+		// ฟังก์ชันปิดหน้าต่างคลังประวัติ
+		window.closePersistentLogModal = function() {
+			const modal = document.getElementById('persistent-log-modal');
+			if (modal) modal.classList.add('hidden');
+		};
+
+		// ฟังก์ชันวาด UI คลังประวัติ (ดึงจากตัวแปรหลัก รายละเอียดครบ ซิงค์และกู้คืนมาแน่นอน)
+		window.renderPersistentLogs = function() {
+			const listContainer = document.getElementById('persistent-log-list');
+			if (!listContainer) return;
+
+			// ดึงจากตัวแปรเดียวกับกระดิ่งเลย!
+			let logs = state.notificationHistory || [];
+
+			if (logs.length === 0) {
+				listContainer.innerHTML = `
+					<div class="flex flex-col items-center justify-center h-full min-h-[250px] text-gray-400 dark:text-gray-500">
+						<i class="fa-solid fa-box-open text-5xl mb-4 opacity-40"></i>
+						<p class="text-sm font-medium">ยังไม่มีประวัติกิจกรรมในระบบ</p>
+					</div>
+				`;
+				return;
+			}
+
+			const formatTime = (isoString) => {
+				const date = new Date(isoString);
+				const now = new Date();
+				const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+				if (diffDays === 0) return `วันนี้ ${date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})} น.`;
+				if (diffDays === 1) return `เมื่อวาน ${date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})} น.`;
+				return `${date.toLocaleDateString('th-TH', {day: 'numeric', month: 'short'})} ${date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})} น.`;
+			};
+
+			listContainer.innerHTML = logs.map(log => {
+				let deviceText = '';
+				if (log.device && log.device !== 'Unknown') {
+					deviceText = typeof log.device === 'object' ? (log.device.os || log.device.browser || log.device.type || log.device.name || 'อุปกรณ์') : log.device;
+					deviceText = `<span class="ml-2 pl-2 border-l border-gray-300 dark:border-gray-600 text-gray-400"><i class="fa-solid fa-mobile-screen mr-1"></i> ${deviceText}</span>`;
+				}
+
+				// 💡 ดึงรายละเอียด ยอดเงิน/บัญชี/สลิป มาโชว์ให้ครบเหมือนในกระดิ่งเป๊ะๆ
+				let extraHtml = '';
+				if (log.amount !== undefined) {
+					const amountNum = parseFloat(log.amount);
+					const colorAmt = log.type === 'expense' ? 'text-red-500' : (log.type === 'income' ? 'text-green-500' : 'text-blue-500');
+					const signAmt = log.type === 'expense' ? '-' : (log.type === 'income' ? '+' : '');
+					extraHtml += `<div class="mt-2 text-sm font-bold ${colorAmt}">${signAmt}${amountNum.toLocaleString('th-TH', {minimumFractionDigits: 2})} ฿</div>`;
+				}
+				if (log.accountName || log.accountId) {
+					extraHtml += `<div class="mt-1 text-[11px] text-gray-500 dark:text-gray-400"><i class="fa-solid fa-wallet mr-1"></i> ${log.accountName || log.accountId}</div>`;
+				}
+				if (log.hasReceipt || log.receiptImage) {
+					extraHtml += `<div class="mt-1.5 inline-block bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800"><i class="fa-solid fa-receipt mr-1"></i> มีสลิปแนบ</div>`;
+				}
+
+				return `
+				<div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 items-start transition-all">
+					<div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center border border-gray-100 dark:border-gray-600">
+						<i class="fa-solid ${log.icon} ${log.color} text-lg"></i>
+					</div>
+					<div class="flex-1 min-w-0">
+						<h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">${log.action}</h4>
+						<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">${log.details}</p>
+						${extraHtml}
+						<span class="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-2 flex items-center flex-wrap gap-y-1">
+							<i class="fa-regular fa-clock mr-1"></i> ${formatTime(log.timestamp)}
+							${deviceText}
+						</span>
+					</div>
+				</div>
+				`;
+			}).join('');
+		};
 
 		// อัปเดต badge บนไอคอนกระดิ่ง
 		function updateNotificationBadge() {
@@ -4121,8 +4217,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		// ล้างประวัติทั้งหมด
 		async function clearAllNotifications() {
 			const confirm = await Swal.fire({
-				title: 'ล้างประวัติทั้งหมด?',
-				text: 'คุณต้องการลบประวัติกิจกรรมทั้งหมดใช่หรือไม่?',
+				title: 'ล้างแจ้งเตือนทั้งหมด?',
+				text: 'แจ้งเตือนจะถูกล้างออกจากกระดิ่ง แต่จะยังคงดูย้อนหลังได้ใน "ประวัติกิจกรรมระบบ"',
 				icon: 'warning',
 				showCancelButton: true,
 				confirmButtonColor: '#d33',
@@ -4130,11 +4226,26 @@ document.addEventListener('DOMContentLoaded', () => {
 				cancelButtonText: 'ยกเลิก'
 			});
 			if (confirm.isConfirmed) {
-				state.notificationHistory = [];
-				await dbPut(STORE_CONFIG, { key: 'notification_history', value: [] });
-				renderNotificationHistory();
-				updateNotificationBadge();
-				showToast('ล้างประวัติเรียบร้อย', 'success');
+				// 💡 เปลี่ยนจากการลบทิ้ง เป็นการ "ติดป้ายว่าล้างจากกระดิ่งแล้ว"
+				if (state.notificationHistory) {
+					state.notificationHistory = state.notificationHistory.map(log => ({
+						...log,
+						isClearedFromBell: true, // ซ่อนจากกระดิ่ง
+						isRead: true             // ถือว่าอ่านแล้วทั้งหมด
+					}));
+				}
+				
+				// บันทึกสถานะการซ่อนลงฐานข้อมูลหลัก (ไม่ได้ลบทิ้งแล้ว!)
+				await dbPut(STORE_CONFIG, { key: 'notification_history', value: state.notificationHistory });
+				
+				// สั่งวาดหน้าจอใหม่
+				if (typeof renderNotificationHistory === 'function') renderNotificationHistory();
+				if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+				
+				// 🚀 สั่ง Sync ขึ้น Firebase คลาวด์อัตโนมัติ (รับประกันว่าคลาวด์ไม่หาย!)
+				if (typeof syncToFirebase === 'function') syncToFirebase();
+
+				if (typeof showToast === 'function') showToast('ล้างแจ้งเตือนหน้ากระดิ่งเรียบร้อย', 'success');
 			}
 		}
 
@@ -4435,17 +4546,21 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		// 2. ฟังก์ชันแสดงประวัติการแจ้งเตือน (Notification History)
+		// ฟังก์ชันแสดงประวัติการแจ้งเตือน (Notification History - หน้ากระดิ่ง)
 		function renderNotificationHistory() {
 			const list = document.getElementById('notification-history-list');
 			if (!list) return;
 
-			if (!state.notificationHistory || state.notificationHistory.length === 0) {
-				list.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">ยังไม่มีประวัติกิจกรรม</p>';
+			// 💡 กรองเอาเฉพาะรายการที่ "ยังไม่ได้กดล้างออกจากกระดิ่ง" มาแสดง
+			const visibleLogs = (state.notificationHistory || []).filter(log => !log.isClearedFromBell);
+
+			if (visibleLogs.length === 0) {
+				list.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">ไม่มีแจ้งเตือนใหม่</p>';
 				return;
 			}
 
-			// เรียงลำดับจากใหม่ไปเก่า (เราทำ unshift ไว้แล้ว แต่เผื่อ)
-			const sorted = [...state.notificationHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+			// เรียงลำดับจากใหม่ไปเก่า
+			const sorted = [...visibleLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
 			let html = '';
 			sorted.forEach(log => {
@@ -4461,12 +4576,12 @@ document.addEventListener('DOMContentLoaded', () => {
 						</div>
 						<div class="flex-1">
 							<div class="flex justify-between items-start">
-								<span class="font-bold text-gray-700 dark:text-gray-200">${escapeHTML(log.action)}</span>
+								<span class="font-bold text-gray-700 dark:text-gray-200">${typeof escapeHTML === 'function' ? escapeHTML(log.action) : log.action}</span>
 								<span class="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full whitespace-nowrap">
 									${dateStr} ${timeStr}
 								</span>
 							</div>
-							<div class="text-gray-600 dark:text-gray-400 mt-1 text-xs">${escapeHTML(log.details)}</div>
+							<div class="text-gray-600 dark:text-gray-400 mt-1 text-xs">${typeof escapeHTML === 'function' ? escapeHTML(log.details) : log.details}</div>
 						</div>
 						${!log.isRead ? `<button class="mark-read-btn text-blue-500 hover:text-blue-700 p-1" data-id="${log.id}" title="ทำเครื่องหมายว่าอ่านแล้ว"><i class="fa-solid fa-check-circle"></i></button>` : ''}
 					</div>
@@ -4480,7 +4595,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				btn.addEventListener('click', async (e) => {
 					e.stopPropagation();
 					const id = e.currentTarget.dataset.id;
-					await markNotificationAsRead(id);
+					if (typeof markNotificationAsRead === 'function') {
+						await markNotificationAsRead(id);
+					}
 				});
 			});
 		}
