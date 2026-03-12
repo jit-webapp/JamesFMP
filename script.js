@@ -1674,10 +1674,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
 			state.notificationHistory = state.notificationHistory.filter(item => new Date(item.timestamp).getTime() > thirtyDaysAgo);
 
-			if (state.notificationHistory.length > 300) {
-				state.notificationHistory = state.notificationHistory.slice(0, 300);
+			const MAX_LOG_ITEMS = 3000; // หรือจำนวนที่ต้องการ
+			if (state.notificationHistory.length > MAX_LOG_ITEMS) {
+				state.notificationHistory = state.notificationHistory.slice(0, MAX_LOG_ITEMS);
 			}
-
 			// บันทึกลงฐานข้อมูลหลักของแอป
 			dbPut(STORE_CONFIG, { key: 'notification_history', value: state.notificationHistory })
 				.then(() => {
@@ -13277,6 +13277,16 @@ document.addEventListener('DOMContentLoaded', () => {
 				// ฟังก์ชันแจ้งเตือนแบบใหม่ (ซ้ายบน + ดีไซน์สวย)
 				// ============================================
 				function showToast(title, icon = 'success') {
+					// +++ เพิ่มการตรวจสอบ Lock Screen และ Swal container +++
+					const lockScreen = document.getElementById('app-lock-screen');
+					if (lockScreen && !lockScreen.classList.contains('hidden')) {
+						return; // ถ้าล็อคอยู่ ไม่แสดง Toast
+					}
+					if (document.querySelector('.swal2-container')) {
+						return; // ถ้ามี Swal เปิดอยู่ ไม่แสดง Toast
+					}
+					// +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 					// เช็ค Dark Mode จากตัวแปร state ที่มีอยู่แล้วในไฟล์
 					const isDark = state.isDarkMode; 
 
