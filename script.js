@@ -674,124 +674,120 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
     // ฟังก์ชันโหลดข้อมูลจาก Cloud ลงเครื่อง (เรียกตอน Login)
-    // แก้ไขล่าสุด: บังคับ Overwrite (ล้างเครื่องแล้วโหลดใหม่) เสมอ โดยไม่ถาม
-    window.loadDataFromCloud = async (uid) => {
-        if (!window.db) return;
-        
-        const collectionsToSync = [
-            STORE_TRANSACTIONS, 
-            STORE_ACCOUNTS, 
-            STORE_CATEGORIES, 
-            STORE_FREQUENT_ITEMS, 
-            STORE_CONFIG,
-            STORE_AUTO_COMPLETE,
-            STORE_RECURRING,
-            STORE_BUDGETS,
+	window.loadDataFromCloud = async (uid) => {
+		if (!window.db) return;
+		
+		const collectionsToSync = [
+			STORE_TRANSACTIONS, 
+			STORE_ACCOUNTS, 
+			STORE_CATEGORIES, 
+			STORE_FREQUENT_ITEMS, 
+			STORE_CONFIG,
+			STORE_AUTO_COMPLETE,
+			STORE_RECURRING,
+			STORE_BUDGETS,
 			STORE_NOTIFICATIONS,
 			STORE_VOICE_COMMANDS,
 			STORE_ICS_IMPORTS,
 			STORE_IMPORTED_EVENTS
-        ];
+		];
 
-        try {
-            let hasDownloaded = false;
-            let hasUploaded = false;
-            
-            // --- กำหนดโหมดเป็น 'overwrite' (ทับข้อมูล) เสมอ ---
-            // ผลลัพธ์: ข้อมูลเก่าในเครื่องจะถูกลบก่อน แล้วโหลดจาก Cloud มาใส่
-            let syncMode = 'overwrite'; 
+		try {
+			let hasDownloaded = false;
+			let hasUploaded = false;
+			
+			let syncMode = 'overwrite'; 
 
-            // ตรวจสอบข้อมูล Cloud (เพื่อดูว่ามีอะไรต้องโหลดไหม)
-            const cloudTxRef = window.dbCollection(window.db, 'users', uid, STORE_TRANSACTIONS);
-            const cloudTxSnapshot = await window.dbGetDocs(cloudTxRef);
+			const cloudTxRef = window.dbCollection(window.db, 'users', uid, STORE_TRANSACTIONS);
+			const cloudTxSnapshot = await window.dbGetDocs(cloudTxRef);
 
-            for (const storeName of collectionsToSync) {
-                let snapshot;
-                if (storeName === STORE_TRANSACTIONS) {
-                    snapshot = cloudTxSnapshot;
-                } else {
-                    const colRef = window.dbCollection(window.db, 'users', uid, storeName);
-                    snapshot = await window.dbGetDocs(colRef);
-                }
-                
-                if (!snapshot.empty) {
-                    // --- กรณี A: บน Cloud มีข้อมูล ---
-                    // ให้ล้างข้อมูลในเครื่องทิ้งก่อน (เฉพาะ Store นั้นๆ)
-                    if (syncMode === 'overwrite') {
-                        await dbClear(storeName); 
-                    }
-                    
-                    const tx = db.transaction([storeName], 'readwrite');
-                    const store = tx.objectStore(storeName);
-                    
-                    snapshot.forEach(doc => {
-                        let data = doc.data(); 
-                        let isValid = true;    
+			for (const storeName of collectionsToSync) {
+				let snapshot;
+				if (storeName === STORE_TRANSACTIONS) {
+					snapshot = cloudTxSnapshot;
+				} else {
+					const colRef = window.dbCollection(window.db, 'users', uid, storeName);
+					snapshot = await window.dbGetDocs(colRef);
+				}
+				
+				if (!snapshot.empty) {
+					if (syncMode === 'overwrite') {
+						await dbClear(storeName); 
+					}
+					
+					const tx = db.transaction([storeName], 'readwrite');
+					const store = tx.objectStore(storeName);
+					
+					snapshot.forEach(doc => {
+						let data = doc.data(); 
+						let isValid = true;    
 
-                        // Validation Logic (ตรวจสอบความถูกต้องของข้อมูล)
-                        if (storeName === STORE_BUDGETS) {
-                            if (!data.category) data.category = doc.id;
-                            if (!data.category) isValid = false;
-                        } else if (storeName === STORE_TRANSACTIONS || storeName === STORE_ACCOUNTS || storeName === STORE_RECURRING) {
-                            if (!data.id) data.id = doc.id;
-                            if (!data.id) isValid = false;
-                        } else if (storeName === STORE_CATEGORIES) {
-                            if (!data.type) data.type = doc.id;
-                            if (!data.type) isValid = false;
-                        } else if (storeName === STORE_FREQUENT_ITEMS) {
-                            if (!data.name) data.name = doc.id;
-                            if (!data.name) isValid = false;
-                        } else if (storeName === STORE_CONFIG) {
-                            if (!data.key) data.key = doc.id;
-                            if (!data.key) isValid = false;
-                        }
-						else if (storeName === STORE_VOICE_COMMANDS) {
+						if (storeName === STORE_BUDGETS) {
+							if (!data.category) data.category = doc.id;
+							if (!data.category) isValid = false;
+						} else if (storeName === STORE_TRANSACTIONS || storeName === STORE_ACCOUNTS || storeName === STORE_RECURRING) {
+							if (!data.id) data.id = doc.id;
+							if (!data.id) isValid = false;
+						} else if (storeName === STORE_CATEGORIES) {
+							if (!data.type) data.type = doc.id;
+							if (!data.type) isValid = false;
+						} else if (storeName === STORE_FREQUENT_ITEMS) {
+							if (!data.name) data.name = doc.id;
+							if (!data.name) isValid = false;
+						} else if (storeName === STORE_CONFIG) {
+							if (!data.key) data.key = doc.id;
+							if (!data.key) isValid = false;
+						} else if (storeName === STORE_VOICE_COMMANDS) {
 							if (!data.id) data.id = doc.id;
 							if (!data.id) isValid = false;
 						}
 
-                        if (isValid) {
-                            try {
-                                store.put(data);
-                            } catch (err) {
-                                console.error(`Skipping corrupt record in ${storeName}:`, doc.id, err);
-                            }
-                        }
-                    });
-                    
-                    await new Promise(resolve => tx.oncomplete = resolve);
-                    hasDownloaded = true;
-                }
-                else {
-                    // --- กรณี B: บน Cloud ว่างเปล่า (ผู้ใช้ใหม่ หรือเพิ่งเคลียร์ Cloud) ---
-                    // ให้อัปโหลดข้อมูลจากเครื่องขึ้นไปแทน (Backup ครั้งแรก)
-                    const localItems = await dbGetAll(storeName);
-                    if (localItems.length > 0) {
-                        const uploadPromises = localItems.map(item => saveToCloud(storeName, item));
-                        await Promise.all(uploadPromises);
-                        hasUploaded = true;
-                    }
-                }
-            }
-            
-            // บันทึกว่าเครื่องนี้ซิงค์กับ User นี้เรียบร้อยแล้ว
-            localStorage.setItem('last_sync_uid', uid);
+						if (isValid) {
+							try {
+								store.put(data);
+							} catch (err) {
+								console.error(`Skipping corrupt record in ${storeName}:`, doc.id, err);
+							}
+						}
+					});
+					
+					await new Promise(resolve => tx.oncomplete = resolve);
+					hasDownloaded = true;
+				} else {
+					const localItems = await dbGetAll(storeName);
+					if (localItems.length > 0) {
+						const uploadPromises = localItems.map(item => saveToCloud(storeName, item));
+						await Promise.all(uploadPromises);
+						hasUploaded = true;
+					}
+				}
+			}
+			
+			localStorage.setItem('last_sync_uid', uid);
 
-            // โหลดข้อมูลเข้า State ใหม่ และรีเฟรชหน้าจอ
-            await loadStateFromDB();
-            refreshAllUI();
-            
-            // แสดง Toast แจ้งเตือน
-            if (hasDownloaded) {
-                showToast("ดาวน์โหลดข้อมูลจาก Cloud เรียบร้อย!", "success");
-            } else if (hasUploaded) {
-                showToast("อัปโหลดข้อมูลเริ่มต้นขึ้น Cloud แล้ว!", "success");
-            }
-        } catch (error) {
-            console.error("Sync Error:", error);
-            showToast("Sync Error: " + error.message, "error");
-        }
-    };
+			await loadStateFromDB();
+			refreshAllUI();
+
+			// +++ อัปเดตเวลาซิงค์คลาวด์ล่าสุด +++
+			const now = new Date();
+			state.cloudSyncLastTime = now.toISOString();
+			await updateCloudSyncTimeInDB(state.cloudSyncLastTime);
+			if (currentPage === 'page-settings') {
+				const cloudSpan = document.getElementById('last-cloud-sync-time');
+				if (cloudSpan) cloudSpan.textContent = now.toLocaleString('th-TH');
+			}
+			// +++++++++++++++++++++++++++++++++++
+
+			if (hasDownloaded) {
+				showToast("ดาวน์โหลดข้อมูลจาก Cloud เรียบร้อย!", "success");
+			} else if (hasUploaded) {
+				showToast("อัปโหลดข้อมูลเริ่มต้นขึ้น Cloud แล้ว!", "success");
+			}
+		} catch (error) {
+			console.error("Sync Error:", error);
+			showToast("Sync Error: " + error.message, "error");
+		}
+	};
 	
 	// ============================================
     // ฟังก์ชัน: ล้างข้อมูลและรีเซ็ตค่าเริ่มต้นเมื่อ Logout (Factory Reset)
@@ -1833,7 +1829,7 @@ document.addEventListener('DOMContentLoaded', () => {
 									<h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">${log.action}</h4>
 									<span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full whitespace-nowrap ml-2">${timeStr}</span>
 								</div>
-								<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">${log.details}</p>
+								<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">${log.details.replace(/\n/g, '<br>')}</p>
 								${extraHtml}
 								<span class="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-2 flex items-center flex-wrap gap-y-1">
 									<i class="fa-regular fa-clock mr-1"></i> ${timeStr}
@@ -2485,6 +2481,32 @@ document.addEventListener('DOMContentLoaded', () => {
 			closeModal(); 
 			closeAccountDetailModal();
 			openAccountModal(null, true);
+			
+			// +++ เพิ่มการปิด modal และ popover อื่นๆ +++
+			closeQuickDraftModal(); // ปิด quick-draft-modal
+			closeVoiceCommandModal(); // ปิด voice-command-modal
+			closeImportedEventsModal(); // ปิด imported-events-modal
+			closeCustomNotifyModal(); // ปิด custom-notify-modal
+			closePersistentLogModal(); // ปิด persistent-log-modal
+			
+			// ปิด notification-modal (ถ้ามี)
+			const notifModal = document.getElementById('notification-modal');
+			if (notifModal) notifModal.classList.add('hidden');
+			
+			// ปิด calculator popovers ทั้งหมด
+			const calcPopovers = ['calculator-popover', 'account-calculator-popover', 'edit-account-calculator-popover'];
+			calcPopovers.forEach(id => {
+				const el = document.getElementById(id);
+				if (el) el.classList.add('hidden');
+			});
+			
+			// ปิด notification popover
+			const notifPopover = document.getElementById('notification-popover');
+			if (notifPopover) notifPopover.classList.add('hidden');
+
+			// รีเซ็ต state ที่เกี่ยวข้อง
+			state.activeModalId = null;
+			// +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 			// ซ่อนหน้าจอหลักทั้งหมด
 			PAGE_IDS.forEach(id => {
@@ -2495,9 +2517,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			// แสดงหน้าจอล็อค
 			document.getElementById('app-lock-screen').classList.remove('hidden');
 			document.getElementById('smart-voice-btn')?.classList.add('hidden');
-			// [เพิ่มใหม่] เช็คว่าเครื่องนี้เปิดใช้สแกนนิ้วไว้ไหม?
-			// ถ้าเปิด (มี state.biometricId) -> ให้แสดงปุ่มสแกน
-			// ถ้าปิด -> ให้ซ่อนปุ่มสแกน
+			
+			// เช็คว่าเครื่องนี้เปิดใช้สแกนนิ้วไว้ไหม?
 			const bioUnlockBtn = document.getElementById('btn-bio-unlock');
 			if (bioUnlockBtn) {
 				if (state.biometricId) {
@@ -2518,19 +2539,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				
 				if (state.biometricId) {
-				// เรียกใช้ async function ภายใน setTimeout
-				(async () => {
-					try {
-						const success = await verifyBiometricIdentity();
-						if (success === true) { // 💡 [แก้บั๊ก] เช็ค === true เพื่อกันการกด Back
-							unlockAppSuccess();
+					(async () => {
+						try {
+							const success = await verifyBiometricIdentity();
+							if (success === true) {
+								unlockAppSuccess();
+							}
+						} catch (err) {
+							console.warn("Auto scan blocked:", err);
 						}
-					} catch (err) {
-						console.warn("Auto scan blocked:", err);
-					}
-				})();
-			}
-				
+					})();
+				}
 			}, 300);
 		}
 
@@ -3091,7 +3110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 								</p>
 								<span class="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">${timeStr}</span>
 							</div>
-							<p class="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5 whitespace-pre-wrap">${escapeHTML(log.details)}</p>
+							<p class="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5 whitespace-pre-wrap">${escapeHTML(log.details).replace(/\n/g, '<br>')}</p>
 						</div>
 					</div>
 				`;
@@ -12199,25 +12218,29 @@ document.addEventListener('DOMContentLoaded', () => {
 					text: "ระบบจะส่งข้อมูลทั้งหมดในเครื่องนี้ ไปบันทึกทับ/รวมกับข้อมูลบน Cloud",
 					icon: 'warning',
 					showCancelButton: true,
-					confirmButtonColor: '#f97316', // สีส้ม
+					confirmButtonColor: '#f97316',
 					confirmButtonText: 'ใช่, ส่งข้อมูลเดี๋ยวนี้',
 					cancelButtonText: 'ยกเลิก'
 				});
 
 				if (result.isConfirmed) {
-					// แจ้งเตือนแบบใหม่
-                showToast("กำลังทยอยส่งข้อมูล... ห้ามปิดหน้าจอ", "info");
+					showToast("กำลังทยอยส่งข้อมูล... ห้ามปิดหน้าจอ", "info");
 
 					try {
+						// +++ ใช้ collections เดียวกับ loadDataFromCloud +++
 						const collections = [
-							STORE_TRANSACTIONS, 
-							STORE_ACCOUNTS, 
-							STORE_CATEGORIES, 
-							STORE_FREQUENT_ITEMS, 
+							STORE_TRANSACTIONS,
+							STORE_ACCOUNTS,
+							STORE_CATEGORIES,
+							STORE_FREQUENT_ITEMS,
 							STORE_CONFIG,
 							STORE_AUTO_COMPLETE,
 							STORE_RECURRING,
-							STORE_BUDGETS
+							STORE_BUDGETS,
+							STORE_NOTIFICATIONS,
+							STORE_VOICE_COMMANDS,
+							STORE_ICS_IMPORTS,
+							STORE_IMPORTED_EVENTS
 						];
 
 						let totalCount = 0;
@@ -12225,12 +12248,21 @@ document.addEventListener('DOMContentLoaded', () => {
 						for (const storeName of collections) {
 							const items = await dbGetAll(storeName);
 							if (items.length > 0) {
-								// ใช้ Promise.all เพื่อยิงข้อมูลขึ้นพร้อมกัน (เร็วกว่าทำทีละตัว)
 								await Promise.all(items.map(item => saveToCloud(storeName, item)));
 								totalCount += items.length;
 								console.log(`Uploaded ${items.length} items from ${storeName}`);
 							}
 						}
+
+						// +++ อัปเดตเวลาซิงค์คลาวด์ล่าสุด +++
+						const now = new Date();
+						state.cloudSyncLastTime = now.toISOString();
+						await updateCloudSyncTimeInDB(state.cloudSyncLastTime);
+						if (currentPage === 'page-settings') {
+							const cloudSpan = document.getElementById('last-cloud-sync-time');
+							if (cloudSpan) cloudSpan.textContent = now.toLocaleString('th-TH');
+						}
+						// +++++++++++++++++++++++++++++++++++
 
 						Swal.fire('สำเร็จ!', `ส่งข้อมูล ${totalCount} รายการ ขึ้น Cloud เรียบร้อยแล้ว`, 'success');
 

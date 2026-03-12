@@ -571,3 +571,10 @@ body.dark [id$="-close-btn"], body.dark [id$="-close"], body.dark button[onclick
     transform-origin: center center;
     opacity: 0.75; /* ปุ่มจะจางลงตลอดเวลาที่กระดิก */
 }
+
+/* ให้ข้อความใน activity log ขึ้นบรรทัดใหม่ตาม newline */
+#persistent-log-list p,
+#persistent-log-list .text-xs,
+#popover-notification-list .notification-item .flex-1 p {
+    white-space: pre-line;
+}

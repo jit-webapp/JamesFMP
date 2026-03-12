@@ -2424,24 +2424,39 @@
 							localStorage.removeItem('fmpro_just_updated');
 							localStorage.removeItem('fmpro_skipped_version');
 							localStorage.removeItem('fmpro_later_update'); 
-							
+
 							const isDark = document.body.classList.contains('dark');
-							
+
+							// ดึงรายละเอียดจาก APP_UPDATE_NOTES
+							let notesPlain = '';
+							if (window.APP_UPDATE_NOTES) {
+								// ลบ HTML tags และแปลง newline เป็น \n (คง \n ไว้)
+								notesPlain = window.APP_UPDATE_NOTES.replace(/<[^>]*>?/gm, '').trim();
+							}
+
 							setTimeout(() => {
 								Swal.fire({
 									icon: 'success',
 									title: 'อัปเดตเสร็จสมบูรณ์!',
-									html: `แอปพลิเคชันเป็นเวอร์ชัน <b>${window.APP_VERSION}</b> แล้ว`,
+									html: `แอปพลิเคชันเป็นเวอร์ชัน <b>${window.APP_VERSION}</b> แล้ว<br><br>${window.APP_UPDATE_NOTES.replace(/\n/g, '<br>')}`,
 									confirmButtonColor: '#9333ea',
 									customClass: { popup: isDark ? 'swal2-popup' : '' },
 									background: isDark ? '#1a1a1a' : '#fff',
 									color: isDark ? '#e5e7eb' : '#545454'
 								});
-								
+
 								if (typeof window.addActivityLog === 'function') {
-									window.addActivityLog('🚀 อัปเดตระบบสำเร็จ', `แอปพลิเคชันอัปเดตเป็นเวอร์ชัน ${window.APP_VERSION} เรียบร้อยแล้ว`, 'fa-arrow-up-right-dots', 'text-green-600');
+									const logMessage = `แอปพลิเคชันอัปเดตเป็นเวอร์ชัน ${window.APP_VERSION} เรียบร้อยแล้ว`;
+									// ใช้ \n คั่นระหว่างบรรทัด
+									const fullMessage = notesPlain ? `${logMessage}\n${notesPlain}` : logMessage;
+									window.addActivityLog(
+										'🚀 อัปเดตระบบสำเร็จ',
+										fullMessage,
+										'fa-arrow-up-right-dots',
+										'text-green-600'
+									);
 								}
-							}, 800); 
+							}, 800);
 						}
 
 						const btnCancelUpdate = document.getElementById('btn-cancel-update');
