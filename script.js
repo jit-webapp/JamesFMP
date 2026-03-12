@@ -15693,6 +15693,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 					container.style.cursor = 'grabbing';
 					btn.style.pointerEvents = 'none';
+					
+					// +++ สั่นต่อเนื่องเมื่อเริ่มลากปุ่ม +++
+					if (navigator.vibrate) navigator.vibrate(9999);
 				}
 
 				if (isDragging) {
@@ -15723,6 +15726,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				document.removeEventListener('mouseup', stopDrag);
 				document.removeEventListener('touchmove', onDrag);
 				document.removeEventListener('touchend', stopDrag);
+				
+				// +++ หยุดสั่นเมื่อปล่อยปุ่ม +++
+				if (navigator.vibrate) navigator.vibrate(100);
 
 				if (dragTimeout) {
 					clearTimeout(dragTimeout);
