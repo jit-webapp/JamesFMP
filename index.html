@@ -1430,7 +1430,12 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">หมายเหตุ (เช่น ดอกเบี้ย, ค่าธรรมเนียม):</label>
                         <input type="text" id="smart-input-desc" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm p-3 bg-white dark:bg-gray-900 dark:border-gray-600 dark:text-white transition-colors" placeholder="เว้นว่างได้...">
                     </div>
-                    
+                    <!-- ช่องเลือกวันที่สำหรับรายการปรับปรุงยอด -->
+					<div class="mb-3">
+						<label for="adjust-tx-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">วันที่ต้องการให้บันทึก</label>
+						<input type="datetime-local" id="adjust-tx-date" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg p-3 bg-white dark:bg-gray-900 dark:border-gray-600 dark:text-white transition-colors">
+						<p class="text-xs text-gray-400 mt-1">* หากไม่ระบุ ระบบจะใช้วันที่ปัจจุบัน</p>
+					</div>
                     <input type="hidden" id="adjust-tx-type" value="">
                     <input type="hidden" id="adjust-tx-amount" value="">
                     <input type="hidden" id="adjust-tx-desc" value="">
