@@ -3,7 +3,7 @@
 // ============================================
 
 // เวอร์ชันหลัก
-var APP_VERSION = 'v8.6.40.1';
+var APP_VERSION = 'v8.6.41';
 var APP_LAST_UPDATED = '12-03-2026';
 var APP_LAST_UPDATED_TH = '12 มีนาคม 2569';
 
@@ -13,6 +13,7 @@ var APP_UPDATE_NOTES = `
 เพิ่ม addActivityLog เป็น30วัน 3000รายการ
 แก้ไข เวลาซิงค์ขึ้นคลาวด์ล่าสุด (Cloud)
 แก้ไข Swal ไม่แสดงขณะล็อคหน้าจอ
+เพิ่มระบบสั่น เมื่อพูด
 `;
 
 var APP_STATUS = '';

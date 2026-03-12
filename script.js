@@ -15172,6 +15172,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					showToast('กรุณาปลดล็อคแอปก่อนใช้คำสั่งเสียง', 'warning');
 					return;
 				}
+				
+				// +++ สั่นสั้นๆ 1 ครั้ง (50ms) เพื่อแจ้งให้ผู้ใช้ทราบว่าปุ่มกำลังรับคำสั่ง +++
+				if (navigator.vibrate) navigator.vibrate(50);
 
 				// 1. ตรวจสอบ API
 				const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -15232,6 +15235,8 @@ document.addEventListener('DOMContentLoaded', () => {
 							icon.classList.remove('fa-ear-listen', 'fa-beat-fade');
 						}
 						btn.title = originalTitle;
+						// +++ สั่น 50ms, พัก 50ms, สั่น 50ms เพื่อแจ้งให้ผู้ใช้ทราบว่าปุ่มหยุดรับคำสั่ง +++
+						if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 					}
 				};
 
