@@ -15416,15 +15416,25 @@ document.addEventListener('DOMContentLoaded', () => {
 					};
 				}
 			} else {
-				// ถ้าคีย์บอร์ดพับเก็บแล้ว ให้คืนค่าปุ่มกลับไปตำแหน่งเดิมทันที
-				if (smartVoiceOriginalPos) {
-					container.style.top = smartVoiceOriginalPos.top;
-					container.style.left = smartVoiceOriginalPos.left;
-					smartVoiceOriginalPos = null; // เคลียร์ค่าทิ้ง
+				// +++ คืนค่าตำแหน่งจาก localStorage (ตำแหน่งที่ผู้ใช้ลากไว้) +++
+				const savedPos = localStorage.getItem('smartVoicePos');
+				if (savedPos) {
+					try {
+						const pos = JSON.parse(savedPos);
+						container.style.top = pos.top;
+						container.style.left = pos.left;
+						container.style.right = 'auto';
+						container.style.bottom = 'auto';
+						smartVoiceOriginalPos = null; // ล้างตัวแปรชั่วคราว
+						return; // ออกจากฟังก์ชันทันที ไม่ให้คำนวณขอบจอซ้ำ
+					} catch (e) {
+						console.warn('Error parsing smartVoicePos', e);
+					}
 				}
+				// ถ้าไม่มี localStorage (เช่นยังไม่เคยลาก) ก็ปล่อยให้คำนวณขอบจอด้านล่าง
 			}
 
-			// คำนวณขอบจอเพื่อดึงปุ่มกลับ
+			// คำนวณขอบจอเพื่อดึงปุ่มกลับ (ทำงานเมื่อไม่มีคีย์บอร์ดและไม่มี localStorage หรือเมื่อคีย์บอร์ดเปิดอยู่)
 			const rect = container.getBoundingClientRect();
 			const margin = 15;
 			
@@ -15472,6 +15482,69 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			}
 		}
+		
+		// ฟังก์ชันตรวจสอบและดึงปุ่ม Smart Voice กลับเข้าจอ ถ้าหลุดเกิน 30%
+		function checkSmartVoiceButtonVisibility() {
+			const container = document.getElementById('smart-voice-container');
+			if (!container) return;
+
+			// ถ้าปุ่มยังใช้ตำแหน่งเริ่มต้น (ไม่ได้ถูกลาก) ไม่ต้องตรวจสอบ
+			if (!container.style.left || !container.style.top) return;
+
+			const rect = container.getBoundingClientRect();
+			const winWidth = window.innerWidth;
+			const winHeight = window.innerHeight;
+			const margin = 15; // ระยะห่างจากขอบจอเมื่อดึงกลับ
+
+			let newLeft = parseFloat(container.style.left) || rect.left;
+			let newTop = parseFloat(container.style.top) || rect.top;
+			let adjusted = false;
+
+			// ตรวจสอบขอบซ้าย-ขวา (หลุดออกไปเกิน 30% ของความกว้างปุ่ม)
+			if (rect.left < -rect.width * 0.3) {
+				newLeft = margin;
+				adjusted = true;
+			} else if (rect.right > winWidth + rect.width * 0.3) {
+				newLeft = winWidth - rect.width - margin;
+				adjusted = true;
+			}
+
+			// ตรวจสอบขอบบน-ล่าง (หลุดออกไปเกิน 30% ของความสูงปุ่ม)
+			if (rect.top < -rect.height * 0.3) {
+				newTop = margin;
+				adjusted = true;
+			} else if (rect.bottom > winHeight + rect.height * 0.3) {
+				// เผื่อที่สำหรับ bottom navigation บนมือถือ (90px)
+				const bottomSafeZone = (winWidth < 768) ? 90 : margin;
+				newTop = winHeight - rect.height - bottomSafeZone;
+				adjusted = true;
+			}
+
+			if (adjusted) {
+				container.style.left = newLeft + 'px';
+				container.style.top = newTop + 'px';
+				container.style.right = 'auto';
+				container.style.bottom = 'auto';
+				// บันทึกตำแหน่งใหม่ลง localStorage
+				localStorage.setItem('smartVoicePos', JSON.stringify({ 
+					left: newLeft + 'px', 
+					top: newTop + 'px' 
+				}));
+				console.log('Smart Voice button pulled back into view');
+			}
+		}
+
+		// เรียกใช้ฟังก์ชันนี้เมื่อมีการเปลี่ยนแปลงขนาดหน้าจอหรือหมุนจอ
+		window.addEventListener('resize', () => {
+			setTimeout(checkSmartVoiceButtonVisibility, 100);
+		});
+		window.addEventListener('orientationchange', () => {
+			setTimeout(checkSmartVoiceButtonVisibility, 200);
+		});
+
+		// นอกจากนี้ควรเรียกใน repositionButtonIfOutOfBounds ด้วย (ถ้าต้องการให้ทำงานต่อเนื่อง)
+		// โดยเพิ่มบรรทัดนี้ท้ายฟังก์ชัน repositionButtonIfOutOfBounds (ก่อนปิดฟังก์ชัน)
+		// checkSmartVoiceButtonVisibility();
 
 		// ผูก Event ดักจับการเปลี่ยนแปลงของหน้าจอทุกรูปแบบ
 		// 1. ดักจับการ Resize หน้าต่างปกติ
