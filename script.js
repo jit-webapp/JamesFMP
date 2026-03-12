@@ -1720,11 +1720,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		};
 
 		// ฟังก์ชันวาด UI คลังประวัติ (ดึงจากตัวแปรหลัก รายละเอียดครบ ซิงค์และกู้คืนมาแน่นอน)
+		// ฟังก์ชันวาด UI คลังประวัติ (แบบจัดกลุ่มตามวัน)
 		window.renderPersistentLogs = function() {
 			const listContainer = document.getElementById('persistent-log-list');
 			if (!listContainer) return;
 
-			// ดึงจากตัวแปรเดียวกับกระดิ่งเลย!
 			let logs = state.notificationHistory || [];
 
 			if (logs.length === 0) {
@@ -1737,54 +1737,115 @@ document.addEventListener('DOMContentLoaded', () => {
 				return;
 			}
 
-			const formatTime = (isoString) => {
+			// ฟังก์ชันช่วยจัดรูปแบบวันที่
+			const formatDate = (isoString) => {
 				const date = new Date(isoString);
 				const now = new Date();
-				const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-				if (diffDays === 0) return `วันนี้ ${date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})} น.`;
-				if (diffDays === 1) return `เมื่อวาน ${date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})} น.`;
-				return `${date.toLocaleDateString('th-TH', {day: 'numeric', month: 'short'})} ${date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})} น.`;
+				const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+				const yesterday = new Date(today);
+				yesterday.setDate(yesterday.getDate() - 1);
+
+				const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+				if (dateOnly.getTime() === today.getTime()) {
+					return { groupKey: 'today', display: 'วันนี้' };
+				} else if (dateOnly.getTime() === yesterday.getTime()) {
+					return { groupKey: 'yesterday', display: 'เมื่อวาน' };
+				} else {
+					const day = date.getDate().toString().padStart(2, '0');
+					const month = (date.getMonth() + 1).toString().padStart(2, '0');
+					const year = date.getFullYear() + 543; // พ.ศ.
+					return { groupKey: `${year}-${month}-${day}`, display: `${day}/${month}/${year}` };
+				}
 			};
 
-			listContainer.innerHTML = logs.map(log => {
-				let deviceText = '';
-				if (log.device && log.device !== 'Unknown') {
-					deviceText = typeof log.device === 'object' ? (log.device.os || log.device.browser || log.device.type || log.device.name || 'อุปกรณ์') : log.device;
-					deviceText = `<span class="ml-2 pl-2 border-l border-gray-300 dark:border-gray-600 text-gray-400"><i class="fa-solid fa-mobile-screen mr-1"></i> ${deviceText}</span>`;
+			// จัดกลุ่ม logs ตามวันที่ (ใช้ groupKey จาก formatDate)
+			const grouped = {};
+			logs.forEach(log => {
+				const { groupKey, display } = formatDate(log.timestamp);
+				if (!grouped[groupKey]) {
+					grouped[groupKey] = { display, items: [] };
 				}
+				grouped[groupKey].items.push(log);
+			});
 
-				// 💡 ดึงรายละเอียด ยอดเงิน/บัญชี/สลิป มาโชว์ให้ครบเหมือนในกระดิ่งเป๊ะๆ
-				let extraHtml = '';
-				if (log.amount !== undefined) {
-					const amountNum = parseFloat(log.amount);
-					const colorAmt = log.type === 'expense' ? 'text-red-500' : (log.type === 'income' ? 'text-green-500' : 'text-blue-500');
-					const signAmt = log.type === 'expense' ? '-' : (log.type === 'income' ? '+' : '');
-					extraHtml += `<div class="mt-2 text-sm font-bold ${colorAmt}">${signAmt}${amountNum.toLocaleString('th-TH', {minimumFractionDigits: 2})} ฿</div>`;
-				}
-				if (log.accountName || log.accountId) {
-					extraHtml += `<div class="mt-1 text-[11px] text-gray-500 dark:text-gray-400"><i class="fa-solid fa-wallet mr-1"></i> ${log.accountName || log.accountId}</div>`;
-				}
-				if (log.hasReceipt || log.receiptImage) {
-					extraHtml += `<div class="mt-1.5 inline-block bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800"><i class="fa-solid fa-receipt mr-1"></i> มีสลิปแนบ</div>`;
-				}
+			// เรียงกลุ่มตามวันที่ (groupKey ที่เป็นตัวเลขจะเรียงตามตัวอักษรได้ถ้าเป็น YYYY-MM-DD)
+			// แต่ต้องจัดการ special groups: today, yesterday ให้อยู่บนสุด
+			const groupOrder = [];
+			if (grouped.today) groupOrder.push({ key: 'today', ...grouped.today });
+			if (grouped.yesterday) groupOrder.push({ key: 'yesterday', ...grouped.yesterday });
 
-				return `
-				<div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 items-start transition-all">
-					<div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center border border-gray-100 dark:border-gray-600">
-						<i class="fa-solid ${log.icon} ${log.color} text-lg"></i>
+			// กลุ่มอื่นๆ เรียงตามวันที่จากใหม่ไปเก่า
+			const otherGroups = Object.keys(grouped)
+				.filter(key => key !== 'today' && key !== 'yesterday')
+				.sort((a, b) => b.localeCompare(a)); // เรียงจากปี-เดือน-วัน มากไปน้อย (ใหม่ไปเก่า)
+
+			otherGroups.forEach(key => {
+				groupOrder.push({ key, ...grouped[key] });
+			});
+
+			// สร้าง HTML
+			let html = '';
+			groupOrder.forEach(group => {
+				// หัวข้อกลุ่ม
+				html += `
+					<div class="sticky top-0 bg-gray-100 dark:bg-gray-800/90 backdrop-blur-sm z-10 py-2 px-3 rounded-t-xl mt-2 first:mt-0 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+						<i class="fa-solid fa-calendar-day text-purple-600 dark:text-purple-400 text-sm"></i>
+						<span class="font-bold text-gray-700 dark:text-gray-300 text-sm">${group.display}</span>
+						<span class="ml-auto text-xs text-gray-500 dark:text-gray-400">${group.items.length} รายการ</span>
 					</div>
-					<div class="flex-1 min-w-0">
-						<h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">${log.action}</h4>
-						<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">${log.details}</p>
-						${extraHtml}
-						<span class="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-2 flex items-center flex-wrap gap-y-1">
-							<i class="fa-regular fa-clock mr-1"></i> ${formatTime(log.timestamp)}
-							${deviceText}
-						</span>
-					</div>
-				</div>
 				`;
-			}).join('');
+
+				// เรียงรายการภายในกลุ่มตามเวลา (ใหม่ไปเก่า)
+				group.items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+				group.items.forEach(log => {
+					const date = new Date(log.timestamp);
+					const timeStr = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+					let deviceText = '';
+					if (log.device && log.device !== 'Unknown') {
+						deviceText = typeof log.device === 'object' ? (log.device.os || log.device.browser || log.device.type || log.device.name || 'อุปกรณ์') : log.device;
+						deviceText = `<span class="ml-2 pl-2 border-l border-gray-300 dark:border-gray-600 text-gray-400"><i class="fa-solid fa-mobile-screen mr-1"></i> ${deviceText}</span>`;
+					}
+
+					let extraHtml = '';
+					if (log.amount !== undefined) {
+						const amountNum = parseFloat(log.amount);
+						const colorAmt = log.type === 'expense' ? 'text-red-500' : (log.type === 'income' ? 'text-green-500' : 'text-blue-500');
+						const signAmt = log.type === 'expense' ? '-' : (log.type === 'income' ? '+' : '');
+						extraHtml += `<div class="mt-2 text-sm font-bold ${colorAmt}">${signAmt}${amountNum.toLocaleString('th-TH', {minimumFractionDigits: 2})} ฿</div>`;
+					}
+					if (log.accountName || log.accountId) {
+						extraHtml += `<div class="mt-1 text-[11px] text-gray-500 dark:text-gray-400"><i class="fa-solid fa-wallet mr-1"></i> ${log.accountName || log.accountId}</div>`;
+					}
+					if (log.hasReceipt || log.receiptImage) {
+						extraHtml += `<div class="mt-1.5 inline-block bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800"><i class="fa-solid fa-receipt mr-1"></i> มีสลิปแนบ</div>`;
+					}
+
+					html += `
+						<div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 items-start transition-all mb-2">
+							<div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center border border-gray-100 dark:border-gray-600">
+								<i class="fa-solid ${log.icon} ${log.color} text-lg"></i>
+							</div>
+							<div class="flex-1 min-w-0">
+								<div class="flex justify-between items-start">
+									<h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">${log.action}</h4>
+									<span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full whitespace-nowrap ml-2">${timeStr}</span>
+								</div>
+								<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">${log.details}</p>
+								${extraHtml}
+								<span class="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-2 flex items-center flex-wrap gap-y-1">
+									<i class="fa-regular fa-clock mr-1"></i> ${timeStr}
+									${deviceText}
+								</span>
+							</div>
+						</div>
+					`;
+				});
+			});
+
+			listContainer.innerHTML = html;
 		};
 
 		// อัปเดต badge บนไอคอนกระดิ่ง
@@ -2145,6 +2206,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				setupSwipeNavigation(); 
 				setupAutoLockListener(); 
+				// +++ เพิ่ม event listener สำหรับปุ่ม back เพื่อยกเลิก biometric และให้ไปที่รหัสผ่าน +++
+				window.addEventListener('popstate', () => {
+					// ถ้ามี AbortController ที่กำลังทำงานอยู่ และยังไม่ถูก abort
+					if (window.bioAbortController && !window.bioAbortController.signal.aborted) {
+						window.bioAbortController.abort(); // ยกเลิกการสแกน
+						// ถ้ามี Swal เปิดอยู่ (เช่น "กำลังตรวจสอบ...") ให้ปิด
+						if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+							Swal.close();
+						}
+					}
+				});
+				// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 				applyDarkModePreference(); 
 				
 				window.addEventListener('online', () => updateCloudStatusIcon());
@@ -2221,7 +2294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							try {
 								console.log("Attempting auto-biometric scan...");
 								const success = await verifyBiometricIdentity();
-								if (success) {
+								if (success === true) { // 💡 [แก้บั๊ก] เช็ค === true เพื่อกันการกด Back (aborted)
 									unlockAppSuccess();
 								}
 							} catch (err) {
@@ -2275,6 +2348,11 @@ document.addEventListener('DOMContentLoaded', () => {
 					checkNotifications();
 				}
 				checkAndRunAutoBackup();
+				
+				// 💡 [ย้ายอัปเดต] ถ้าไม่ได้ตั้งรหัสผ่าน ให้เช็คอัปเดตเลย
+				if (!state.password && typeof checkForUpdates === 'function') {
+					checkForUpdates();
+				}
 			}, 2000);
 		}
 
@@ -2359,6 +2437,11 @@ document.addEventListener('DOMContentLoaded', () => {
 					if(typeof checkNotifications === 'function') {
 						checkNotifications();
 					}
+					
+					// 💡 [ย้ายอัปเดต] เช็คอัปเดตหลังจากปลดล็อคสำเร็จแล้วเท่านั้น!
+					if (typeof checkForUpdates === 'function') {
+						checkForUpdates();
+					}
 				}, 2000);
 
 			}, 100);
@@ -2439,7 +2522,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				(async () => {
 					try {
 						const success = await verifyBiometricIdentity();
-						if (success) {
+						if (success === true) { // 💡 [แก้บั๊ก] เช็ค === true เพื่อกันการกด Back
 							unlockAppSuccess();
 						}
 					} catch (err) {
@@ -4907,16 +4990,26 @@ document.addEventListener('DOMContentLoaded', () => {
 						checkAndProcessRecurring();
 					}
 					
-					// [แก้ไข] จัดการระบบ Auto Scan Biometric เมื่อสลับแอปกลับมาและหน้าจอล็อคอยู่
+					// [แก้ไข] ดักเช็คสถานะการล็อคหน้าจอ
 					const lockScreen = document.getElementById('app-lock-screen');
-					if (lockScreen && !lockScreen.classList.contains('hidden') && state.biometricId) {
+					const isLocked = lockScreen && !lockScreen.classList.contains('hidden');
+					
+					// 💡 [ย้ายอัปเดต] ถ้าไม่ได้ติดหน้าจอล็อคอยู่ ถึงจะยอมให้เช็คอัปเดต
+					if (!isLocked) {
+						setTimeout(() => {
+							if (typeof checkForUpdates === 'function') checkForUpdates();
+						}, 500);
+					}
+
+					// จัดการระบบ Auto Scan Biometric เมื่อสลับแอปกลับมาและหน้าจอล็อคอยู่
+					if (isLocked && state.biometricId) {
 						// ต้องหน่วงเวลาเล็กน้อยให้เบราว์เซอร์มือถือพร้อมทำงานหลังสลับแอป
 						setTimeout(async () => {
 							try {
 								console.log("App resumed: Attempting auto-biometric scan...");
 								// พยายามเรียก Auto Scan (อาจถูกบล็อกได้ในมือถือบางรุ่นถ้าไม่มีการแตะหน้าจอก่อน)
 								const success = await verifyBiometricIdentity();
-								if (success) {
+								if (success === true) { // 💡 [แก้บั๊ก] เช็ค === true เพื่อกันการกด Back
 									unlockAppSuccess();
 								}
 							} catch (err) {
@@ -9154,104 +9247,111 @@ document.addEventListener('DOMContentLoaded', () => {
 		modal.classList.remove('hidden');
 	}
 
-	async function handleEditAccountSubmit(e) {
-		e.preventDefault();
-		const getEl = (id) => document.getElementById(id);
-		document.getElementById('edit-account-calculator-popover').classList.add('hidden');
+		async function handleEditAccountSubmit(e) {
+			e.preventDefault();
+			const getEl = (id) => document.getElementById(id);
+			document.getElementById('edit-account-calculator-popover').classList.add('hidden');
 
-		const accountId = getEl('edit-account-id').value;
-		const name = getEl('edit-account-name').value.trim();
-		const type = getEl('edit-account-type').value;
+			const accountId = getEl('edit-account-id').value;
+			const name = getEl('edit-account-name').value.trim();
+			const type = getEl('edit-account-type').value;
+			const rawBalance = getEl('edit-account-balance').value;
 
-		const rawBalance = getEl('edit-account-balance').value;
-		let initialBalance = typeof safeCalculate === 'function' ? safeCalculate(rawBalance) : parseFloat(rawBalance);
-		if (initialBalance === null || isNaN(initialBalance)) {
-			Swal.fire('ข้อมูลไม่ถูกต้อง', 'ยอดเริ่มต้นไม่ถูกต้อง', 'warning');
-			return;
-		}
-		initialBalance = parseFloat(initialBalance.toFixed(2));
+			let initialBalance = typeof safeCalculate === 'function' ? safeCalculate(rawBalance) : parseFloat(rawBalance);
+			if (initialBalance === null || isNaN(initialBalance)) {
+				Swal.fire('ข้อมูลไม่ถูกต้อง', 'ยอดเริ่มต้นไม่ถูกต้อง', 'warning');
+				return;
+			}
+			initialBalance = parseFloat(initialBalance.toFixed(2));
 
-		if (!name || !accountId) {
-			Swal.fire('ข้อผิดพลาด', 'ข้อมูลไม่ถูกต้อง', 'error');
-			return;
-		}
-
-		const accountIndex = state.accounts.findIndex(a => a.id === accountId);
-		if (accountIndex === -1) {
-			Swal.fire('ข้อผิดพลาด', 'ไม่พบบัญชี', 'error');
-			return;
-		}
-
-		const oldAccount = JSON.parse(JSON.stringify(state.accounts[accountIndex]));
-
-		const defaultIconName = type === 'credit' ? 'fa-credit-card' : (type === 'liability' ? 'fa-file-invoice-dollar' : 'fa-wallet');
-
-		const updatedAccount = {
-			...state.accounts[accountIndex],
-			name: name,
-			type: type,
-			initialBalance: initialBalance,
-			icon: defaultIconName,
-			iconName: state.accounts[accountIndex].iconName || defaultIconName
-		};
-
-		try {
-			await dbPut(STORE_ACCOUNTS, updatedAccount);
-			state.accounts[accountIndex] = updatedAccount;
-			if (typeof setLastUndoAction === 'function') {
-				setLastUndoAction({ type: 'account-edit', oldData: oldAccount, newData: updatedAccount });
+			if (!name || !accountId) {
+				Swal.fire('ข้อผิดพลาด', 'ข้อมูลไม่ถูกต้อง', 'error');
+				return;
 			}
 
-			// ✅ ADD ACTIVITY LOG สำหรับแก้ไขบัญชี
-			if (typeof addActivityLog === 'function') {
-				addActivityLog('✏️ แก้ไขบัญชี', `${oldAccount.name} → ${updatedAccount.name}`, 'fa-pencil', 'text-blue-600');
+			const accountIndex = state.accounts.findIndex(a => a.id === accountId);
+			if (accountIndex === -1) {
+				Swal.fire('ข้อผิดพลาด', 'ไม่พบบัญชี', 'error');
+				return;
 			}
 
-			// บันทึกรายการปรับปรุงยอด (รับค่าจากตัวคำนวณอัตโนมัติที่ซ่อนไว้)
-			const adjAmountVal = getEl('adjust-tx-amount').value;
-			const adjType = getEl('adjust-tx-type').value;
-			const adjDesc = getEl('adjust-tx-desc').value.trim();
+			const oldAccount = JSON.parse(JSON.stringify(state.accounts[accountIndex]));
+			const defaultIconName = type === 'credit' ? 'fa-credit-card' : (type === 'liability' ? 'fa-file-invoice-dollar' : 'fa-wallet');
+			
+			const updatedAccount = {
+				...state.accounts[accountIndex],
+				name: name,
+				type: type,
+				initialBalance: initialBalance,
+				icon: defaultIconName,
+				iconName: state.accounts[accountIndex].iconName || defaultIconName
+			};
 
-			let adjMessage = '';
-			if (adjAmountVal && parseFloat(adjAmountVal) > 0) {
-				const amount = parseFloat(adjAmountVal);
-				const finalName = adjDesc || (adjType === 'income' ? 'ดอกเบี้ยรับ/ปรับยอดเพิ่ม' : 'ค่าธรรมเนียม/ปรับยอดลด');
-				
-				const newTx = {
-					id: `tx-adj-${Date.now()}`,
-					type: adjType,
-					amount: amount,
-					name: finalName,
-					category: 'ปรับปรุงยอดบัญชี',
-					accountId: accountId,
-					date: new Date().toISOString(),
-					desc: 'ปรับปรุงยอดผ่านเมนูแก้ไขบัญชี'
-				};
-				await dbPut(STORE_TRANSACTIONS, newTx);
-				state.transactions.push(newTx);
-				if (typeof sendLineAlert === 'function') sendLineAlert(newTx, 'add');
-				
-				adjMessage = `<br><span class="text-sm text-gray-500">และบันทึกรายการปรับปรุงยอด ${typeof formatCurrency === 'function' ? formatCurrency(amount) : amount.toLocaleString()} เรียบร้อย</span>`;
+			try {
+				await dbPut(STORE_ACCOUNTS, updatedAccount);
+				state.accounts[accountIndex] = updatedAccount;
 
-				// ✅ ADD ACTIVITY LOG สำหรับปรับปรุงยอด
-				if (typeof addActivityLog === 'function') {
-					addActivityLog('💰 ปรับปรุงยอด', `${finalName} ${typeof formatCurrency === 'function' ? formatCurrency(amount) : amount.toLocaleString()} (${updatedAccount.name})`, 'fa-calculator', 'text-orange-600');
+				if (typeof setLastUndoAction === 'function') {
+					setLastUndoAction({ type: 'account-edit', oldData: oldAccount, newData: updatedAccount });
 				}
-			}
 
-			if (typeof renderAccountSettingsList === 'function') renderAccountSettingsList();
-			if (typeof currentPage !== 'undefined' && currentPage === 'home' && typeof renderAll === 'function') renderAll();
-			if (typeof openAccountModal === 'function') openAccountModal(null, true);
-			Swal.fire({
-				title: 'สำเร็จ',
-				html: `อัปเดตข้อมูลบัญชีเรียบร้อยแล้ว${adjMessage}`,
-				icon: 'success'
-			});
-		} catch (err) {
-			console.error("Failed to edit account:", err);
-			Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตบัญชีได้', 'error');
+				if (typeof addActivityLog === 'function') {
+					addActivityLog('✏️ แก้ไขบัญชี', `${oldAccount.name} → ${updatedAccount.name}`, 'fa-pencil', 'text-blue-600');
+				}
+
+				const adjAmountVal = getEl('adjust-tx-amount').value;
+				const adjType = getEl('adjust-tx-type').value;
+				const adjDesc = getEl('adjust-tx-desc').value.trim();
+				let adjMessage = '';
+
+				if (adjAmountVal && parseFloat(adjAmountVal) > 0) {
+					const amount = parseFloat(adjAmountVal);
+					const finalName = adjDesc || (adjType === 'income' ? 'ดอกเบี้ยรับ/ปรับยอดเพิ่ม' : 'ค่าธรรมเนียม/ปรับยอดลด');
+					
+					// 💡 [แก้ไข] ตรวจสอบและสร้างหมวดหมู่ "ปรับปรุงยอด" อัตโนมัติ
+					if (!state.categories[adjType].includes('ปรับปรุงยอด')) {
+						state.categories[adjType].push('ปรับปรุงยอด');
+						await dbPut(STORE_CATEGORIES, { type: adjType, items: state.categories[adjType] });
+					}
+
+					const newTx = {
+						id: `tx-adj-${Date.now()}`,
+						type: adjType,
+						amount: amount,
+						name: finalName,
+						category: 'ปรับปรุงยอด', // <--- จับใส่หมวดหมู่นี้ทันที
+						accountId: accountId,
+						date: new Date().toISOString(),
+						desc: 'ปรับปรุงยอดผ่านเมนูแก้ไขบัญชี'
+					};
+
+					await dbPut(STORE_TRANSACTIONS, newTx);
+					state.transactions.push(newTx);
+					
+					if (typeof sendLineAlert === 'function') sendLineAlert(newTx, 'add');
+
+					adjMessage = `<br><span class="text-sm text-gray-500">และบันทึกรายการปรับปรุงยอด ${typeof formatCurrency === 'function' ? formatCurrency(amount) : amount.toLocaleString()} เรียบร้อย</span>`;
+
+					if (typeof addActivityLog === 'function') {
+						addActivityLog('💰 ปรับปรุงยอด', `${finalName} ${typeof formatCurrency === 'function' ? formatCurrency(amount) : amount.toLocaleString()} (${updatedAccount.name})`, 'fa-calculator', 'text-orange-600');
+					}
+				}
+
+				if (typeof renderAccountSettingsList === 'function') renderAccountSettingsList();
+				if (typeof currentPage !== 'undefined' && currentPage === 'home' && typeof renderAll === 'function') renderAll();
+				if (typeof openAccountModal === 'function') openAccountModal(null, true);
+
+				Swal.fire({
+					title: 'สำเร็จ',
+					html: `อัปเดตข้อมูลบัญชีเรียบร้อยแล้ว${adjMessage}`,
+					icon: 'success'
+				});
+
+			} catch (err) {
+				console.error("Failed to edit account:", err);
+				Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตบัญชีได้', 'error');
+			}
 		}
-	}
     
     function closeIconModal() {
         document.getElementById('icon-form-modal').classList.add('hidden');
@@ -11615,13 +11715,20 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (state.biometricId) {
 				try {
 					const bioSuccess = await verifyBiometricIdentity();
-					if (bioSuccess) {
+					if (bioSuccess === true) {
 						// สแกนสำเร็จ คืนค่า true ทันที (ไม่ต้องแสดงฟอร์ม)
 						return true;
+					} else if (bioSuccess === 'aborted') {
+						// +++ ผู้ใช้กด back หรือยกเลิกการสแกน → ให้ไปที่ฟอร์มรหัสผ่าน (ไม่ return false) +++
+						console.log('Biometric aborted, proceeding to password form');
+						// ปล่อยให้ไปขั้นตอนที่ 2 ต่อ
+					} else {
+						// สแกนไม่สำเร็จ (false) ให้ fallback ไปฟอร์มรหัสผ่าน
+						// ปล่อยให้ไปขั้นตอนที่ 2 ต่อ
 					}
-					// ถ้าสแกนไม่สำเร็จ (ผู้ใช้กดยกเลิก หรือ error อื่น) จะ fallback ไปยังฟอร์มรหัสผ่าน
 				} catch (err) {
 					console.warn('Biometric attempt failed, falling back to password prompt', err);
+					// ปล่อยให้ไปขั้นตอนที่ 2 ต่อ
 				}
 			}
 
@@ -15253,6 +15360,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		// ฟังก์ชันดึงปุ่ม Smart Voice กลับเข้าจออัตโนมัติ (รองรับมือถือจอพับ เช่น Z Fold / Flip)
+		// ตัวแปร Global สำหรับจำตำแหน่งปุ่มก่อนคีย์บอร์ดเด้ง
+		let smartVoiceOriginalPos = null;
+		let maxKnownScreenHeight = window.innerHeight || document.documentElement.clientHeight;
+
+		// ฟังก์ชันดึงปุ่ม Smart Voice กลับเข้าจออัตโนมัติ (แก้ปัญหาปุ่มลอยมั่วตอนคีย์บอร์ดมือถือเด้ง)
 		function repositionButtonIfOutOfBounds() {
 			const container = document.getElementById('smart-voice-container');
 			if (!container) return;
@@ -15260,51 +15372,80 @@ document.addEventListener('DOMContentLoaded', () => {
 			// ถ้าปุ่มยังใช้ค่า Default (bottom/right) และยังไม่ได้ถูกลาก ไม่ต้องคำนวณใหม่
 			if (!container.style.left || !container.style.top) return;
 
-			// ดึงขนาดหน้าจอที่มองเห็นได้จริง (รองรับ Visual Viewport)
-			const winWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
-			const winHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+			const currentWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+			const currentHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 			
+			// อัปเดตความสูงสูงสุดที่เคยเจอ (ความสูงหน้าจอตอนที่ไม่มีคีย์บอร์ด)
+			if (currentHeight > maxKnownScreenHeight) {
+				maxKnownScreenHeight = currentHeight;
+			}
+
+			// 💡 เช็คว่าคีย์บอร์ดเด้งอยู่หรือไม่ (ถ้าความสูงหายไปเกิน 150px แปลว่าคีย์บอร์ดเด้ง)
+			const isKeyboardOpen = (maxKnownScreenHeight - currentHeight) > 150;
+
+			if (isKeyboardOpen) {
+				// ถ้าคีย์บอร์ดเพิ่งเด้ง และยังไม่ได้จำค่าเดิม ให้จำพิกัดของปุ่ม ณ ตอนนั้นไว้ก่อน
+				if (!smartVoiceOriginalPos) {
+					smartVoiceOriginalPos = {
+						top: container.style.top,
+						left: container.style.left
+					};
+				}
+			} else {
+				// ถ้าคีย์บอร์ดพับเก็บแล้ว ให้คืนค่าปุ่มกลับไปตำแหน่งเดิมทันที
+				if (smartVoiceOriginalPos) {
+					container.style.top = smartVoiceOriginalPos.top;
+					container.style.left = smartVoiceOriginalPos.left;
+					smartVoiceOriginalPos = null; // เคลียร์ค่าทิ้ง
+				}
+			}
+
+			// คำนวณขอบจอเพื่อดึงปุ่มกลับ
 			const rect = container.getBoundingClientRect();
-			const margin = 15; // ระยะห่างขอบจอที่ปลอดภัย
+			const margin = 15;
 			
-			let newLeft = rect.left;
-			let newTop = rect.top;
+			let newLeft = parseFloat(container.style.left);
+			let newTop = parseFloat(container.style.top);
 			let isChanged = false;
 
-			// เช็คขอบขวา (ถ้าพับจอเล็กลง แล้วปุ่มหลุดขอบขวา)
-			if (newLeft + rect.width > winWidth - margin) {
-				newLeft = Math.max(margin, winWidth - rect.width - margin);
+			// เช็คขอบขวา/ซ้าย
+			if (newLeft + rect.width > currentWidth - margin) {
+				newLeft = Math.max(margin, currentWidth - rect.width - margin);
 				isChanged = true;
 			}
-			// เช็คขอบซ้าย
 			if (newLeft < margin) {
 				newLeft = margin;
 				isChanged = true;
 			}
 			
-			// เช็คขอบล่าง (เผื่อพื้นที่ให้ Bottom Nav Bar สำหรับมือถือ)
-			const bottomSafeZone = winWidth < 768 ? 90 : margin; 
-			if (newTop + rect.height > winHeight - bottomSafeZone) {
-				newTop = Math.max(margin, winHeight - rect.height - bottomSafeZone);
+			// เช็คขอบล่าง/บน
+			// ถ้าไม่มีคีย์บอร์ด ให้เผื่อที่ให้เมนูด้านล่าง 90px แต่ถ้ามีคีย์บอร์ดให้ชิดขอบคีย์บอร์ดได้เลย (margin)
+			const bottomSafeZone = (currentWidth < 768 && !isKeyboardOpen) ? 90 : margin; 
+			
+			if (newTop + rect.height > currentHeight - bottomSafeZone) {
+				newTop = Math.max(margin, currentHeight - rect.height - bottomSafeZone);
 				isChanged = true;
 			}
-			// เช็คขอบบน
 			if (newTop < margin) {
 				newTop = margin;
 				isChanged = true;
 			}
 
-			// ถ้าพบว่าปุ่มหลุดจอ ให้ตั้งค่าพิกัดใหม่และเซฟลงเครื่องทันที
+			// ถ้าพบว่าปุ่มหลุดจอ หรือต้องขยับหนีคีย์บอร์ด ให้เซ็ตพิกัดใหม่
 			if (isChanged) {
 				container.style.left = newLeft + 'px';
 				container.style.top = newTop + 'px';
 				container.style.right = 'auto';
 				container.style.bottom = 'auto';
 				
-				localStorage.setItem('smartVoicePos', JSON.stringify({ 
-					left: newLeft + 'px', 
-					top: newTop + 'px' 
-				}));
+				// 🚨 สำคัญมาก: เซฟลง LocalStorage เฉพาะตอนที่ "ไม่มีคีย์บอร์ด" เท่านั้น
+				// ป้องกันไม่ให้เอาตำแหน่งตอนปุ่มโดนคีย์บอร์ดดัน ไปทับตำแหน่งที่ผู้ใช้ตั้งไว้
+				if (!isKeyboardOpen) {
+					localStorage.setItem('smartVoicePos', JSON.stringify({ 
+						left: newLeft + 'px', 
+						top: newTop + 'px' 
+					}));
+				}
 			}
 		}
 
