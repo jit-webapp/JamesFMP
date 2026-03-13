@@ -359,6 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
         const dateFile = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
         
+		window.appVibrate([50, 50]); // +++ สั่น 2 ครั้งเบาๆ ยืนยันการสร้างไฟล์ Excel สำเร็จ +++
         // สั่งดาวน์โหลดไฟล์ .xlsx
         XLSX.writeFile(wb, `Statement_${account.name}_${dateFile}.xlsx`);
     }
@@ -2673,6 +2674,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				toggleDarkModeBtn.addEventListener('change', async (e) => {
 					const isChecked = e.target.checked;
+					window.appVibrate(50); // +++ สั่น 1 ครั้งเมื่อสลับโหมดกลางคืน +++
 					state.isDarkMode = isChecked;
 					
 					try {
@@ -2771,6 +2773,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					icon.classList.remove('fa-spin', 'text-green-500');
 					icon.classList.add('text-blue-500');
 				});
+				window.appVibrate([50, 50, 50]); // +++ สั่นยืนยันเมื่อรีเฟรชคลาวด์เสร็จสิ้น +++
 				showToast('รีเฟรชข้อมูลสำเร็จ', 'success');
 			} catch (err) {
 				console.error('Refresh error:', err);
@@ -4936,6 +4939,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const deleteAllBtn = document.getElementById('btn-delete-all-imported');
 			if (deleteAllBtn) {
 				deleteAllBtn.addEventListener('click', async () => {
+					window.appVibrate([100, 50, 100]); // +++ สั่นกระตุกเตือนสติก่อนกดลบกิจกรรมที่นำเข้าทั้งหมด +++
 					const confirm = await Swal.fire({
 						title: 'ลบกิจกรรมทั้งหมด?',
 						text: 'คุณต้องการลบไฟล์ ICS ที่นำเข้าและกิจกรรมทั้งหมดใช่หรือไม่',
@@ -5234,6 +5238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // [แก้ไข] เพิ่มพารามิเตอร์ addToHistory = true
     function showPage(pageId, addToHistory = true) {
         if (isTransitioning) return;
+		window.appVibrate(20); // +++ สั่นสะกิดเบาๆ 20ms เมื่อกดเปลี่ยนหน้า +++
         resetAutoLockTimer(); 
         const pageName = pageId.replace('page-', '');
         const getEl = (id) => document.getElementById(id);
@@ -9155,6 +9160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         updateFormVisibility();
+		window.appVibrate(20); // +++ สั่นเบาๆ เมื่อเปิดหน้าต่างบันทึกข้อมูล +++
 		state.activeModalId = 'form-modal';  
         getEl('form-modal').classList.remove('hidden');
     }
