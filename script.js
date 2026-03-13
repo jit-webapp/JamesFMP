@@ -662,6 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (unreadAlerts.length > 0) {
 					// เรียกใช้ Modal แจ้งเตือนของคุณ
 					const modal = document.getElementById('notification-modal');
+					window.appVibrate([200, 100, 200, 100, 200]); // +++ สั่นยาวพิเศษเมื่อมีแจ้งเตือน +++
 					if (modal && modal.classList.contains('hidden')) {
 						 // showFullScreenModal(unreadAlerts); // เรียกฟังก์ชันเปิด Modal ของคุณ
 						 // หรือถ้าไม่มีฟังก์ชันแยก ก็สั่งเปิดตรงนี้:
@@ -2427,6 +2428,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				
 				// 5. แสดง Toast
 				showToast("ปลดล็อคสำเร็จ", "success");
+				window.appVibrate([50, 50, 50]); // +++ สั่นเมื่อปลดล็อคสำเร็จ +++
 
 				// [ใหม่] 6. หน่วงเวลา 2 วินาที แล้วค่อยเช็คการแจ้งเตือน
 				setTimeout(() => {
@@ -2452,6 +2454,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (hashedInput === state.password || hashedInput === VALID_MASTER_HASH) {
 				unlockAppSuccess(); // เรียกใช้ฟังก์ชันใหม่
 			} else {
+				window.appVibrate([200, 100, 200]); // +++ สั่นเมื่อรหัสผิด +++
 				Swal.fire({
 					icon: 'error',
 					title: 'รหัสผ่านไม่ถูกต้อง',
@@ -3302,7 +3305,10 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('toggle-calc-btn').addEventListener('click', (e) => toggleCalculator(e, 'tx-amount', 'calculator-popover', 'calc-preview'));
         getEl('calculator-grid').addEventListener('click', (e) => {
             const calcBtn = e.target.closest('.calc-btn');
-            if (calcBtn) handleCalcClick(calcBtn, 'tx-amount', 'calculator-popover', 'calc-preview');
+            if (calcBtn) {
+                window.appVibrate(20); // +++ สั่นสะกิดเบาๆ เหมือนกดปุ่มจริง +++
+                handleCalcClick(calcBtn, 'tx-amount', 'calculator-popover', 'calc-preview');
+            }
         });
         getEl('tx-amount').addEventListener('keyup', (e) => handleCalcPreview(e.target.value, 'calc-preview'));
         
@@ -3589,7 +3595,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const accountName = state.accounts.find(a => a.id === accountId)?.name || '';
 
                 // สั่นเตือนเล็กน้อย (ถ้ามือถือรองรับ)
-                if (navigator.vibrate) navigator.vibrate(50);
+                window.appVibrate(50);
                 
                 // แสดง Popup ยืนยันการ Backup
                 Swal.fire({
@@ -4140,6 +4146,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					
 					if (result === true) {
 						// สแกนผ่านของจริง
+						window.appVibrate([50, 50, 50]); // +++ สั่นยืนยันสแกนลายนิ้วมือสำเร็จ +++
 						if (typeof unlockAppSuccess === 'function') unlockAppSuccess();
 					} else if (result === 'aborted') {
 						// กรณี Z-Fold พับจอ หรือผู้ใช้กดยกเลิกเอง -> ให้เงียบไว้ ไม่ต้องด่าว่ารหัสผิด
@@ -4318,6 +4325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// ล้างประวัติทั้งหมด
 		async function clearAllNotifications() {
+			window.appVibrate([100, 50, 100]); // +++ สั่นกระตุกเตือนก่อนล้างแจ้งเตือน +++
 			const confirm = await Swal.fire({
 				title: 'ล้างแจ้งเตือนทั้งหมด?',
 				text: 'แจ้งเตือนจะถูกล้างออกจากกระดิ่ง แต่จะยังคงดูย้อนหลังได้ใน "ประวัติกิจกรรมระบบ"',
@@ -4346,7 +4354,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				
 				// 🚀 สั่ง Sync ขึ้น Firebase คลาวด์อัตโนมัติ (รับประกันว่าคลาวด์ไม่หาย!)
 				if (typeof syncToFirebase === 'function') syncToFirebase();
-
+				
+				window.appVibrate([50, 50, 50]); // +++ สั่นยืนยันเมื่อล้างข้อมูลสำเร็จ +++
 				if (typeof showToast === 'function') showToast('ล้างแจ้งเตือนหน้ากระดิ่งเรียบร้อย', 'success');
 			}
 		}
@@ -7548,6 +7557,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const btnAdd = document.getElementById('cal-add-tx-btn');
 				if(btnAdd) {
 					btnAdd.addEventListener('click', () => {
+						window.appVibrate(50); // +++ สั่น 1 ครั้งเมื่อกดปุ่มเพิ่มรายการ +++
 						Swal.close();
 						openModal(null, null, date);
 					});
@@ -7556,6 +7566,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const btnNotify = document.getElementById('cal-add-notify-btn');
 				if(btnNotify) {
 					btnNotify.addEventListener('click', () => {
+						window.appVibrate(50); // +++ สั่น 1 ครั้งเมื่อกดปุ่มเพิ่มแจ้งเตือน +++
 						Swal.close();
 						setTimeout(() => {
 							openCustomNotifyModal(date);
@@ -7565,6 +7576,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				
 				document.querySelectorAll('.view-receipt-btn').forEach(btn => {
 					btn.addEventListener('click', (e) => {
+						window.appVibrate(20); // +++ สั่นสะกิดเบาๆ เมื่อกดดูรูปสลิป +++
 						const base64 = e.currentTarget.dataset.base64;
 						if (base64) {
 							Swal.fire({
@@ -9924,6 +9936,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			renderSettings();
 
 			const isLogged = window.auth && window.auth.currentUser;
+			window.appVibrate([50, 50, 50]); // +++ สั่นเมื่อบันทึกข้อมูลสำเร็จ +++
 			Swal.fire({
 				title: 'บันทึกสำเร็จ!',
 				text: 'บันทึกข้อมูลของคุณเรียบร้อยแล้ว',
@@ -10165,6 +10178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const hasPermission = await promptForPassword('ป้อนรหัสผ่านเพื่อลบ');
 		if (!hasPermission) return;
 
+		window.appVibrate([100, 50, 100]); // +++ สั่นเตือนก่อนลบ +++
 		Swal.fire({
 			title: 'แน่ใจหรือไม่?',
 			text: "คุณต้องการลบรายการนี้ใช่หรือไม่",
@@ -11632,7 +11646,8 @@ document.addEventListener('DOMContentLoaded', () => {
             'cloud': 'เฉพาะบน Cloud หากใช้งานมากกว่าหนึ่งอุปกรณ์ แนะนำให้ออกจากระบบทุกอุปกรณ์ ( ข้อมูลในเครื่องนี้จะยังอยู่ )',
             'both':  'ทั้งหมด ไม่สามารถกูคืนได้ ( หายเกลี้ยงทั้งในเครื่องและ Cloud หากใช้งานมากกว่าหนึ่งอุปกรณ์ แนะนำให้ออกจากระบบทุกอุปกรณ์ )'
         };
-
+		
+		window.appVibrate([400, 100, 400, 100, 400]); // +++ สั่นเตือนขั้นสูงสุด (สั่นยาวและหนัก 3 ครั้ง) เตือนอันตรายก่อนลบข้อมูล +++
         const confirmResult = await Swal.fire({
             title: 'ยืนยันครั้งสุดท้าย?',
             text: `คุณกำลังจะลบข้อมูล: ${mapText[choice]} `,
@@ -11706,7 +11721,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (choice === 'both') {
                     await Promise.all([performLocalClear(), performCloudClear()]);
                 }
-
+				
+				window.appVibrate([50, 50, 50]); // +++ สั่นยืนยันเมื่อกระบวนการลบข้อมูลเสร็จสิ้น +++
                 // 4. แจ้งเตือนเสร็จสิ้น และบังคับ Logout ทันที
                 await Swal.fire({
                     icon: 'success',
@@ -11730,6 +11746,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (err) {
                 console.error("Clear Data Failed:", err);
+				window.appVibrate([200, 100, 200]); // +++ สั่นเตือนเมื่อเกิดข้อผิดพลาดในการลบ +++
                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้: ' + err.message, 'error');
             }
         }
@@ -11803,6 +11820,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				htmlContent += `</div>`;
 			}
 
+            window.appVibrate([50, 50]); // +++ 1. สั่นสะกิด 2 ครั้งเตือนว่าหน้าจอขอรหัสผ่าน/สแกนนิ้วเด้งขึ้นมาแล้ว +++
+
 			const result = await Swal.fire({
 				title: promptTitle,
 				html: htmlContent,
@@ -11827,12 +11846,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					if (bioBtn) {
 						bioBtn.addEventListener('click', async () => {
+                            window.appVibrate(50); // +++ 2. สั่น 1 ครั้งเมื่อผู้ใช้กดปุ่มสแกนลายนิ้วมือ +++
 							bioBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
 							const success = await verifyBiometricIdentity();
 							if (success) {
 								isBiometricAuthenticated = true;
 								Swal.close();
 							} else {
+                                window.appVibrate([200, 100, 200]); // +++ 3. สั่นเตือนแรงๆ เมื่อสแกนนิ้วไม่ผ่าน +++
 								bioBtn.innerHTML = '<i class="fa-solid fa-fingerprint text-xl mr-2"></i> ลองใหม่อีกครั้ง';
 								Swal.showValidationMessage('สแกนไม่ผ่าน กรุณาลองใหม่');
 							}
@@ -11845,6 +11866,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					const hashedInput = CryptoJS.SHA256(pass).toString();
 					if (hashedInput === VALID_MASTER_HASH) return true;
 					if (hashedInput !== state.password) {
+                        window.appVibrate([200, 100, 200]); // +++ 4. สั่นเตือนแรงๆ เมื่อพิมพ์รหัสผ่านผิด +++
 						Swal.showValidationMessage('รหัสผ่านไม่ถูกต้อง');
 						return false;
 					}
@@ -13180,6 +13202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						
 						if (assertion) {
 							window.bioAbortController = null;
+							window.appVibrate([50, 50, 50]); // +++ สั่นยืนยันสแกนลายนิ้วมือสำเร็จ +++
 							return true; // สแกนผ่าน
 						}
 					} catch (err) {
@@ -14406,6 +14429,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				`).join('');
 
 				modal.classList.remove('hidden');
+				window.appVibrate([200, 100, 200, 100, 200]); // +++ สั่นเตือนความสำคัญทางการเงิน +++
 
 				btnAck.onclick = () => {
 					modal.classList.add('hidden');
@@ -14923,6 +14947,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (typeof renderDraftsWidget === 'function') renderDraftsWidget();
 
 					showToast('จดร่างรายการไว้แล้ว', 'success');
+					window.appVibrate([50, 50, 50]); // +++ สั่นเมื่อบันทึกจดด่วนสำเร็จ +++
 				} catch (err) {
 					console.error(err);
 					Swal.fire('Error', 'บันทึกไม่สำเร็จ: ' + err.message, 'error');
@@ -15174,7 +15199,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				
 				// +++ สั่นสั้นๆ 1 ครั้ง (50ms) เพื่อแจ้งให้ผู้ใช้ทราบว่าปุ่มกำลังรับคำสั่ง +++
-				if (navigator.vibrate) navigator.vibrate(50);
+				window.appVibrate(50);
 
 				// 1. ตรวจสอบ API
 				const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -15236,7 +15261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 						btn.title = originalTitle;
 						// +++ สั่น 50ms, พัก 50ms, สั่น 50ms เพื่อแจ้งให้ผู้ใช้ทราบว่าปุ่มหยุดรับคำสั่ง +++
-						if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+						window.appVibrate([50, 50, 50]);
 					}
 				};
 
@@ -15695,7 +15720,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					btn.style.pointerEvents = 'none';
 					
 					// +++ สั่นต่อเนื่องเมื่อเริ่มลากปุ่ม +++
-					if (navigator.vibrate) navigator.vibrate(9999);
+					window.appVibrate(9999);
 				}
 
 				if (isDragging) {
@@ -15728,7 +15753,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				document.removeEventListener('touchend', stopDrag);
 				
 				// +++ หยุดสั่นเมื่อปล่อยปุ่ม +++
-				if (navigator.vibrate) navigator.vibrate(100);
+				window.appVibrate(100);
 
 				if (dragTimeout) {
 					clearTimeout(dragTimeout);
@@ -19310,6 +19335,31 @@ document.addEventListener('DOMContentLoaded', () => {
 					});
 				});
 			})();
+			
+			// ============================================
+			// HAPTIC FEEDBACK SETTINGS (ตั้งค่าระบบสั่น)
+			// ============================================
+			const toggleHaptic = document.getElementById('toggle-haptic-feedback');
+			if (toggleHaptic) {
+				// ตรวจสอบค่าเริ่มต้น (ถ้าไม่เคยตั้งค่า ให้เป็นเปิดเสมอ)
+				const isHapticEnabled = localStorage.getItem('fmpro_haptic') !== 'false';
+				toggleHaptic.checked = isHapticEnabled;
+
+				toggleHaptic.addEventListener('change', (e) => {
+					localStorage.setItem('fmpro_haptic', e.target.checked);
+					// สั่น 1 ครั้งเบาๆ เพื่อทดสอบเมื่อผู้ใช้กดเปิด
+					if (e.target.checked && navigator.vibrate) {
+						navigator.vibrate(50);
+					}
+				});
+			}
+
+			// ฟังก์ชันกลางสำหรับเรียกใช้ระบบสั่น (เรียกใช้แทน navigator.vibrate ตรงๆ)
+			window.appVibrate = function(pattern) {
+				if (navigator.vibrate && localStorage.getItem('fmpro_haptic') !== 'false') {
+					navigator.vibrate(pattern);
+				}
+			};
 			
 
         });
