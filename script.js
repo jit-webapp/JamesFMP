@@ -5857,39 +5857,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // สิ้นสุดฟังก์ชัน renderListPage --------------------------
 	
 	// ฟังก์ชันรีเซ็ตตัวกรองให้เป็นเดือนปัจจุบัน
-	function resetToCurrentMonth() {
-		const now = new Date();
-		const year = now.getFullYear();
-		const month = String(now.getMonth() + 1).padStart(2, '0');
-		const firstDay = `${year}-${month}-01`;
-		const lastDay = new Date(year, now.getMonth() + 1, 0).toISOString().slice(0, 10); // วันสุดท้ายของเดือน
+		function resetToCurrentMonth() {
+			const now = new Date();
+			const year = now.getFullYear();
+			const month = String(now.getMonth() + 1).padStart(2, '0');
+			
+			const firstDay = `${year}-${month}-01`;
+			const lastDay = new Date(year, now.getMonth() + 1, 0).toISOString().slice(0, 10); // วันสุดท้ายของเดือน
 
-		// ตั้งค่าช่องวันที่
-		const startInput = document.getElementById('adv-filter-start');
-		const endInput = document.getElementById('adv-filter-end');
-		if (startInput) startInput.value = firstDay;
-		if (endInput) endInput.value = lastDay;
+			// ตั้งค่าช่องวันที่
+			const startInput = document.getElementById('adv-filter-start');
+			const endInput = document.getElementById('adv-filter-end');
+			if (startInput) startInput.value = firstDay;
+			if (endInput) endInput.value = lastDay;
 
-		// ตั้งค่าประเภทเป็นทั้งหมด
-		const typeSelect = document.getElementById('adv-filter-type');
-		if (typeSelect) typeSelect.value = 'all';
-		state.advFilterType = 'all';
+			// ตั้งค่าประเภทเป็นทั้งหมด
+			const typeSelect = document.getElementById('adv-filter-type');
+			if (typeSelect) typeSelect.value = 'all';
+			state.advFilterType = 'all';
 
-		// ล้างคำค้นหา
-		const searchInput = document.getElementById('adv-filter-search');
-		if (searchInput) {
-			searchInput.value = '';
+            // +++ คืนค่าตัวกรองบัญชีกลับเป็น "ทั้งหมด" +++
+			const accountSelect = document.getElementById('adv-filter-account');
+			if (accountSelect) accountSelect.value = 'all';
+
+			// ล้างคำค้นหา
+			const searchInput = document.getElementById('adv-filter-search');
+			if (searchInput) {
+				searchInput.value = '';
+			}
+			state.advFilterSearch = '';
+
+			// รีเฟรชหน้ารายการ
+			if (typeof renderListPage === 'function') {
+				renderListPage();
+			}
+
+			// แจ้งเตือนผู้ใช้ (optional)
+			showToast('คืนค่าตัวกรองเริ่มต้น', 'info'); // ปรับข้อความแจ้งเตือนให้เข้ากับชื่อปุ่ม
 		}
-		state.advFilterSearch = '';
-
-		// รีเฟรชหน้ารายการ
-		if (typeof renderListPage === 'function') {
-			renderListPage();
-		}
-
-		// แจ้งเตือนผู้ใช้ (optional)
-		showToast('แสดงข้อมูลเดือนปัจจุบัน', 'info');
-	}
 
 	// ============================================
 	// [แก้ไข] FUNCTION EXPORT FILTERED LIST (ตั้งชื่อไฟล์ตามสิ่งที่ค้นหา)

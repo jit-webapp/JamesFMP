@@ -578,3 +578,48 @@ body.dark [id$="-close-btn"], body.dark [id$="-close"], body.dark button[onclick
 #popover-notification-list .notification-item .flex-1 p {
     white-space: pre-line;
 }
+
+<style>
+    /* =========================================
+       ระบบแถบเลื่อนแบบเร็ว (Fast Scrollbar) สำหรับประวัติกิจกรรม
+       ========================================= */
+       
+    /* 1. กำหนดให้คอนเทนเนอร์เลื่อนได้ลื่นไหล (Smooth Scrolling) บนมือถือ */
+    #persistent-log-list, 
+    #notification-history-list,
+    #persistent-log-modal .overflow-y-auto {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        /* บังคับให้แสดง Scrollbar เสมอในบางเบราว์เซอร์ */
+        overflow-y: overlay; 
+    }
+
+    /* 2. ขยายขนาดความกว้างของแกนเลื่อน (Track) ให้แตะง่ายขึ้น */
+    #persistent-log-list::-webkit-scrollbar,
+    #notification-history-list::-webkit-scrollbar,
+    #persistent-log-modal .overflow-y-auto::-webkit-scrollbar {
+        width: 10px; /* ความกว้างที่เหมาะกับปลายนิ้ว */
+        background-color: transparent;
+    }
+
+    /* 3. ปรับแต่งตัวจับ (Thumb) ให้เห็นชัดเจนและจับลากได้ */
+    #persistent-log-list::-webkit-scrollbar-thumb,
+    #notification-history-list::-webkit-scrollbar-thumb,
+    #persistent-log-modal .overflow-y-auto::-webkit-scrollbar-thumb {
+        background-color: #d8b4fe; /* สีม่วงอ่อน ให้เข้ากับธีมแอป */
+        border-radius: 10px;
+        border: 2px solid transparent; 
+        background-clip: padding-box; /* ทำให้ดูมีขอบใสๆ */
+    }
+
+    /* 4. เมื่อเอานิ้วแตะค้าง (Active) หรือใช้เมาส์ชี้ ให้แถบเข้มขึ้นเต็มเส้น */
+    #persistent-log-list::-webkit-scrollbar-thumb:hover,
+    #persistent-log-list::-webkit-scrollbar-thumb:active,
+    #notification-history-list::-webkit-scrollbar-thumb:hover,
+    #notification-history-list::-webkit-scrollbar-thumb:active,
+    #persistent-log-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+    #persistent-log-modal .overflow-y-auto::-webkit-scrollbar-thumb:active {
+        background-color: #9333ea; /* สีม่วงเข้มขึ้นเมื่อแตะลาก */
+        border: none; /* ขยายให้เต็มร่องเพื่อจับลากง่ายที่สุด */
+    }
+</style>

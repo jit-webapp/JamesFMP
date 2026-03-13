@@ -321,39 +321,38 @@
                 </div>
             </div>
         
-            <div id="page-list" class="app-page hidden">
-				<div id="transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-lg pb-24"> <h2 class="text-lg font-bold text-purple-600 mb-4 flex items-center">
+           <div id="page-list" class="app-page hidden">
+				<div id="transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-lg pb-24">
+					<h2 class="text-lg font-bold text-purple-600 mb-4 flex items-center">
 						<i class="fa-solid fa-filter mr-2"></i> ค้นหาและวิเคราะห์ (Advanced Filter)
 					</h2>
 
 					<div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4 space-y-3">
-
-						<div id="advanced-filter-controls" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4 space-y-4">
-    
-							<div class="grid grid-cols-1 sm:grid-cols-[1fr,1fr,auto] gap-3 items-end">
+						<div id="advanced-filter-controls" class="space-y-4">
+							
+							<div class="grid grid-cols-2 md:grid-cols-[1fr,1fr,auto] gap-3 items-end">
 								<div>
 									<label class="block text-xs font-bold text-gray-500 mb-1 ml-1">ตั้งแต่วันที่</label>
-									<input type="date" id="adv-filter-start" onchange="renderListPage()" class="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700">
+									<input type="date" id="adv-filter-start" onchange="renderListPage()" class="w-full px-2 py-1.5 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700 shadow-sm transition-all">
 								</div>
 								<div>
 									<label class="block text-xs font-bold text-gray-500 mb-1 ml-1">ถึงวันที่</label>
-									<input type="date" id="adv-filter-end" onchange="renderListPage()" class="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700">
+									<input type="date" id="adv-filter-end" onchange="renderListPage()" class="w-full px-2 py-1.5 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700 shadow-sm transition-all">
 								</div>
-								<div class="flex items-end">
+								<div class="col-span-2 md:col-span-1">
 									<button id="btn-this-month" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition whitespace-nowrap h-[38px]">
-										<i class="fa-regular fa-calendar mr-1"></i> เดือนนี้
+										<i class="fa-solid fa-rotate-left"></i> คืนค่าเริ่มต้น
 									</button>
 								</div>
 							</div>
-
-							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<div class="grid grid-cols-2 md:grid-cols-[1fr,1fr,auto] gap-3 items-end">
 								<div>
 									<label class="block text-xs font-bold text-gray-500 mb-1 ml-1">บัญชี</label>
 									<div class="relative">
-										<select id="adv-filter-account" onchange="renderListPage()" class="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700 appearance-none cursor-pointer">
+										<select id="adv-filter-account" onchange="renderListPage()" class="w-full px-2 py-1.5 pr-7 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700 appearance-none cursor-pointer shadow-sm transition-all">
 											<option value="all">💳 ทั้งหมด</option>
 										</select>
-										<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+										<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
 											<i class="fa-solid fa-chevron-down text-[10px]"></i>
 										</div>
 									</div>
@@ -362,13 +361,13 @@
 								<div>
 									<label class="block text-xs font-bold text-gray-500 mb-1 ml-1">ประเภท</label>
 									<div class="relative">
-										<select id="adv-filter-type" onchange="renderListPage()" class="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700 appearance-none cursor-pointer">
+										<select id="adv-filter-type" onchange="renderListPage()" class="w-full px-2 py-1.5 pr-7 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700 appearance-none cursor-pointer shadow-sm transition-all">
 											<option value="all">📊 ทั้งหมด</option>
 											<option value="income">💰 รายรับ</option>
 											<option value="expense">💸 รายจ่าย</option>
 											<option value="transfer">🔄 โอนย้าย</option>
 										</select>
-										<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+										<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
 											<i class="fa-solid fa-chevron-down text-[10px]"></i>
 										</div>
 									</div>
@@ -376,9 +375,9 @@
 							</div>
 
 							<div>
-								<label class="block text-xs font-bold text-gray-500 mb-1 ml-1">ค้นหา (ชื่อ/หมวดหมู่/หมายเหตุ)</label>
+								<label class="block text-xs font-bold text-gray-500 mb-1 ml-1">ค้นหา (ชื่อ/หมายเหตุ)</label>
 								<div class="relative">
-									<input type="text" id="adv-filter-search" oninput="renderListPage()" placeholder="พิมพ์สิ่งที่ต้องการค้นหา..." class="w-full p-2 pl-10 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700 transition">
+									<input type="text" id="adv-filter-search" oninput="renderListPage()" placeholder="พิมพ์สิ่งที่ต้องการค้นหา..." class="w-full p-2 pl-10 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-700 transition shadow-sm">
 									<div class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
 										<i class="fa-solid fa-magnifying-glass text-xs"></i>
 									</div>
@@ -389,10 +388,10 @@
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 border border-purple-100 dark:border-gray-700 rounded-lg p-3 md:p-5 mt-2 transition-colors duration-200 w-full">
+						<div class="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 border border-purple-100 dark:border-gray-700 rounded-lg p-3 md:p-5 mt-4 transition-colors duration-200 w-full">
 							
 							<div class="flex justify-between items-center text-xs md:text-sm text-gray-500 mb-3">
-								<span><i class="fa-solid fa-chart-simple mr-1"></i>สรุปยอด (ตามรายการที่เห็น)</span>
+								<span><i class="fa-solid fa-chart-simple mr-1"></i>สรุปยอด (ตามรายการที่ค้นหา)</span>
 								<span id="dyn-count-display" class="bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm font-medium">0 รายการ</span>
 							</div>
 
@@ -405,7 +404,6 @@
 								</div>
 
 								<div id="list-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full h-full transition-all duration-300">
-									
 									<div class="list-chart-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full">
 										<h3 class="list-chart-title text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-1.5 flex-shrink-0 justify-center">
 											<i class="fa-solid fa-chart-pie text-purple-500"></i> <span class="list-chart-title-text">สัดส่วนหมวดหมู่</span>
@@ -423,13 +421,11 @@
 											<canvas id="chart-time"></canvas>
 										</div>
 									</div>
-
 								</div>
 							</div>
 
 							<script>
 								let isListChartsExpanded = window.getInitialChartState ? window.getInitialChartState('list') : true;
-
 								function toggleListCharts() {
 									isListChartsExpanded = !isListChartsExpanded;
 									window.applyListChartState(isListChartsExpanded);
@@ -454,8 +450,8 @@
 						</div>
 					</div>
 
-					<div class="flex justify-between items-center mb-2 gap-2">
-						<h3 class="font-bold text-gray-700 flex-grow">รายการ</h3>
+					<div class="flex justify-between items-center mb-2 gap-2 mt-6">
+						<h3 class="font-bold text-gray-700 flex-grow">ผลลัพธ์การค้นหา</h3>
 						
 						<button id="btn-export-filtered" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg shadow flex items-center gap-2 transition-colors">
 							<i class="fa-solid fa-file-excel"></i> <span class="hidden sm:inline">Export Excel</span>
