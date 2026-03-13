@@ -6568,130 +6568,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
     }
 
-    function renderExpenseByNameChart(transactions) {
-		
-		const today = new Date();
-		today.setHours(23, 59, 59, 999);
-
-		// [แก้ไข] กรองเอาเฉพาะ 'expense' และ วันที่ต้องไม่เกินวันนี้
-		const expenseTransactions = transactions.filter(tx => {
-			return tx.type === 'expense' && new Date(tx.date) <= today;
-		});
-		
-		const itemData = expenseTransactions.reduce((acc, tx) => {
-			const name = tx.name || 'ไม่ระบุรายการ';
-			if (!acc[name]) {
-				acc[name] = 0;
-			}
-			acc[name] += tx.amount;
-			return acc;
-		}, {});
-		let sortedItems = Object.entries(itemData).map(([name, amount]) => ({ name, amount }));
-		sortedItems.sort((a, b) => b.amount - a.amount);
-
-		const TOP_N = 9;
-		let labels = [];
-		let data = [];
-		
-		if (sortedItems.length > (TOP_N + 1)) { 
-			const topItems = sortedItems.slice(0, TOP_N);
-			const otherItems = sortedItems.slice(TOP_N);
-			
-			topItems.forEach(item => {
-				labels.push(`${item.name} (${formatCurrency(item.amount)})`);
-				data.push(item.amount);
-			});
-			const otherAmount = otherItems.reduce((sum, item) => sum + item.amount, 0);
-			labels.push(`อื่นๆ (${formatCurrency(otherAmount)})`);
-			data.push(otherAmount);
-		} else {
-			sortedItems.forEach(item => {
-				labels.push(`${item.name} (${formatCurrency(item.amount)})`);
-				data.push(item.amount);
-			});
-		}
-
-		if (myExpenseByNameChart) { 
-			myExpenseByNameChart.destroy();
-		}
-		
-		const noDataEl = document.getElementById('expense-chart-no-data');
-		if (data.length === 0) {
-			noDataEl.classList.remove('hidden');
-			return;
-		} else {
-			noDataEl.classList.add('hidden');
-		}
-
-		const generateColors = (numColors) => {
-			let colors = [];
-			const colorPalette = ['#e11d48', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#3b82f6', '#059669', '#0e7490', '#db2777', '#ca8a04', '#6d28d9', '#64748b'];
-			for (let i = 0; i < numColors; i++) {
-				colors.push(colorPalette[i % colorPalette.length]);
-			}
-			return colors;
-		};
-
-		const ctx = document.getElementById('expense-category-chart').getContext('2d');
-		
-		const isMobile = window.innerWidth < 768; 
-		const textColor = state.isDarkMode ? '#e5e7eb' : '#4b5563'; 
-
-		myExpenseByNameChart = new Chart(ctx, { 
-			type: 'pie', 
-			plugins: [typeof ChartDataLabels !== 'undefined' ? ChartDataLabels : {}],
-			data: {
-				labels: labels,
-				datasets: [{
-					data: data,
-					backgroundColor: generateColors(labels.length),
-					borderWidth: 1
-				}]
-				},
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					layout: {
-						padding: {
-							left: isMobile ? 0 : 0,
-							right: isMobile ? 0 : 0,
-							top: isMobile ? 0 : 0,
-							bottom: isMobile ? 0 : 0
-						}
-					},
-					plugins: {
-						datalabels: {
-							display: false, 
-						},
-						legend: {
-							position: 'right',
-							align: 'center', 
-							labels: {
-								usePointStyle: true, 
-								boxWidth: isMobile ? 8 : 10, 
-								padding: isMobile ? 6 : 10,  
-								font: {
-									family: 'Prompt, sans-serif',
-									size: isMobile ? 10 : 12, 
-									color: textColor 
-								}
-							}
-						},
-						tooltip: {
-							callbacks: {
-								label: function(context) {
-									 return ''; 
-								},
-								title: function(context) {
-									return context[0].label;
-								}
-							}
-						}
-					}
-				}
-			});
-    }
-
     function renderListPageBarChart(transactions) {
 		const ctx = document.getElementById('list-page-bar-chart').getContext('2d');
 		const noDataEl = document.getElementById('list-chart-no-data');
@@ -15726,7 +15602,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					btn.style.pointerEvents = 'none';
 					
 					// +++ สั่นต่อเนื่องเมื่อเริ่มลากปุ่ม +++
-					window.appVibrate(9999);
+					window.appVibrate([20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20]); // สั่น 20 รอบ
 				}
 
 				if (isDragging) {
@@ -15759,7 +15635,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				document.removeEventListener('touchend', stopDrag);
 				
 				// +++ หยุดสั่นเมื่อปล่อยปุ่ม +++
-				window.appVibrate(100);
+				window.appVibrate(20);
 
 				if (dragTimeout) {
 					clearTimeout(dragTimeout);
@@ -19160,84 +19036,70 @@ document.addEventListener('DOMContentLoaded', () => {
 			// =========================================================================
 			document.addEventListener('DOMContentLoaded', () => {
 				
-				// หน่วงเวลา 1 วินาที เพื่อให้มั่นใจว่า HTML ทุกส่วน (รวมถึงเมนูที่ซ่อนอยู่) โหลดเสร็จสมบูรณ์ 100%
+				// หน่วงเวลา 1 วินาที เพื่อให้มั่นใจว่า HTML ทุกส่วนโหลดเสร็จ
 				setTimeout(() => {
-					// รายการ ID ของปุ่มตั้งค่าทั้งหมดที่ต้องการให้แจ้งเตือนและบันทึก
+					// รายการ ID ของปุ่มตั้งค่าทั้งหมด
 					const notifySettingsConfig = [
-						{ id: 'toggle-notify-scheduled', key: 'fmpro_notify_scheduled', name: 'อัปเดต: แจ้งเตือนรายการล่วงหน้า', type: 'checkbox' },
-						{ id: 'toggle-notify-recurring', key: 'fmpro_notify_recurring', name: 'อัปเดต: แจ้งเตือนรายการประจำ', type: 'checkbox' },
-						{ id: 'toggle-notify-budget-1', key: 'fmpro_notify_budget_1', name: 'อัปเดต: แจ้งเตือนงบประมาณ (ระดับ 1)', type: 'checkbox' },
-						{ id: 'input-notify-budget-percent-1', key: 'fmpro_notify_budget_percent_1', name: 'อัปเดต: เปอร์เซ็นต์งบประมาณ (ระดับ 1)', type: 'number' },
-						{ id: 'toggle-notify-budget-2', key: 'fmpro_notify_budget_2', name: 'อัปเดต: แจ้งเตือนงบประมาณ (ระดับ 2)', type: 'checkbox' },
-						{ id: 'input-notify-budget-percent-2', key: 'fmpro_notify_budget_percent_2', name: 'อัปเดต: เปอร์เซ็นต์งบประมาณ (ระดับ 2)', type: 'number' }
+						{ id: 'toggle-notify-scheduled', type: 'checkbox' },
+						{ id: 'toggle-notify-recurring', type: 'checkbox' },
+						{ id: 'toggle-notify-budget-1', type: 'checkbox' },
+						{ id: 'input-notify-budget-percent-1', type: 'number' },
+						{ id: 'toggle-notify-budget-2', type: 'checkbox' },
+						{ id: 'input-notify-budget-percent-2', type: 'number' }
 					];
 
-					// 1. โหลดค่าเดิมจาก localStorage มาแสดงที่หน้าจอ
 					notifySettingsConfig.forEach(item => {
 						const el = document.getElementById(item.id);
-						if (el) {
-							const savedValue = localStorage.getItem(item.key);
-							if (savedValue !== null) {
-								if (item.type === 'checkbox') {
-									el.checked = (savedValue === 'true');
-								} else {
-									el.value = savedValue;
-								}
+						if (!el) return;
+
+						// ✅ ลบ event listener เดิมทั้งหมด (clone + replace)
+						const newEl = el.cloneNode(true);
+						el.parentNode.replaceChild(newEl, el);
+
+						// ✅ ผูก event ใหม่
+						newEl.addEventListener('change', (e) => {
+							const newValue = item.type === 'checkbox' ? e.target.checked : e.target.value;
+							
+							// อัปเดต state ตาม element
+							switch (item.id) {
+								case 'toggle-notify-scheduled':
+									state.notifySettings.scheduled = newValue;
+									break;
+								case 'toggle-notify-recurring':
+									state.notifySettings.recurring = newValue;
+									break;
+								case 'toggle-notify-budget-1':
+									state.notifySettings.budget1_active = newValue;
+									break;
+								case 'input-notify-budget-percent-1':
+									state.notifySettings.budget1_percent = parseInt(newValue) || 50;
+									break;
+								case 'toggle-notify-budget-2':
+									state.notifySettings.budget2_active = newValue;
+									break;
+								case 'input-notify-budget-percent-2':
+									state.notifySettings.budget2_percent = parseInt(newValue) || 90;
+									break;
 							}
 
-							// 2. ดักจับเมื่อมีการคลิกหรือพิมพ์เปลี่ยนค่า (Change Event)
-							el.addEventListener('change', (e) => {
-								// หาค่าใหม่ที่ถูกเปลี่ยน
-								const newValue = item.type === 'checkbox' ? e.target.checked : e.target.value;
-								
-								// บันทึกลงระบบเครื่อง (เพื่อรองรับระบบกู้คืนและ Backup เดิม)
-								localStorage.setItem(item.key, newValue);
+							// บันทึกผ่านระบบหลัก
+							dbPut(STORE_CONFIG, { key: 'notification_settings', value: state.notifySettings })
+								.catch(err => console.error('Failed to save notification settings:', err));
 
-								// แจ้งเตือนมุมซ้ายบน (top-start)
-								if (typeof Swal !== 'undefined') {
-									Swal.fire({
-										icon: 'success',
-										title: 'บันทึกสำเร็จ',
-										text: item.name,
-										toast: true,
-										position: 'top-start', // ตั้งค่าให้ออกมุมซ้ายบนตามที่ต้องการ
-										showConfirmButton: false,
-										timer: 2000,
-										timerProgressBar: true
-									});
-								}
-
-								// 3. สั่งซิงค์ข้อมูลขึ้นคลาวด์อัตโนมัติ (ครอบคลุมฟังก์ชันซิงค์ทั้งหมดของระบบ)
-								if (typeof syncDataToFirebase === 'function') {
-									syncDataToFirebase();
-								} else if (typeof autoSync === 'function') {
-									autoSync();
-								} else if (typeof syncSettingsToCloud === 'function') {
-									syncSettingsToCloud();
-								}
-							});
-						}
+							// ไม่ต้องแสดง toast ซ้ำ (ระบบหลักจะแสดงเอง)
+						});
 					});
 
-					// 4. ดักจับเมื่อมีการกู้คืนข้อมูล (Restore) ให้รีเฟรชค่าบนหน้าจอแบบเรียลไทม์
+					// ✅ Storage event (สำหรับซิงค์ระหว่างแท็บ)
 					window.addEventListener('storage', (e) => {
 						if (e.key && e.key.startsWith('fmpro_notify_')) {
-							notifySettingsConfig.forEach(item => {
-								if (e.key === item.key) {
-									const el = document.getElementById(item.id);
-									if (el) {
-										if (item.type === 'checkbox') {
-											el.checked = (e.newValue === 'true');
-										} else {
-											el.value = e.newValue;
-										}
-									}
-								}
+							loadStateFromDB().then(() => {
+								if (currentPage === 'page-settings') renderSettings();
 							});
 						}
 					});
 
-				}, 1000); // จบการหน่วงเวลา 1 วินาที
+				}, 1000);
 			});
 			// =========================================================================
 			window.renderListPage = renderListPage;
@@ -19366,6 +19228,75 @@ document.addEventListener('DOMContentLoaded', () => {
 					navigator.vibrate(pattern);
 				}
 			};
+			
+			// ===========================================
+			// DOUBLE TAP TO LOCK (เคาะจอ 2 ครั้งเพื่อล็อค)
+			// ===========================================
+			const toggleDoubleTap = document.getElementById('toggle-double-tap-lock');
+			if (toggleDoubleTap) {
+				// โหลดค่าเริ่มต้น (ค่าปริยายคือปิดไว้ก่อน)
+				const isDoubleTapEnabled = localStorage.getItem('fmpro_double_tap_lock') === 'true';
+				toggleDoubleTap.checked = isDoubleTapEnabled;
+
+				toggleDoubleTap.addEventListener('change', (e) => {
+					const isEnabled = e.target.checked;
+					localStorage.setItem('fmpro_double_tap_lock', isEnabled);
+					
+					if (isEnabled) {
+						// +++ สั่น 1 ครั้ง และแจ้งเตือนเมื่อเปิดสวิตช์ +++
+						window.appVibrate(50);
+						if (typeof showToast === 'function') {
+							showToast('เปิดใช้งาน เคาะ 2 ครั้งเพื่อล็อค', 'success');
+						}
+					} else {
+						// +++ แจ้งเตือนเมื่อปิดสวิตช์ +++
+						if (typeof showToast === 'function') {
+							showToast('ปิดใช้งาน เคาะ 2 ครั้งเพื่อล็อค', 'info');
+						}
+					}
+				});
+			}
+
+			// ระบบดักจับการคลิก / แตะหน้าจอ
+			let lastTapTime = 0;
+			document.addEventListener('click', (e) => {
+				// 1. ตรวจสอบว่าเปิดตั้งค่าไว้หรือไม่
+				if (localStorage.getItem('fmpro_double_tap_lock') !== 'true') return;
+
+				// 2. ป้องกันไม่ให้ทำงานถ้าคลิกโดนองค์ประกอบที่กดได้ (ปุ่ม, ฟอร์ม, ลิงก์, การ์ดรายการ, ปฏิทิน, หน้าจอล็อค, popup)
+				const ignoredElements = 'button, input, select, textarea, a, label, .swal2-container, #app-lock-screen, .fc, .calc-btn, .tx-item';
+				if (e.target.closest(ignoredElements)) {
+					return; // ถือว่าไม่ได้เคาะพื้นที่ว่าง ให้หยุดทำงาน
+				}
+
+				// 3. ตรวจสอบระยะเวลาห่างของการเคาะจอ
+				const currentTime = new Date().getTime();
+				const tapLength = currentTime - lastTapTime;
+
+				// ถ้าเคาะติดกันภายใน 200 มิลลิวินาที ถือว่าเป็น Double Tap
+				if (tapLength < 200 && tapLength > 0) {
+					const lockScreen = document.getElementById('app-lock-screen');
+					// ถ้าแอปยังไม่ล็อค ให้ทำการล็อคทันที
+					if (lockScreen && lockScreen.classList.contains('hidden')) {
+						window.appVibrate([50, 50]); // สั่น 2 ครั้งเบาๆ ยืนยันการล็อค
+						lockScreen.classList.remove('hidden');
+						
+						// เคลียร์รหัสผ่านเก่าที่ค้างอยู่ในช่อง
+						const passInput = document.getElementById('unlock-password');
+						if (passInput) passInput.value = '';
+					}
+				}
+				lastTapTime = currentTime;
+			});
+			
+			// ============================================
+			// DUMMY FUNCTIONS สำหรับ legacy calls (ป้องกัน error)
+			// ============================================
+			window.syncDataToFirebase = function() { console.log('[dummy] syncDataToFirebase'); };
+			window.autoSync = function() { console.log('[dummy] autoSync'); };
+			window.syncSettingsToCloud = function() { console.log('[dummy] syncSettingsToCloud'); };
+			window.syncToFirebase = function() { console.log('[dummy] syncToFirebase'); };
+			// ============================================
 			
 
         });
