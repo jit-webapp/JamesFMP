@@ -3,14 +3,15 @@
 // ============================================
 
 // เวอร์ชันหลัก
-var APP_VERSION = 'v8.6.46';
-var APP_LAST_UPDATED = '13-03-2026';
-var APP_LAST_UPDATED_TH = '13 มีนาคม 2569';
+var APP_VERSION = 'v8.6.48';
+var APP_LAST_UPDATED = '14-03-2026';
+var APP_LAST_UPDATED_TH = '14 มีนาคม 2569';
 
 // ช่องสำหรับพิมพ์รายละเอียดการอัปเดต (ให้พิมพ์ไว้ในเครื่องหมาย ` `)
 var APP_UPDATE_NOTES = `
 <b>⚙️ เพิ่มฟีเจอร์ </b>
-"เคาะจอ 2 ครั้งเพื่อล็อค (Double Tap to Lock)
+เคาะจอ 2 ครั้งเพื่อล็อค (Double Tap to Lock)
+เพิ่มความสามารถของ Advanced Filter
 `;
 
 var APP_STATUS = '';
