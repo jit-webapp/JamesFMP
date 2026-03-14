@@ -5120,6 +5120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				}
 			});
+		
     }
 	
 	function applyMobileMenuStyle() {
@@ -5818,7 +5819,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const getEl = (id) => document.getElementById(id);
 
 		// ===============================================================
-		// [เพิ่มใหม่] ลอจิกดึงหมวดหมู่ทั้งหมดในระบบมาใส่ Dropdown อัตโนมัติ
+		// ลอจิกดึงหมวดหมู่ทั้งหมดในระบบมาใส่ Dropdown อัตโนมัติ
 		// ===============================================================
 		const catSelectElem = getEl('adv-filter-category');
 		if (catSelectElem && typeof state !== 'undefined' && state.transactions) {
@@ -5845,67 +5846,78 @@ document.addEventListener('DOMContentLoaded', () => {
 		const endDate = getEl('adv-filter-end') ? getEl('adv-filter-end').value : '';
 		const filterType = getEl('adv-filter-type') ? getEl('adv-filter-type').value : 'all';
 		const filterAccount = getEl('adv-filter-account') ? getEl('adv-filter-account').value : 'all'; 
-		const searchTerm = getEl('adv-filter-search') ? getEl('adv-filter-search').value.toLowerCase().trim() : '';
+		const searchTermElem = getEl('adv-filter-search');
+		const searchTerm = searchTermElem ? searchTermElem.value.toLowerCase().trim() : '';
 
-		// ===============================================================
-		// [เพิ่มใหม่] ดึงค่าจาก Input ที่เพิ่มมาใหม่ (หมวดหมู่, ยอดเงิน, การเรียงลำดับ)
-		// ===============================================================
+		// ดึงค่าจาก Input หมวดหมู่ และ ยอดเงิน
 		const filterCategory = catSelectElem ? catSelectElem.value : 'all';
 		
-		const filterMinElem = getEl('adv-filter-min');
-		const filterMin = filterMinElem && filterMinElem.value !== '' ? parseFloat(filterMinElem.value) : NaN;
+		const minInputElem = getEl('adv-filter-min');
+		const minRawVal = minInputElem ? minInputElem.value : '';
+		const filterMin = minRawVal !== '' ? parseFloat(minRawVal) : NaN;
 		
-		const filterMaxElem = getEl('adv-filter-max');
-		const filterMax = filterMaxElem && filterMaxElem.value !== '' ? parseFloat(filterMaxElem.value) : NaN;
-		
-		const filterSortElem = getEl('adv-filter-sort');
-		const filterSort = filterSortElem ? filterSortElem.value : 'date-desc';
+		const maxInputElem = getEl('adv-filter-max');
+		const maxRawVal = maxInputElem ? maxInputElem.value : '';
+		const filterMax = maxRawVal !== '' ? parseFloat(maxRawVal) : NaN;
 
-		// ปุ่ม Clear Search
-		const btnClear = getEl('btn-clear-search');
-		if (btnClear) {
-			if(searchTerm.length > 0) btnClear.classList.remove('hidden');
-			else btnClear.classList.add('hidden');
+		// ===============================================================
+		// ควบคุมการแสดง/ซ่อน ปุ่ม (X) สำหรับเคลียร์ข้อมูล
+		// ===============================================================
+		const btnClearSearch = getEl('btn-clear-search');
+		if (btnClearSearch) {
+			if(searchTerm.length > 0) btnClearSearch.classList.remove('hidden');
+			else btnClearSearch.classList.add('hidden');
 		}
+
+		const btnClearMin = getEl('btn-clear-min');
+		if (btnClearMin) {
+			if(minRawVal.length > 0) btnClearMin.classList.remove('hidden');
+			else btnClearMin.classList.add('hidden');
+		}
+
+		const btnClearMax = getEl('btn-clear-max');
+		if (btnClearMax) {
+			if(maxRawVal.length > 0) btnClearMax.classList.remove('hidden');
+			else btnClearMax.classList.add('hidden');
+		}
+		// ===============================================================
+
+		if (typeof state === 'undefined' || !state || !state.transactions) return;
 
 		// 2. กรองข้อมูล (Filtering)
 		let filtered = state.transactions.filter(tx => {
 			const txDate = tx.date ? tx.date.slice(0, 10) : ''; 
 			
-			// 2.1 กรองวันที่ (Start <= Date <= End)
+			// 2.1 กรองวันที่
 			const isDateInRange = (!startDate || txDate >= startDate) && 
 								  (!endDate || txDate <= endDate);
 			if (!isDateInRange) return false;
 
-			// 2.2 กรองประเภท (Type)
+			// 2.2 กรองประเภท
 			if (filterType !== 'all' && tx.type !== filterType) return false;
 
-			// 🌟 2.3 กรองตามบัญชี (Account)
+			// 2.3 กรองตามบัญชี
 			if (filterAccount !== 'all') {
 				if (tx.accountId !== filterAccount && tx.toAccountId !== filterAccount) {
 					return false;
 				}
 			}
 
-			// ===============================================================
-			// [เพิ่มใหม่] กรองตามหมวดหมู่ และช่วงจำนวนเงิน
-			// ===============================================================
-			// 2.3.1 กรองตามหมวดหมู่
+			// 2.4 กรองตามหมวดหมู่
 			if (filterCategory !== 'all' && tx.category !== filterCategory) {
 				return false;
 			}
 
-			// 2.3.2 กรองตามยอดเงินต่ำสุด
+			// 2.5 กรองตามยอดเงินต่ำสุด-สูงสุด
 			if (!isNaN(filterMin) && tx.amount < filterMin) {
 				return false;
 			}
 
-			// 2.3.3 กรองตามยอดเงินสูงสุด
 			if (!isNaN(filterMax) && tx.amount > filterMax) {
 				return false;
 			}
 
-			// 2.4 กรองคำค้นหา (Search Keyword)
+			// 2.6 กรองคำค้นหา
 			if (searchTerm) {
 				const amountStr = String(tx.amount);
 				const fromAccount = state.accounts.find(a => a.id === tx.accountId);
@@ -5929,27 +5941,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			return true;
 		});
 
-		// 3. เรียงลำดับ (Smart Sorting)
-		filtered.sort((a, b) => {
-			if (filterSort === 'date-desc') {
-				const dateA = new Date(a.date + 'T' + (a.time || '00:00:00')).getTime();
-				const dateB = new Date(b.date + 'T' + (b.time || '00:00:00')).getTime();
-				return dateB - dateA; // วันที่ ใหม่ไปเก่า
-			} else if (filterSort === 'date-asc') {
-				const dateA = new Date(a.date + 'T' + (a.time || '00:00:00')).getTime();
-				const dateB = new Date(b.date + 'T' + (b.time || '00:00:00')).getTime();
-				return dateA - dateB; // วันที่ เก่าไปใหม่
-			} else if (filterSort === 'amount-desc') {
-				return b.amount - a.amount; // ยอดเงิน มากไปน้อย
-			} else if (filterSort === 'amount-asc') {
-				return a.amount - b.amount; // ยอดเงิน น้อยไปมาก
-			}
-			
-			// คืนค่าสำรอง หากไม่มีเงื่อนไขใดตรง (เรียงตามวันที่ใหม่ไปเก่าแบบเดิม)
-			return new Date(b.date) - new Date(a.date);
-		});
+		// 3. เรียงลำดับ (วันที่ใหม่สุดขึ้นก่อนเสมอ)
+		filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-		// 4. คำนวณ Dynamic Summary (สรุปยอดจากรายการที่เห็น)
+		// 4. คำนวณ Dynamic Summary
 		let sumIncome = 0;
 		let sumExpense = 0;
 		
@@ -5961,12 +5956,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		const sumNet = sumIncome - sumExpense;
 
 		// อัปเดตตัวเลขบนหน้าจอ
-		if (getEl('dyn-sum-income')) getEl('dyn-sum-income').textContent = formatCurrency(sumIncome);
-		if (getEl('dyn-sum-expense')) getEl('dyn-sum-expense').textContent = formatCurrency(sumExpense);
+		if (getEl('dyn-sum-income')) getEl('dyn-sum-income').textContent = typeof formatCurrency === 'function' ? formatCurrency(sumIncome) : sumIncome;
+		if (getEl('dyn-sum-expense')) getEl('dyn-sum-expense').textContent = typeof formatCurrency === 'function' ? formatCurrency(sumExpense) : sumExpense;
 		
 		const netEl = getEl('dyn-sum-net');
 		if (netEl) {
-			netEl.textContent = formatCurrency(sumNet);
+			netEl.textContent = typeof formatCurrency === 'function' ? formatCurrency(sumNet) : sumNet;
 			if (sumNet > 0) { netEl.className = "text-sm md:text-base font-bold text-green-600"; }
 			else if (sumNet < 0) { netEl.className = "text-sm md:text-base font-bold text-red-600"; }
 			else { netEl.className = "text-sm md:text-base font-bold text-gray-600"; }
@@ -5974,54 +5969,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		if (getEl('dyn-count-display')) getEl('dyn-count-display').textContent = `${filtered.length} รายการ`;
 		
-		// เรียกแสดงกราฟ
-		if (typeof renderAnalyticsChart === 'function') {
-			renderAnalyticsChart(filtered);
+		// อัปเดตตาราง และ Pagination ให้ตรงกับสิ่งที่ค้นหา
+		if (typeof state !== 'undefined') {
+			state.filteredTransactions = filtered;
+			state.currentPage = 1;
 		}
-		
-		if (window.applyListChartState) {
-			window.applyListChartState(state.listChartsExpanded);
+		if (typeof updatePaginationControls === 'function') {
+			updatePaginationControls();
 		}
 
-		// 5. แสดงผลรายการ 
 		if (typeof renderTransactionList === 'function') {
 			renderTransactionList('transaction-list-body', filtered, 'list');
 		}
+
+		// เรียกแสดงกราฟทีหลัง เพื่อให้เฟรมเรทไม่กระตุกตอนที่ตารางกำลังโหลดใหม่
+		setTimeout(() => {
+			if (typeof renderAnalyticsChart === 'function') {
+				renderAnalyticsChart(filtered);
+			}
+			if (window.applyListChartState) {
+				window.applyListChartState(state.listChartsExpanded);
+			}
+		}, 10);
 	}
-    // สิ้นสุดฟังก์ชัน renderListPage --------------------------
+	
+	// สิ้นสุดฟังก์ชัน renderListPage --------------------------
 	
 	// ฟังก์ชันรีเซ็ตตัวกรองให้เป็นเดือนปัจจุบัน
 	function resetToCurrentMonth() {
-		// +++ [เพิ่มใหม่] สั่นเตือนเมื่อกดปุ่มคืนค่าเริ่มต้น +++
 		if (window.appVibrate) window.appVibrate(20);
 
 		const now = new Date();
 		const year = now.getFullYear();
 		const month = String(now.getMonth() + 1).padStart(2, '0');
 		const firstDay = `${year}-${month}-01`;
-		const lastDay = new Date(year, now.getMonth() + 1, 0).toISOString().slice(0, 10); // วันสุดท้ายของเดือน
+		const lastDay = new Date(year, now.getMonth() + 1, 0).toISOString().slice(0, 10); 
 
-		// ตั้งค่าช่องวันที่
 		const startInput = document.getElementById('adv-filter-start');
 		const endInput = document.getElementById('adv-filter-end');
 		if (startInput) startInput.value = firstDay;
 		if (endInput) endInput.value = lastDay;
 
-		// ตั้งค่าประเภทเป็นทั้งหมด
 		const typeSelect = document.getElementById('adv-filter-type');
 		if (typeSelect) typeSelect.value = 'all';
 		if (typeof state !== 'undefined') state.advFilterType = 'all';
 
-		// คืนค่าตัวกรองบัญชีกลับเป็น "ทั้งหมด"
 		const accountSelect = document.getElementById('adv-filter-account');
 		if (accountSelect) accountSelect.value = 'all';
 
-		// ล้างคำค้นหา
 		const searchInput = document.getElementById('adv-filter-search');
 		if (searchInput) searchInput.value = '';
 		if (typeof state !== 'undefined') state.advFilterSearch = '';
 
-		// คืนค่าตัวกรอง หมวดหมู่, จำนวนเงิน, และการเรียงลำดับ
 		const categorySelect = document.getElementById('adv-filter-category');
 		if (categorySelect) categorySelect.value = 'all';
 
@@ -6031,10 +6030,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		const maxInput = document.getElementById('adv-filter-max');
 		if (maxInput) maxInput.value = '';
 
-		const sortSelect = document.getElementById('adv-filter-sort');
-		if (sortSelect) sortSelect.value = 'date-desc';
+		// รีเซ็ตการเรียงลำดับใหม่ทั้ง 2 Dropdown
+		const sortDateSelect = document.getElementById('adv-filter-sort-date');
+		if (sortDateSelect) sortDateSelect.value = 'date-desc';
 
-		// รีเซ็ตสถานะปุ่มลัดวันที่ ให้กลับมาที่ "เดือนนี้" (thisMonth)
+		const sortAmountSelect = document.getElementById('adv-filter-sort-amount');
+		if (sortAmountSelect) sortAmountSelect.value = 'none';
+
 		document.querySelectorAll('.quick-date-btn').forEach(btn => {
 			if (btn.dataset.range === 'thisMonth') {
 				btn.className = "quick-date-btn flex-1 shrink-0 justify-center text-[11px] sm:text-xs bg-purple-100 text-purple-700 font-medium border border-purple-200 py-1.5 px-1 sm:px-2 rounded-full transition-colors whitespace-nowrap";
@@ -6043,12 +6045,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 
-		// รีเฟรชหน้ารายการ
 		if (typeof renderListPage === 'function') {
 			renderListPage();
 		}
 
-		// แจ้งเตือนผู้ใช้ (optional)
 		if (typeof showToast === 'function') {
 			showToast('คืนค่าตัวกรองเริ่มต้น', 'info');
 		}
