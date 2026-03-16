@@ -667,3 +667,94 @@ body:not(.dark) .ring-purple-500, body:not(.dark) .ring-primary-500 { --tw-ring-
 .text-white.bg-teal-500, .text-white.bg-blue-500, .text-white.bg-yellow-500 {
     color: var(--theme-text-color) !important;
 }
+
+/* =========================================
+   ระบบขอบการ์ดตามสีธีม (Dynamic Theme Borders)
+   เพิ่มขอบสีธีมให้การ์ดในทุกหน้า (ยกเว้นหน้าตั้งค่า)
+   ========================================= */
+
+/* 1. การ์ดหน้าแรก, รายการ, ปฏิทิน, บัญชี, คู่มือ และหน้าล็อครหัสผ่าน (เปลี่ยนสีตามธีม) */
+#home-budget-widget,
+#page-home > div.bg-white,
+#page-home > div.grid > div.bg-white,
+#home-transaction-list-container,
+#transaction-list-container,
+#page-calendar > div.bg-white,
+#page-accounts .bg-white.shadow-lg,
+#page-guide .bg-white.shadow-lg,
+#page-guide .bg-white.shadow-md,
+#app-lock-screen > div,
+/* 2. หน้าต่าง Popups และ Modals ทั้งหมด (เปลี่ยนสีตามธีม) */
+#form-modal > div,
+#account-form-modal > div,
+#account-detail-modal > div,
+#icon-form-modal > div,
+#recurring-form-modal > div,
+#voice-command-modal > div,
+#imported-events-modal > div,
+#custom-notify-modal > div,
+#quick-draft-modal > div,
+#persistent-log-modal > div,
+#update-alert-modal > div,
+#welcome-modal > div,
+#notification-popover,
+#calculator-popover > div,
+#account-calculator-popover > div,
+#edit-account-calculator-popover > div {
+    border: 2px solid rgb(var(--theme-300)) !important;
+    transition: border-color 0.3s ease;
+}
+
+/* 3. โหมดมืด (Dark Mode) สำหรับข้อ 1 และ 2 */
+body.dark #home-budget-widget,
+body.dark #page-home > div.bg-white,
+body.dark #page-home > div.grid > div.bg-white,
+body.dark #home-transaction-list-container,
+body.dark #transaction-list-container,
+body.dark #page-calendar > div.bg-white,
+body.dark #page-accounts .bg-white.shadow-lg,
+body.dark #page-guide .bg-white.shadow-lg,
+body.dark #page-guide .bg-white.shadow-md,
+body.dark #app-lock-screen > div,
+body.dark #form-modal > div,
+body.dark #account-form-modal > div,
+body.dark #account-detail-modal > div,
+body.dark #icon-form-modal > div,
+body.dark #recurring-form-modal > div,
+body.dark #voice-command-modal > div,
+body.dark #imported-events-modal > div,
+body.dark #custom-notify-modal > div,
+body.dark #quick-draft-modal > div,
+body.dark #persistent-log-modal > div,
+body.dark #update-alert-modal > div,
+body.dark #welcome-modal > div,
+body.dark #notification-popover,
+body.dark #calculator-popover > div,
+body.dark #account-calculator-popover > div,
+body.dark #edit-account-calculator-popover > div {
+    border: 2px solid rgb(var(--theme-700)) !important;
+}
+
+/* =========================================
+   4. หน้าตั้งค่า (Settings)
+   ให้คง "สีเดิม" ของแต่ละการ์ดไว้ (ฟ้า, แดง, เขียว) แต่เพิ่มความหนาเป็น 2px
+   ========================================= */
+#page-settings .bg-white {
+    border-width: 2px !important;
+}
+
+/* 5. ปรับช่องกรอกรหัสผ่านในหน้าล็อคจอ */
+#unlock-password {
+    border: 2px solid rgb(var(--theme-300)) !important;
+}
+#unlock-password:focus {
+    border-color: rgb(var(--theme-500)) !important;
+    box-shadow: 0 0 0 4px rgb(var(--theme-200)) !important;
+}
+body.dark #unlock-password {
+    border: 2px solid rgb(var(--theme-700)) !important;
+}
+body.dark #unlock-password:focus {
+    border-color: rgb(var(--theme-500)) !important;
+    box-shadow: 0 0 0 4px rgb(var(--theme-800)) !important;
+}
