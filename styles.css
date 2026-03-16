@@ -673,18 +673,19 @@ body:not(.dark) .ring-purple-500, body:not(.dark) .ring-primary-500 { --tw-ring-
    เพิ่มขอบสีธีมให้การ์ดในทุกหน้า (ยกเว้นหน้าตั้งค่า)
    ========================================= */
 
-/* 1. การ์ดหน้าแรก, รายการ, ปฏิทิน, บัญชี, คู่มือ และหน้าล็อครหัสผ่าน (เปลี่ยนสีตามธีม) */
+/* 1. คลาสพิเศษสำหรับ "ล็อกเป้าหมาย" (เอาไปแปะใน HTML กล่องไหน กล่องนั้นขอบขึ้นทันที!) */
+.theme-border-target,
+
+/* 2. ดักจับกล่องหน้าแรก และหน้าอื่นๆ (โครงสร้างเดิม) */
+#page-home div[class*="shadow-"],
+#page-home button[class*="shadow-"],
 #home-budget-widget,
-#page-home > div.bg-white,
-#page-home > div.grid > div.bg-white,
 #home-transaction-list-container,
 #transaction-list-container,
-#page-calendar > div.bg-white,
-#page-accounts .bg-white.shadow-lg,
-#page-guide .bg-white.shadow-lg,
-#page-guide .bg-white.shadow-md,
+#page-calendar div[class*="shadow-"],
+#page-accounts div[class*="shadow-"],
+#page-guide div[class*="shadow-"],
 #app-lock-screen > div,
-/* 2. หน้าต่าง Popups และ Modals ทั้งหมด (เปลี่ยนสีตามธีม) */
 #form-modal > div,
 #account-form-modal > div,
 #account-detail-modal > div,
@@ -705,16 +706,16 @@ body:not(.dark) .ring-purple-500, body:not(.dark) .ring-primary-500 { --tw-ring-
     transition: border-color 0.3s ease;
 }
 
-/* 3. โหมดมืด (Dark Mode) สำหรับข้อ 1 และ 2 */
+/* 3. โหมดมืด (Dark Mode) */
+body.dark .theme-border-target,
+body.dark #page-home div[class*="shadow-"],
+body.dark #page-home button[class*="shadow-"],
 body.dark #home-budget-widget,
-body.dark #page-home > div.bg-white,
-body.dark #page-home > div.grid > div.bg-white,
 body.dark #home-transaction-list-container,
 body.dark #transaction-list-container,
-body.dark #page-calendar > div.bg-white,
-body.dark #page-accounts .bg-white.shadow-lg,
-body.dark #page-guide .bg-white.shadow-lg,
-body.dark #page-guide .bg-white.shadow-md,
+body.dark #page-calendar div[class*="shadow-"],
+body.dark #page-accounts div[class*="shadow-"],
+body.dark #page-guide div[class*="shadow-"],
 body.dark #app-lock-screen > div,
 body.dark #form-modal > div,
 body.dark #account-form-modal > div,
@@ -737,9 +738,9 @@ body.dark #edit-account-calculator-popover > div {
 
 /* =========================================
    4. หน้าตั้งค่า (Settings)
-   ให้คง "สีเดิม" ของแต่ละการ์ดไว้ (ฟ้า, แดง, เขียว) แต่เพิ่มความหนาเป็น 2px
+   ให้คง "สีเดิม" ไว้ แต่เพิ่มความหนาเป็น 2px
    ========================================= */
-#page-settings .bg-white {
+#page-settings div[class*="border-"] {
     border-width: 2px !important;
 }
 

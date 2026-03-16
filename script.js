@@ -5904,6 +5904,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 cardsContainer.classList.add('grid-cols-2');
             }
         }
+		
+		// อัปเดตสีปุ่มกรอง
+		if (typeof updateHomeFilterUI === 'function') {
+			updateHomeFilterUI();
+		}
 
         let homeFilteredTxs = visibleTransactions;
         if (state.homeFilterType !== 'all') {
@@ -10668,18 +10673,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleHomeFilter(buttonEl) {
-        document.querySelectorAll('#home-filter-buttons .home-filter-btn').forEach(btn => {
-            btn.classList.remove('bg-purple-500', 'text-white');
-            btn.classList.add('bg-gray-200', 'text-gray-700');
-        });
-        buttonEl.classList.add('bg-purple-500', 'text-white');
-        buttonEl.classList.remove('bg-gray-200', 'text-gray-700');
-        
-        state.homeFilterType = buttonEl.dataset.filter;
-        
-        state.homeCurrentPage = 1;
-        renderAll();
-    }
+		document.querySelectorAll('#home-filter-buttons .home-filter-btn').forEach(btn => {
+			btn.classList.remove('bg-primary-500', 'text-white');
+			btn.classList.add('bg-gray-100', 'text-gray-700');
+		});
+		buttonEl.classList.add('bg-primary-500', 'text-white');
+		buttonEl.classList.remove('bg-gray-100', 'text-gray-700');
+
+		state.homeFilterType = buttonEl.dataset.filter;
+		state.homeCurrentPage = 1;
+		renderAll();
+	}
+	
+	function updateHomeFilterUI() {
+		document.querySelectorAll('#home-filter-buttons .home-filter-btn').forEach(btn => {
+			if (btn.dataset.filter === state.homeFilterType) {
+				btn.classList.add('bg-primary-500', 'text-white');
+				btn.classList.remove('bg-gray-100', 'text-gray-700');
+			} else {
+				btn.classList.remove('bg-primary-500', 'text-white');
+				btn.classList.add('bg-gray-100', 'text-gray-700');
+			}
+		});
+	}
 
     async function handleEditClick(buttonEl) {
         const txId = buttonEl.dataset.id;
