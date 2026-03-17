@@ -670,13 +670,12 @@ body:not(.dark) .ring-purple-500, body:not(.dark) .ring-primary-500 { --tw-ring-
 
 /* =========================================
    ระบบขอบการ์ดตามสีธีม (Dynamic Theme Borders)
-   เพิ่มขอบสีธีมให้การ์ดในทุกหน้า (ยกเว้นหน้าตั้งค่า)
    ========================================= */
 
-/* 1. คลาสพิเศษสำหรับ "ล็อกเป้าหมาย" (เอาไปแปะใน HTML กล่องไหน กล่องนั้นขอบขึ้นทันที!) */
+/* 1. คลาสพิเศษ และดักจับปุ่มเลื่อนหน้า (Pagination) */
 .theme-border-target,
-
-/* 2. ดักจับกล่องหน้าแรก และหน้าอื่นๆ (โครงสร้างเดิม) */
+#list-pagination-controls button,
+#home-pagination-controls button,
 #page-home div[class*="shadow-"],
 #page-home button[class*="shadow-"],
 #home-budget-widget,
@@ -684,8 +683,8 @@ body:not(.dark) .ring-purple-500, body:not(.dark) .ring-primary-500 { --tw-ring-
 #transaction-list-container,
 #page-calendar div[class*="shadow-"],
 #page-accounts div[class*="shadow-"],
-#page-guide div[class*="shadow-"],
 #app-lock-screen > div,
+/* 2. หน้าต่าง Popups และ Modals ทั้งหมด */
 #form-modal > div,
 #account-form-modal > div,
 #account-detail-modal > div,
@@ -708,6 +707,8 @@ body:not(.dark) .ring-purple-500, body:not(.dark) .ring-primary-500 { --tw-ring-
 
 /* 3. โหมดมืด (Dark Mode) */
 body.dark .theme-border-target,
+body.dark #list-pagination-controls button,
+body.dark #home-pagination-controls button,
 body.dark #page-home div[class*="shadow-"],
 body.dark #page-home button[class*="shadow-"],
 body.dark #home-budget-widget,
@@ -715,7 +716,6 @@ body.dark #home-transaction-list-container,
 body.dark #transaction-list-container,
 body.dark #page-calendar div[class*="shadow-"],
 body.dark #page-accounts div[class*="shadow-"],
-body.dark #page-guide div[class*="shadow-"],
 body.dark #app-lock-screen > div,
 body.dark #form-modal > div,
 body.dark #account-form-modal > div,
@@ -736,15 +736,7 @@ body.dark #edit-account-calculator-popover > div {
     border: 2px solid rgb(var(--theme-700)) !important;
 }
 
-/* =========================================
-   4. หน้าตั้งค่า (Settings)
-   ให้คง "สีเดิม" ไว้ แต่เพิ่มความหนาเป็น 2px
-   ========================================= */
-#page-settings div[class*="border-"] {
-    border-width: 2px !important;
-}
-
-/* 5. ปรับช่องกรอกรหัสผ่านในหน้าล็อคจอ */
+/* 4. ปรับช่องกรอกรหัสผ่านในหน้าล็อคจอ */
 #unlock-password {
     border: 2px solid rgb(var(--theme-300)) !important;
 }

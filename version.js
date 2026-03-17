@@ -3,9 +3,9 @@
 // ============================================
 
 // เวอร์ชันหลัก
-var APP_VERSION = 'v8.6.57';
-var APP_LAST_UPDATED = '14-03-2026';
-var APP_LAST_UPDATED_TH = '14 มีนาคม 2569';
+var APP_VERSION = 'v8.6.58';
+var APP_LAST_UPDATED = '17-03-2026';
+var APP_LAST_UPDATED_TH = '17 มีนาคม 2569';
 
 // ช่องสำหรับพิมพ์รายละเอียดการอัปเดต (ให้พิมพ์ไว้ในเครื่องหมาย ` `)
 var APP_UPDATE_NOTES = `

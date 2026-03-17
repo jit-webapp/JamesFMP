@@ -10673,16 +10673,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleHomeFilter(buttonEl) {
+		// 1. ล้างสีทุกปุ่มให้กลับเป็นสถานะ "ไม่ได้เลือก" (พื้นขาว ตัวหนังสือเทา)
 		document.querySelectorAll('#home-filter-buttons .home-filter-btn').forEach(btn => {
-			btn.classList.remove('bg-primary-500', 'text-white');
-			btn.classList.add('bg-gray-100', 'text-gray-700');
+			btn.classList.remove('bg-primary-500', 'text-white', 'shadow-sm');
+			btn.classList.add('bg-white', 'text-gray-600', 'hover:bg-gray-50');
 		});
-		buttonEl.classList.add('bg-primary-500', 'text-white');
-		buttonEl.classList.remove('bg-gray-100', 'text-gray-700');
+		
+		// 2. ใส่สีให้ปุ่มที่ "ถูกคลิก" (พื้นสีธีม ตัวหนังสือขาว มีเงาเบาๆ)
+		buttonEl.classList.remove('bg-white', 'text-gray-600', 'hover:bg-gray-50');
+		buttonEl.classList.add('bg-primary-500', 'text-white', 'shadow-sm');
 
+		// 3. บันทึกค่าและสั่งโหลดข้อมูลตารางใหม่
 		state.homeFilterType = buttonEl.dataset.filter;
 		state.homeCurrentPage = 1;
 		renderAll();
+		
+		// 4. สั่งให้มือถือสั่นเบาๆ ตอบสนองการกด
+		if(window.appVibrate){ appVibrate(15); } else if(navigator.vibrate){ navigator.vibrate(15); }
 	}
 	
 	function updateHomeFilterUI() {
