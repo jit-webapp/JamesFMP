@@ -6918,7 +6918,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 	
    function renderPieChart(transactions) {
-        // [แก้ไข] กำหนดวันปัจจุบัน (สิ้นสุดวัน)
+		// [แก้ไข] กำหนดวันปัจจุบัน (สิ้นสุดวัน)
 		const today = new Date();
 		today.setHours(23, 59, 59, 999);
 
@@ -6936,116 +6936,129 @@ document.addEventListener('DOMContentLoaded', () => {
 			return acc;
 		}, { income: 0, expense: 0 });
 
-        const labels = ['รายรับ', 'รายจ่าย'];
-        const data = [summary.income, summary.expense];
-        
-        if (myChart) {
-            myChart.destroy();
-        }
-        
-        const noDataEl = document.getElementById('chart-no-data');
-        if (summary.income === 0 && summary.expense === 0) {
-            if(noDataEl) noDataEl.classList.remove('hidden');
-            return;
-        } else {
-            if(noDataEl) noDataEl.classList.add('hidden');
-        }
+		const labels = ['รายรับ', 'รายจ่าย'];
+		const data = [summary.income, summary.expense];
+		
+		if (typeof myChart !== 'undefined' && myChart) {
+			myChart.destroy();
+		}
+		
+		const noDataEl = document.getElementById('chart-no-data');
+		if (summary.income === 0 && summary.expense === 0) {
+			if(noDataEl) noDataEl.classList.remove('hidden');
+			return;
+		} else {
+			if(noDataEl) noDataEl.classList.add('hidden');
+		}
 
-        const ctx = document.getElementById('transaction-chart').getContext('2d');
-        const isDark = state.isDarkMode || document.body.classList.contains('dark');
-        const textColor = isDark ? '#e5e7eb' : '#6b7280';
-        const tooltipBg = isDark ? 'rgba(31, 41, 55, 0.9)' : 'rgba(255, 255, 255, 0.95)';
-        const tooltipText = isDark ? '#f9fafb' : '#111827';
-        
-        const totalAmount = summary.income + summary.expense;
+		const ctx = document.getElementById('transaction-chart').getContext('2d');
+		
+		// +++ ดึงสถานะของระบบมาเช็ค +++
+		const isDark = state?.isDarkMode || document.body.classList.contains('dark');
+		const isGlass = document.body.classList.contains('use-glass'); // เช็คว่าเปิดกระจกอยู่ไหม
 
-        myChart = new Chart(ctx, {
-            type: 'doughnut',
-            plugins: [typeof ChartDataLabels !== 'undefined' ? ChartDataLabels : {}], 
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: ['#34d399', '#f87171'], // Pastel Green, Pastel Red
-                    borderWidth: isDark ? 2 : 3,
-                    borderColor: isDark ? '#1f2937' : '#ffffff',
-                    hoverOffset: 10,
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        position: 'bottom', // เอาไว้ด้านล่างเพราะมีแค่ 2 หัวข้อ
-                        labels: {
-                            usePointStyle: true, 
-                            pointStyle: 'circle',
-                            boxWidth: 10,
-                            padding: 15,
-                            font: { family: "'Prompt', sans-serif", size: 12, weight: '500' },
-                            color: textColor 
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: tooltipBg,
-                        titleColor: tooltipText,
-                        bodyColor: tooltipText,
-                        borderColor: isDark ? '#4b5563' : '#e5e7eb',
-                        borderWidth: 1,
-                        padding: 12,
-                        boxPadding: 6,
-                        usePointStyle: true,
-                        callbacks: {
-                            label: function(context) {
-                                const val = context.raw;
-                                const percentage = totalAmount > 0 ? ((val / totalAmount) * 100).toFixed(1) : 0;
-                                return ` ${context.label}: ${formatCurrency(val)} (${percentage}%)`;
-                            }
-                        }
-                    },
-                    datalabels: {
-                        display: function(context) {
-                            const val = context.dataset.data[context.dataIndex];
-                            return (val / totalAmount) > 0.05;
-                        },
-                        color: '#ffffff',
-                        font: { family: "'Prompt', sans-serif", weight: 'bold', size: 11 },
-                        formatter: (value) => ((value / totalAmount) * 100).toFixed(0) + '%',
-                        textShadowBlur: 4,
-                        textShadowColor: 'rgba(0,0,0,0.3)'
-                    }
-                }
-            },
-            plugins: [{
-                id: 'centerTextHome',
-                beforeDraw: function(chart) {
-                    const width = chart.width, height = chart.height, ctx = chart.ctx;
-                    ctx.restore();
-                    const chartArea = chart.chartArea;
-                    const centerX = (chartArea.left + chartArea.right) / 2;
-                    const centerY = (chartArea.top + chartArea.bottom) / 2;
-                    
-                    ctx.textBaseline = 'middle';
-                    ctx.textAlign = 'center';
+		// +++ ปรับสีต่างๆ ให้รองรับโหมดกระจก +++
+		const textColor = isGlass ? (isDark ? '#f3f4f6' : '#374151') : (isDark ? '#e5e7eb' : '#6b7280');
+		// ปรับ Tooltip ให้เป็นกระจกโปร่งแสง
+		const tooltipBg = isGlass 
+			? (isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.5)') 
+			: (isDark ? 'rgba(31, 41, 55, 0.9)' : 'rgba(255, 255, 255, 0.95)');
+		const tooltipText = isDark ? '#f9fafb' : '#111827';
+		
+		const totalAmount = summary.income + summary.expense;
 
-                    ctx.font = `normal 11px 'Prompt', sans-serif`;
-                    ctx.fillStyle = isDark ? '#9ca3af' : '#6b7280';
-                    ctx.fillText("หมุนเวียน", centerX, centerY - 10);
+		myChart = new Chart(ctx, {
+			type: 'doughnut',
+			plugins: [typeof ChartDataLabels !== 'undefined' ? ChartDataLabels : {}], 
+			data: {
+				labels: labels,
+				datasets: [{
+					data: data,
+					backgroundColor: ['#34d399', '#f87171'], // Pastel Green, Pastel Red
+					borderWidth: isGlass ? 1 : (isDark ? 2 : 3), // ลดความหนาเส้นขอบลงถ้าเป็นกระจก
+					// 🛑 จุดสำคัญ: สั่งให้เส้นขอบโปร่งใส (Transparent) ถ้าเปิดโหมดกระจก 🛑
+					borderColor: isGlass ? 'transparent' : (isDark ? '#1f2937' : '#ffffff'),
+					hoverOffset: 10,
+					borderRadius: 6
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
+				cutout: '70%',
+				plugins: {
+					legend: {
+						position: 'bottom',
+						labels: {
+							usePointStyle: true, 
+							pointStyle: 'circle',
+							boxWidth: 10,
+							padding: 15,
+							font: { family: "'Prompt', sans-serif", size: 12, weight: '500' },
+							color: textColor 
+						}
+					},
+					tooltip: {
+						backgroundColor: tooltipBg,
+						titleColor: tooltipText,
+						bodyColor: tooltipText,
+						borderColor: isGlass ? 'rgba(255, 255, 255, 0.2)' : (isDark ? '#4b5563' : '#e5e7eb'),
+						borderWidth: 1,
+						padding: 12,
+						boxPadding: 6,
+						usePointStyle: true,
+						callbacks: {
+							label: function(context) {
+								const val = context.raw;
+								const percentage = totalAmount > 0 ? ((val / totalAmount) * 100).toFixed(1) : 0;
+								// เรียกใช้ฟังก์ชัน formatCurrency ของคุณ
+								const formattedVal = typeof formatCurrency === 'function' ? formatCurrency(val) : val;
+								return ` ${context.label}: ${formattedVal} (${percentage}%)`;
+							}
+						}
+					},
+					datalabels: {
+						display: function(context) {
+							const val = context.dataset.data[context.dataIndex];
+							return (val / totalAmount) > 0.05;
+						},
+						color: '#ffffff',
+						font: { family: "'Prompt', sans-serif", weight: 'bold', size: 11 },
+						formatter: (value) => ((value / totalAmount) * 100).toFixed(0) + '%',
+						textShadowBlur: 4,
+						textShadowColor: 'rgba(0,0,0,0.3)'
+					}
+				}
+			},
+			plugins: [{
+				id: 'centerTextHome',
+				beforeDraw: function(chart) {
+					const width = chart.width, height = chart.height, ctx = chart.ctx;
+					ctx.restore();
+					const chartArea = chart.chartArea;
+					const centerX = (chartArea.left + chartArea.right) / 2;
+					const centerY = (chartArea.top + chartArea.bottom) / 2;
+					
+					ctx.textBaseline = 'middle';
+					ctx.textAlign = 'center';
 
-                    let displayTotal = formatCurrency(totalAmount);
-                    const fontSize = displayTotal.length > 10 ? 12 : 14;
-                    ctx.font = `bold ${fontSize}px 'Prompt', sans-serif`;
-                    ctx.fillStyle = isDark ? '#e5e7eb' : '#1f2937';
-                    ctx.fillText(displayTotal, centerX, centerY + 10);
-                    ctx.save();
-                }
-            }]
-        });
-    }
+					ctx.font = `normal 11px 'Prompt', sans-serif`;
+					// สีข้อความ "หมุนเวียน" ตรงกลาง
+					ctx.fillStyle = isGlass ? (isDark ? '#d1d5db' : '#4b5563') : (isDark ? '#9ca3af' : '#6b7280');
+					ctx.fillText("หมุนเวียน", centerX, centerY - 10);
+
+					const displayTotal = typeof formatCurrency === 'function' ? formatCurrency(totalAmount) : totalAmount;
+					const fontSize = displayTotal.toString().length > 10 ? 12 : 14;
+					ctx.font = `bold ${fontSize}px 'Prompt', sans-serif`;
+					// สีตัวเลขยอดรวมตรงกลาง
+					ctx.fillStyle = isGlass ? (isDark ? '#ffffff' : '#1f2937') : (isDark ? '#e5e7eb' : '#1f2937');
+					ctx.fillText(displayTotal, centerX, centerY + 10);
+					ctx.save();
+				}
+			}]
+		});
+	}
 
     function renderExpenseByNameChart(transactions) {
 		const today = new Date();
@@ -7267,15 +7280,19 @@ document.addEventListener('DOMContentLoaded', () => {
 						label: 'รายรับ',
 						data: sortedKeys.map(k => trendData[k].income),
 						borderColor: '#22c55e',
-						backgroundColor: '#22c55e',
-						tension: 0.1
+						backgroundColor: 'rgba(34, 197, 94, 0.1)', // ใสมาก 10%
+						borderWidth: 2,
+						tension: 0.1,
+						fill: true
 					},
 					{
 						label: 'รายจ่าย',
 						data: sortedKeys.map(k => trendData[k].expense),
 						borderColor: '#ef4444',
-						backgroundColor: '#ef4444',
-						tension: 0.1
+						backgroundColor: 'rgba(239, 68, 68, 0.1)', // ใสมาก 10%
+						borderWidth: 2,
+						tension: 0.1,
+						fill: true
 					}
 				];
 			}
@@ -7317,12 +7334,18 @@ document.addEventListener('DOMContentLoaded', () => {
 				{
 					label: 'รายรับ',
 					data: incomeData,
-					backgroundColor: '#22c55e'
+					backgroundColor: 'rgba(34, 197, 94, 0.1)', // ใสมาก 10%
+					borderColor: '#22c55e',
+					borderWidth: 1,
+					borderRadius: 4
 				},
 				{
 					label: 'รายจ่าย',
 					data: expenseData,
-					backgroundColor: '#ef4444'
+					backgroundColor: 'rgba(239, 68, 68, 0.1)', // ใสมาก 10%
+					borderColor: '#ef4444',
+					borderWidth: 1,
+					borderRadius: 4
 				}
 			];
 		}
@@ -7367,7 +7390,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							}
 						},
 						 grid: {
-							color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+							color: state.isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
 						}
 					},
 					x: {
@@ -7394,6 +7417,11 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 					},
 					tooltip: {
+						backgroundColor: state.isDarkMode ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+						titleColor: state.isDarkMode ? '#fff' : '#000',
+						bodyColor: state.isDarkMode ? '#fff' : '#000',
+						borderColor: state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+						borderWidth: 1,
 						callbacks: {
 							 label: function(context) {
 								let label = context.dataset.label || '';
@@ -11814,7 +11842,13 @@ document.addEventListener('DOMContentLoaded', () => {
 						isDarkMode: (await dbGet(STORE_CONFIG, DARK_MODE_CONFIG_KEY))?.value || false,
 						themeColor: state.themeColor || '#9333ea',
 						lastCustomColor: state.lastCustomColor || null,
-						autoConfirmPassword: (await dbGet(STORE_CONFIG, AUTO_CONFIRM_CONFIG_KEY))?.value || false
+						autoConfirmPassword: (await dbGet(STORE_CONFIG, AUTO_CONFIRM_CONFIG_KEY))?.value || false,
+
+                        // +++ เพิ่มส่วนนี้เพื่อ Backup Wallpaper และค่าความใสลงไปด้วย +++
+                        wallpaperData: localStorage.getItem('local_wallpaper_data') || null,
+                        glassMode: localStorage.getItem('setting_glass_mode') || 'false',
+                        wallpaperBrightness: localStorage.getItem('local_wallpaper_brightness') || '100',
+                        wallpaperOpacity: localStorage.getItem('local_wallpaper_opacity') || '100'
 					};
 					
 					// สร้าง Blob
@@ -12325,60 +12359,60 @@ document.addEventListener('DOMContentLoaded', () => {
                                 await dbPut(STORE_AUTO_COMPLETE, item);
                             }
                         }
-						
-						await dbClear(STORE_BUDGETS);
-						if (Array.isArray(importedState.budgets)) {
-							for (const budget of importedState.budgets) {
-								await dbPut(STORE_BUDGETS, budget);
-							}
-						}
-						
-						await dbClear(STORE_VOICE_COMMANDS);
-						if (Array.isArray(importedState.voiceCommands)) {
-							for (const item of importedState.voiceCommands) {
-								await dbPut(STORE_VOICE_COMMANDS, item);
-							}
-						}
-						
-						// ---------- ICS IMPORTS ----------
-						await dbClear(STORE_ICS_IMPORTS);
-						if (Array.isArray(importedState.icsImports)) {
-							for (const item of importedState.icsImports) {
-								await dbPut(STORE_ICS_IMPORTS, item);
-							}
-						}
-						await dbClear(STORE_IMPORTED_EVENTS);
-						if (Array.isArray(importedState.importedEvents)) {
-							for (const item of importedState.importedEvents) {
-								await dbPut(STORE_IMPORTED_EVENTS, item);
-							}
-						}
-						
-						// นำเข้า LINE Notify Actions
-						if (importedState.lineNotifyActions) {
-							await dbPut(STORE_CONFIG, { key: 'lineNotifyActions', value: importedState.lineNotifyActions });
-						}
-						
-						if (importedState.autoBackup) {
-							state.autoBackup = importedState.autoBackup;
-							await dbPut(STORE_CONFIG, { key: 'autoBackup', value: importedState.autoBackup });
-						}
+                        
+                        await dbClear(STORE_BUDGETS);
+                        if (Array.isArray(importedState.budgets)) {
+                            for (const budget of importedState.budgets) {
+                                await dbPut(STORE_BUDGETS, budget);
+                            }
+                        }
+                        
+                        await dbClear(STORE_VOICE_COMMANDS);
+                        if (Array.isArray(importedState.voiceCommands)) {
+                            for (const item of importedState.voiceCommands) {
+                                await dbPut(STORE_VOICE_COMMANDS, item);
+                            }
+                        }
+                        
+                        // ---------- ICS IMPORTS ----------
+                        await dbClear(STORE_ICS_IMPORTS);
+                        if (Array.isArray(importedState.icsImports)) {
+                            for (const item of importedState.icsImports) {
+                                await dbPut(STORE_ICS_IMPORTS, item);
+                            }
+                        }
+                        await dbClear(STORE_IMPORTED_EVENTS);
+                        if (Array.isArray(importedState.importedEvents)) {
+                            for (const item of importedState.importedEvents) {
+                                await dbPut(STORE_IMPORTED_EVENTS, item);
+                            }
+                        }
+                        
+                        // นำเข้า LINE Notify Actions
+                        if (importedState.lineNotifyActions) {
+                            await dbPut(STORE_CONFIG, { key: 'lineNotifyActions', value: importedState.lineNotifyActions });
+                        }
+                        
+                        if (importedState.autoBackup) {
+                            state.autoBackup = importedState.autoBackup;
+                            await dbPut(STORE_CONFIG, { key: 'autoBackup', value: importedState.autoBackup });
+                        }
                         
                         await dbClear(STORE_CONFIG);
-						await dbPut(STORE_CONFIG, { key: 'password', value: importedState.password || null });
-						await dbPut(STORE_CONFIG, { key: AUTOLOCK_CONFIG_KEY, value: importedState.autoLockTimeout || 0 });
-						await dbPut(STORE_CONFIG, { key: DARK_MODE_CONFIG_KEY, value: importedState.isDarkMode || false });
-						await dbPut(STORE_CONFIG, { key: AUTO_CONFIRM_CONFIG_KEY, value: importedState.autoConfirmPassword || false });
+                        await dbPut(STORE_CONFIG, { key: 'password', value: importedState.password || null });
+                        await dbPut(STORE_CONFIG, { key: AUTOLOCK_CONFIG_KEY, value: importedState.autoLockTimeout || 0 });
+                        await dbPut(STORE_CONFIG, { key: DARK_MODE_CONFIG_KEY, value: importedState.isDarkMode || false });
+                        await dbPut(STORE_CONFIG, { key: AUTO_CONFIRM_CONFIG_KEY, value: importedState.autoConfirmPassword || false });
 
-						// +++ ค่าตั้งค่าเพิ่มเติม +++
-						await dbPut(STORE_CONFIG, { key: 'showBalanceCard', value: importedState.showBalanceCard ?? false });
-						await dbPut(STORE_CONFIG, { key: 'collapse_preferences', value: importedState.collapsePreferences ?? {} });
-						await dbPut(STORE_CONFIG, { key: 'notification_settings', value: importedState.notifySettings ?? { scheduled: true, recurring: true, budget: true } });
-						await dbPut(STORE_CONFIG, { key: 'ignored_notifications', value: importedState.ignoredNotifications ?? [] });
-						await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: importedState.customNotificationsList ?? [] });
-						await dbPut(STORE_CONFIG, { key: 'notification_history', value: importedState.notificationHistory ?? [] });
-						await dbPut(STORE_CONFIG, { key: 'mobileMenuStyle', value: importedState.mobileMenuStyle ?? 'bottom' });
-						await dbPut(STORE_CONFIG, { key: 'lineUserIds_List', value: importedState.lineUserIdsList ?? [] });
+                        // +++ ค่าตั้งค่าเพิ่มเติม +++
+                        await dbPut(STORE_CONFIG, { key: 'showBalanceCard', value: importedState.showBalanceCard ?? false });
+                        await dbPut(STORE_CONFIG, { key: 'collapse_preferences', value: importedState.collapsePreferences ?? {} });
+                        await dbPut(STORE_CONFIG, { key: 'notification_settings', value: importedState.notifySettings ?? { scheduled: true, recurring: true, budget: true } });
+                        await dbPut(STORE_CONFIG, { key: 'ignored_notifications', value: importedState.ignoredNotifications ?? [] });
+                        await dbPut(STORE_CONFIG, { key: 'custom_notifications_list', value: importedState.customNotificationsList ?? [] });
+                        await dbPut(STORE_CONFIG, { key: 'notification_history', value: importedState.notificationHistory ?? [] });
+                        await dbPut(STORE_CONFIG, { key: 'mobileMenuStyle', value: importedState.mobileMenuStyle ?? 'bottom' });
+                        await dbPut(STORE_CONFIG, { key: 'lineUserIds_List', value: importedState.lineUserIdsList ?? [] });
 
                         // --- NEW THEME VARIABLES FOR RESTORE ---
                         if (importedState.themeColor !== undefined) {
@@ -12390,6 +12424,25 @@ document.addEventListener('DOMContentLoaded', () => {
                             await dbPut(STORE_CONFIG, { key: 'lastCustomColor', value: importedState.lastCustomColor });
                         }
                         // ---------------------------------------
+
+                        // +++ คืนค่า Wallpaper จากไฟล์ Backup กลับลง LocalStorage +++
+                        if (importedState.wallpaperData !== undefined) {
+                            if (importedState.wallpaperData) {
+                                localStorage.setItem('local_wallpaper_data', importedState.wallpaperData);
+                            } else {
+                                localStorage.removeItem('local_wallpaper_data');
+                            }
+                        }
+                        if (importedState.glassMode !== undefined) {
+                            localStorage.setItem('setting_glass_mode', importedState.glassMode);
+                        }
+                        if (importedState.wallpaperBrightness !== undefined) {
+                            localStorage.setItem('local_wallpaper_brightness', importedState.wallpaperBrightness);
+                        }
+                        if (importedState.wallpaperOpacity !== undefined) {
+                            localStorage.setItem('local_wallpaper_opacity', importedState.wallpaperOpacity);
+                        }
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         fileInput.value = null;
                         Swal.fire({
@@ -12405,6 +12458,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 applyThemeColor();
                             }
                             applyDarkModePreference();
+
+                            // บังคับเปลี่ยน Wallpaper ถ้านำเข้าเสร็จ
+                            if (typeof window.applyWallpaper === 'function') {
+                                window.applyWallpaper();
+                            }
                             
                             renderSettings();
                             showPage('page-home'); 
@@ -21039,6 +21097,386 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				});
 			}
+			
+			// ==========================================
+			// ระบบ Wallpaper V.8 (ปรับความใสกระจกแยกโหมดได้อิสระ)
+			// ==========================================
+
+			window.applyWallpaper = function() {
+				let wallDiv = document.getElementById('app-wallpaper');
+				if (!wallDiv) {
+					wallDiv = document.createElement('div');
+					wallDiv.id = 'app-wallpaper';
+					wallDiv.style.position = 'fixed';
+					wallDiv.style.top = '0';
+					wallDiv.style.left = '0';
+					wallDiv.style.width = '100vw';
+					wallDiv.style.height = '100vh';
+					wallDiv.style.zIndex = '-999';
+					wallDiv.style.backgroundSize = 'cover';
+					wallDiv.style.backgroundPosition = 'center';
+					wallDiv.style.backgroundRepeat = 'no-repeat';
+					wallDiv.style.pointerEvents = 'none';
+					wallDiv.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
+					document.body.prepend(wallDiv);
+				}
+
+				const wallpaperData = localStorage.getItem('local_wallpaper_data');
+				const brightness = localStorage.getItem('local_wallpaper_brightness') || '100';
+				
+				// ดึงค่าสวิตช์กระจกและความทึบ
+				const isGlassMode = localStorage.getItem('setting_glass_mode') === 'true';
+				const glassOpLight = localStorage.getItem('local_glass_op_light') || '25';
+				const glassOpDark = localStorage.getItem('local_glass_op_dark') || '65';
+				const isDarkMode = document.body.classList.contains('dark');
+				const currentGlassOp = isDarkMode ? glassOpDark : glassOpLight;
+
+				const toggleGlass = document.getElementById('toggle-glass-mode');
+				if (toggleGlass) toggleGlass.checked = isGlassMode;
+
+				const removeBtn = document.getElementById('btn-remove-wallpaper');
+				const settingsContainer = document.getElementById('wallpaper-settings-container');
+				const brightBox = document.getElementById('setting-brightness-box');
+				const glassBox = document.getElementById('setting-glass-box');
+				
+				const brInput = document.getElementById('input-wallpaper-brightness');
+				const brVal = document.getElementById('wallpaper-brightness-value');
+				const glInput = document.getElementById('input-glass-opacity');
+				const glVal = document.getElementById('glass-opacity-value');
+
+				// เซ็ตตัวแปร CSS ให้แอปทันที
+				document.documentElement.style.setProperty('--glass-op-light', (glassOpLight / 100));
+				document.documentElement.style.setProperty('--glass-op-dark', (glassOpDark / 100));
+
+				if (glInput) glInput.value = currentGlassOp;
+				if (glVal) glVal.textContent = currentGlassOp + '%';
+
+				// 1. จัดการเรื่อง "รูปภาพ"
+				if (wallpaperData) {
+					wallDiv.style.display = 'block';
+					wallDiv.style.backgroundImage = `url(${wallpaperData})`;
+					wallDiv.style.filter = `brightness(${brightness}%)`;
+					document.body.classList.add('has-wallpaper');
+					
+					if(removeBtn) removeBtn.classList.remove('hidden');
+					if(brInput) brInput.value = brightness;
+					if(brVal) brVal.textContent = brightness + '%';
+				} else {
+					wallDiv.style.display = 'none';
+					wallDiv.style.backgroundImage = 'none';
+					document.body.classList.remove('has-wallpaper');
+					if(removeBtn) removeBtn.classList.add('hidden');
+				}
+
+				// 2. จัดการเรื่อง "โหมดกระจก"
+				if (wallpaperData || isGlassMode) {
+					document.body.classList.add('use-glass');
+					if(settingsContainer) settingsContainer.classList.remove('hidden');
+					if(glassBox) glassBox.classList.remove('hidden');
+					
+					// ถ้ามีรูป โชว์แถบความสว่างด้วย
+					if (wallpaperData) {
+						if(brightBox) brightBox.classList.remove('hidden');
+					} else {
+						if(brightBox) brightBox.classList.add('hidden');
+					}
+				} else {
+					document.body.classList.remove('use-glass');
+					if(settingsContainer) settingsContainer.classList.add('hidden');
+				}
+			};
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', window.applyWallpaper);
+			} else {
+				window.applyWallpaper();
+			}
+
+			window.toggleGlassMode = function(isChecked) {
+				localStorage.setItem('setting_glass_mode', isChecked);
+				window.applyWallpaper(); 
+				if (typeof showToast === 'function') {
+					showToast(isChecked ? 'เปิดเอฟเฟกต์กระจกแล้ว' : 'ปิดเอฟเฟกต์กระจกแล้ว', 'success');
+				}
+			};
+
+			window.handleWallpaper = function(event) {
+				const file = event.target.files[0];
+				if (!file) return;
+				
+				// เคลียร์ค่า input เพื่อให้สามารถเลือกไฟล์เดิมซ้ำได้หากต้องการแก้ไข
+				event.target.value = '';
+
+				// 1. แจ้งเตือนกำลังประมวลผล (ใช้ SweetAlert2 ให้เข้าธีมกระจก)
+				Swal.fire({
+					title: 'กำลังประมวลผล...',
+					text: 'กรุณารอสักครู่',
+					allowOutsideClick: false,
+					showConfirmButton: false,
+					didOpen: () => {
+						Swal.showLoading();
+					}
+				});
+
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					const img = new Image();
+					img.onload = function() {
+						try {
+							const canvas = document.createElement('canvas');
+							let width = img.width;
+							let height = img.height;
+							
+							// 2. ปรับขนาดรูปให้ไม่เกิน 1080px (เพื่อให้คมชัดบนจอมือถือ แต่ไฟล์ไม่หนัก)
+							const MAX_SIZE = 1080; 
+
+							if (width > MAX_SIZE || height > MAX_SIZE) {
+								if (width > height) {
+									height = Math.round((height * MAX_SIZE) / width);
+									width = MAX_SIZE;
+								} else {
+									width = Math.round((width * MAX_SIZE) / height);
+									height = MAX_SIZE;
+								}
+							}
+							
+							canvas.width = width;
+							canvas.height = height;
+							const ctx = canvas.getContext('2d');
+							ctx.drawImage(img, 0, 0, width, height);
+							
+							// บีบอัดเป็น JPEG คุณภาพ 70% (สมดุลระหว่างความชัดและขนาดไฟล์)
+							const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+							
+							// 3. บันทึกลง LocalStorage (ใช้ Key เดิมของคุณ)
+							localStorage.setItem('local_wallpaper_data', dataUrl);
+							
+							// บังคับเปิดสวิตช์โหมดกระจกอัตโนมัติเมื่อมีรูป
+							localStorage.setItem('setting_glass_mode', 'true');
+							if (!localStorage.getItem('local_wallpaper_brightness')) {
+								localStorage.setItem('local_wallpaper_brightness', '100');
+							}
+							
+							// อัปเดตพื้นหลังทันที
+							if (typeof window.applyWallpaper === 'function') {
+								window.applyWallpaper();
+							}
+							
+							// แจ้งเตือนสำเร็จ
+							Swal.fire({
+								icon: 'success',
+								title: 'สำเร็จ!',
+								text: 'ตั้งค่าภาพพื้นหลังเรียบร้อยแล้ว',
+								timer: 1500,
+								showConfirmButton: false
+							});
+							
+						} catch (err) {
+							console.error(err);
+							Swal.fire({
+								icon: 'error',
+								title: 'เกิดข้อผิดพลาด',
+								text: 'พื้นที่ความจำเต็ม หรือรูปภาพมีขนาดใหญ่เกินไปครับ'
+							});
+						}
+					};
+					img.onerror = function() { 
+						Swal.fire({
+							icon: 'error',
+							title: 'ข้อผิดพลาด',
+							text: 'ไม่สามารถอ่านไฟล์รูปภาพนี้ได้'
+						});
+					};
+					img.src = e.target.result;
+				};
+				reader.onerror = function() { 
+					Swal.fire({
+						icon: 'error',
+						title: 'ข้อผิดพลาด',
+						text: 'โทรศัพท์ไม่อนุญาตให้อ่านไฟล์'
+					});
+				};
+				reader.readAsDataURL(file);
+			};
+
+			window.removeWallpaper = function() {
+				if (typeof Swal !== 'undefined') {
+					Swal.fire({
+						title: 'ยกเลิกภาพพื้นหลัง?',
+						text: "คุณต้องการลบภาพพื้นหลังนี้ออกใช่หรือไม่?",
+						icon: 'warning',
+						showCancelButton: true,
+						confirmButtonColor: '#ef4444',
+						cancelButtonColor: '#6b7280',
+						confirmButtonText: 'ใช่, ลบเลย!',
+						cancelButtonText: 'ยกเลิก'
+					}).then((result) => {
+						if (result.isConfirmed) {
+							localStorage.removeItem('local_wallpaper_data');
+							window.applyWallpaper();
+							if(typeof showToast === 'function') showToast('ลบภาพพื้นหลังเรียบร้อย', 'success');
+						}
+					});
+				} else {
+					if (confirm('คุณต้องการยกเลิกภาพพื้นหลังใช่หรือไม่?')) {
+						localStorage.removeItem('local_wallpaper_data');
+						window.applyWallpaper();
+						if(typeof showToast === 'function') showToast('ลบภาพพื้นหลังเรียบร้อย', 'success');
+					}
+				}
+			};
+
+			window.previewGlassOpacity = function(val) {
+				const glVal = document.getElementById('glass-opacity-value');
+				if(glVal) glVal.textContent = val + '%';
+				
+				// ปรับแยกกันระหว่างโหมดมืดและสว่าง
+				const isDarkMode = document.body.classList.contains('dark');
+				if (isDarkMode) {
+					document.documentElement.style.setProperty('--glass-op-dark', val / 100);
+				} else {
+					document.documentElement.style.setProperty('--glass-op-light', val / 100);
+				}
+			};
+
+			window.saveGlassOpacity = function(val) {
+				const isDarkMode = document.body.classList.contains('dark');
+				if (isDarkMode) {
+					localStorage.setItem('local_glass_op_dark', val);
+				} else {
+					localStorage.setItem('local_glass_op_light', val);
+				}
+			};
+
+			window.previewWallpaperBrightness = function(val) {
+				const brVal = document.getElementById('wallpaper-brightness-value');
+				if(brVal) brVal.textContent = val + '%';
+				const wallDiv = document.getElementById('app-wallpaper');
+				if(wallDiv) wallDiv.style.filter = `brightness(${val}%)`;
+			};
+			window.saveWallpaperBrightness = function(val) {
+				localStorage.setItem('local_wallpaper_brightness', val);
+			};
+
+			// สั่งโหลดภาพพื้นหลังทันทีเมื่อเปิดแอป
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', window.applyWallpaper);
+			} else {
+				window.applyWallpaper();
+			}
+
+			// ------------------------------------
+			// ระบบจัดการรูป (อัปโหลด/บีบอัด) เหมือนเดิม
+			// ------------------------------------
+			window.handleWallpaper = function(event) {
+				const file = event.target.files[0];
+				if (!file) return;
+
+				event.target.value = '';
+
+				if(typeof showToast === 'function') {
+					showToast('กำลังประมวลผลรูปภาพ กรุณารอสักครู่...', 'info');
+				}
+
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					const img = new Image();
+					img.onload = function() {
+						try {
+							const canvas = document.createElement('canvas');
+							let width = img.width;
+							let height = img.height;
+							const MAX_WIDTH = 720; 
+
+							if (width > MAX_WIDTH) {
+								height = Math.round((height * MAX_WIDTH) / width);
+								width = MAX_WIDTH;
+							}
+							
+							canvas.width = width;
+							canvas.height = height;
+							const ctx = canvas.getContext('2d');
+							ctx.drawImage(img, 0, 0, width, height);
+							
+							const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+							
+							localStorage.setItem('local_wallpaper_data', dataUrl);
+							if (!localStorage.getItem('local_wallpaper_opacity')) localStorage.setItem('local_wallpaper_opacity', '50');
+							if (!localStorage.getItem('local_wallpaper_brightness')) localStorage.setItem('local_wallpaper_brightness', '100');
+							
+							window.applyWallpaper();
+							if(typeof showToast === 'function') showToast('ตั้งค่าภาพพื้นหลังสำเร็จ!', 'success');
+							
+						} catch (err) {
+							console.error(err);
+							alert('เกิดข้อผิดพลาด: พื้นที่ความจำของเบราว์เซอร์เต็ม หรือรูปภาพใหญ่เกินไปครับ');
+						}
+					};
+					img.onerror = function() { alert('ข้อผิดพลาด: ไม่สามารถอ่านไฟล์รูปภาพนี้ได้'); };
+					img.src = e.target.result;
+				};
+				reader.onerror = function() { alert('ข้อผิดพลาด: โทรศัพท์ไม่อนุญาตให้อ่านไฟล์'); };
+				reader.readAsDataURL(file);
+			};
+
+			// ------------------------------------
+			// ระบบลบรูป (เพิ่มแจ้งเตือนยืนยัน)
+			// ------------------------------------
+			window.removeWallpaper = function() {
+				// ใช้ SweetAlert (ถ้าแอปมี) หรือใช้ confirm ปกติ
+				if (typeof Swal !== 'undefined') {
+					Swal.fire({
+						title: 'ยกเลิกภาพพื้นหลัง?',
+						text: "คุณต้องการลบภาพพื้นหลังนี้ออกใช่หรือไม่?",
+						icon: 'warning',
+						showCancelButton: true,
+						confirmButtonColor: '#ef4444', // สีแดง
+						cancelButtonColor: '#6b7280',  // สีเทา
+						confirmButtonText: 'ใช่, ลบเลย!',
+						cancelButtonText: 'ยกเลิก'
+					}).then((result) => {
+						if (result.isConfirmed) {
+							executeRemoveWallpaper();
+						}
+					});
+				} else {
+					if (confirm('คุณต้องการยกเลิกภาพพื้นหลังใช่หรือไม่?')) {
+						executeRemoveWallpaper();
+					}
+				}
+			};
+
+			function executeRemoveWallpaper() {
+				localStorage.removeItem('local_wallpaper_data');
+				window.applyWallpaper();
+				if(typeof showToast === 'function') showToast('ลบภาพพื้นหลังเรียบร้อย', 'success');
+			}
+
+			// ------------------------------------
+			// ระบบแถบควบคุม (ความโปร่งใส)
+			// ------------------------------------
+			window.previewWallpaperOpacity = function(val) {
+				const opVal = document.getElementById('wallpaper-opacity-value');
+				if(opVal) opVal.textContent = val + '%';
+				const wallDiv = document.getElementById('app-wallpaper');
+				if(wallDiv) wallDiv.style.opacity = val / 100;
+			};
+			window.saveWallpaperOpacity = function(val) {
+				localStorage.setItem('local_wallpaper_opacity', val);
+			};
+
+			// ------------------------------------
+			// ระบบแถบควบคุมใหม่ (ความสว่าง/ความเข้ม)
+			// ------------------------------------
+			window.previewWallpaperBrightness = function(val) {
+				const brVal = document.getElementById('wallpaper-brightness-value');
+				if(brVal) brVal.textContent = val + '%';
+				const wallDiv = document.getElementById('app-wallpaper');
+				if(wallDiv) wallDiv.style.filter = `brightness(${val}%)`;
+			};
+			window.saveWallpaperBrightness = function(val) {
+				localStorage.setItem('local_wallpaper_brightness', val);
+			};
 			
 			// ============================================
 			// DUMMY FUNCTIONS สำหรับ legacy calls (ป้องกัน error)

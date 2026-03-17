@@ -68,35 +68,37 @@
 </head>
 <body class="bg-gray-100 text-gray-700">
 
-    <nav class="bg-white shadow-md sticky top-0 z-50">
-        <div id="app-lock-screen" class="fixed inset-0 bg-gradient-to-br from-primary-900 to-indigo-900 z-[70] flex flex-col items-center justify-center p-4 hidden">
-            <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center transform transition-all scale-100">
+		<div id="app-lock-screen" class="fixed top-0 left-0 w-full h-[100dvh] bg-slate-900/20 dark:bg-black/60 backdrop-blur-md z-[9999] flex flex-col items-center justify-center p-4 hidden">
+            
+            <div class="bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-md text-center transform transition-all scale-100">
                 <div class="mb-6">
-                    <div class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fa-solid fa-lock text-4xl text-primary-600"></i>
+                    <div class="w-16 h-16 md:w-20 md:h-20 bg-white/40 dark:bg-gray-800/50 border border-white/50 dark:border-gray-600/50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm backdrop-blur-sm">
+                        <i class="fa-solid fa-lock text-3xl md:text-4xl text-primary-600 dark:text-primary-400 drop-shadow-sm"></i>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-800">กรุณาใส่รหัสผ่าน</h2>
-                    <p class="text-gray-500 mt-2">เพื่อเข้าใช้งานระบบจัดการรายรับ-รายจ่าย</p>
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white drop-shadow-sm">กรุณาใส่รหัสผ่าน</h2>
+                    <p class="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-2 font-medium drop-shadow-sm">เพื่อเข้าใช้งานระบบจัดการรายรับ-รายจ่าย</p>
                 </div>
                 
                 <form id="unlock-form" class="space-y-4">
 					<div class="relative">
-						<input type="password" id="unlock-password" placeholder="รหัสผ่าน" class="w-full text-center text-2xl tracking-widest py-3 px-4 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-primary-200 focus:border-primary-500 outline-none transition-all" required
+                        <input type="password" id="unlock-password" placeholder="รหัสผ่าน" class="w-full text-center text-xl md:text-2xl tracking-widest py-3 px-4 bg-white/50 dark:bg-gray-800/50 border-2 border-white/60 dark:border-gray-600/50 rounded-xl focus:ring-4 focus:ring-primary-300/50 focus:border-primary-500 outline-none transition-all text-gray-800 dark:text-white backdrop-blur-sm placeholder-gray-400 dark:placeholder-gray-500" required
 						autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
 					</div>
 					
-					<button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition duration-300 text-lg flex items-center justify-center gap-2">
+					<button type="submit" class="w-full bg-primary-600/80 hover:bg-primary-600 text-white backdrop-blur-md border border-white/40 font-bold py-3 md:py-4 px-6 rounded-xl shadow-lg transition duration-300 text-base md:text-lg flex items-center justify-center gap-2">
 						<i class="fa-solid fa-door-open"></i> เข้าสู่ระบบ
 					</button>
 
-					<button type="button" id="btn-bio-unlock" class="w-full bg-white border-2 border-primary-200 hover:bg-primary-50 text-primary-700 font-bold py-3 px-6 rounded-xl transition duration-300 text-lg flex items-center justify-center gap-2 hidden">
-						<i class="fa-solid fa-fingerprint text-2xl"></i> สแกนลายนิ้วมือ / ใบหน้า
+					<button type="button" id="btn-bio-unlock" class="w-full bg-white/40 dark:bg-gray-800/40 border border-white/50 dark:border-gray-600/50 hover:bg-white/60 dark:hover:bg-gray-700/50 text-primary-700 dark:text-primary-300 font-bold py-3 px-6 rounded-xl transition duration-300 text-base md:text-lg flex items-center justify-center gap-2 hidden backdrop-blur-md shadow-sm">
+						<i class="fa-solid fa-fingerprint text-xl md:text-2xl drop-shadow-sm"></i> สแกนนิ้ว / ใบหน้า
 					</button>
 				</form>
-                <p class="mt-6 text-xs text-gray-400">© 2025 Finance Manager Pro</p>
+                <p class="mt-6 text-[10px] md:text-xs text-gray-600 dark:text-gray-400 drop-shadow-sm">© 2025 Finance Manager Pro</p>
             </div>
         </div>
 
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="text-lg font-bold text-primary-600">
                 <i class="fa-solid fa-wallet mr-2"></i>
@@ -455,23 +457,23 @@
 						</div>
 					</div>
 
-						<div class="theme-border-target bg-gradient-to-r from-indigo-50 to-primary-50 dark:from-gray-900 dark:to-gray-800 border-0 rounded-lg p-3 md:p-5 mt-4 transition-colors duration-200 w-full">
+						<div class="theme-border-target bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 rounded-lg p-3 md:p-5 mt-4 transition-colors duration-200 w-full shadow-sm">
 							
 							<div class="flex justify-between items-center text-xs md:text-sm text-gray-500 mb-3">
 								<span><i class="fa-solid fa-chart-simple mr-1"></i>สรุปยอด (ตามรายการที่ค้นหา)</span>
-								<span id="dyn-count-display" class="theme-border-target bg-white px-3 py-1 rounded-full border-0 shadow-sm font-medium">0 รายการ</span>
+								<span id="dyn-count-display" class="theme-border-target bg-transparent border border-white/30 dark:border-gray-600/30 px-3 py-1 rounded-full shadow-sm font-medium text-gray-700 dark:text-gray-200">0 รายการ</span>
 							</div>
 
 							<div id="analytics-section" class="mt-4 mb-6 hidden w-full">
 								<div class="flex justify-between items-center mb-3">
-									<h3 class="text-sm md:text-base font-bold text-primary-600"><i class="fa-solid fa-chart-line mr-1"></i> กราฟวิเคราะห์</h3>
-									<button id="toggle-list-charts-btn" onclick="toggleListCharts()" class="theme-border-target text-xs text-primary-600 hover:text-primary-800 font-bold bg-white dark:bg-gray-800 border-0 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
+									<h3 class="text-sm md:text-base font-bold text-primary-600 dark:text-primary-400"><i class="fa-solid fa-chart-line mr-1"></i> กราฟวิเคราะห์</h3>
+									<button id="toggle-list-charts-btn" onclick="toggleListCharts()" class="theme-border-target text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 font-bold bg-transparent border border-white/30 dark:border-gray-600/30 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
 										ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
 									</button>
 								</div>
 
 								<div id="list-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full h-full transition-all duration-300">
-									<div class="list-chart-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full">
+									<div class="list-chart-card bg-transparent border border-white/20 dark:border-gray-700/30 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full hover:bg-white/5 dark:hover:bg-gray-800/10">
 										<h3 class="list-chart-title text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-1.5 flex-shrink-0 justify-center">
 											<i class="fa-solid fa-chart-pie text-primary-500"></i> <span class="list-chart-title-text">สัดส่วนหมวดหมู่</span>
 										</h3>
@@ -480,7 +482,7 @@
 										</div>
 									</div>
 
-									<div class="list-chart-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full">
+									<div class="list-chart-card bg-transparent border border-white/20 dark:border-gray-700/30 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full hover:bg-white/5 dark:hover:bg-gray-800/10">
 										<h3 class="list-chart-title text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-1.5 flex-shrink-0 justify-center">
 											<i class="fa-solid fa-chart-column text-blue-500"></i> <span class="list-chart-title-text">แนวโน้มช่วงเวลา</span>
 										</h3>
@@ -491,18 +493,18 @@
 								</div>
 							</div>
 
-							<div class="grid grid-cols-3 gap-2 text-center divide-x divide-gray-200 w-full bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border-0 theme-border-target">
+							<div class="grid grid-cols-3 gap-2 text-center divide-x divide-gray-300/30 dark:divide-gray-500/30 w-full bg-transparent border border-white/20 dark:border-gray-700/30 p-3 rounded-xl theme-border-target hover:bg-white/5 dark:hover:bg-gray-800/10 transition-colors">
 								<div>
-									<div class="text-[10px] md:text-xs text-gray-500 mb-1">รวมรายรับ</div>
-									<div id="dyn-sum-income" class="text-sm md:text-lg font-bold text-green-600">0</div>
+									<div class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-1">รวมรายรับ</div>
+									<div id="dyn-sum-income" class="text-sm md:text-lg font-bold text-green-600 dark:text-green-400">0</div>
 								</div>
 								<div>
-									<div class="text-[10px] md:text-xs text-gray-500 mb-1">รวมรายจ่าย</div>
-									<div id="dyn-sum-expense" class="text-sm md:text-lg font-bold text-red-600">0</div>
+									<div class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-1">รวมรายจ่าย</div>
+									<div id="dyn-sum-expense" class="text-sm md:text-lg font-bold text-red-600 dark:text-red-400">0</div>
 								</div>
 								<div>
-									<div class="text-[10px] md:text-xs text-gray-500 mb-1">สุทธิ</div>
-									<div id="dyn-sum-net" class="text-sm md:text-lg font-bold text-blue-600">0</div>
+									<div class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-1">สุทธิ</div>
+									<div id="dyn-sum-net" class="text-sm md:text-lg font-bold text-blue-600 dark:text-blue-400">0</div>
 								</div>
 							</div>
 						</div>
@@ -1023,6 +1025,55 @@
 											</div>
 										</div>
 									</div>
+								</div>
+								
+								<div id="glass-wallpaper-section" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+									<div class="flex items-center justify-between mb-4">
+										<div>
+											<span class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+												<i class="fa-solid fa-layer-group"></i> เอฟเฟกต์กระจก (Glass Mode)
+											</span>
+											<p class="text-[11px] text-gray-500 mt-0.5">ดีไซน์การ์ดโปร่งแสง (ใช้ได้แม้ไม่มีรูปภาพ)</p>
+										</div>
+										<label class="relative inline-flex items-center cursor-pointer">
+											<input type="checkbox" id="toggle-glass-mode" class="sr-only peer" onchange="window.toggleGlassMode(this.checked)">
+											<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+										</label>
+									</div>
+
+									<h4 class="font-bold text-gray-700 dark:text-gray-300 text-sm mb-2">
+										<i class="fa-regular fa-image mr-1"></i> ภาพพื้นหลัง (Wallpaper)
+									</h4>
+									<div class="flex items-center gap-2">
+										<input type="file" id="input-wallpaper" accept="image/jpeg, image/png, image/webp" class="hidden" onchange="window.handleWallpaper(event)">
+										
+										<button type="button" onclick="document.getElementById('input-wallpaper').click()" class="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2 px-3 rounded-lg text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
+											<i class="fa-solid fa-upload"></i> เลือกรูปภาพ
+										</button>
+										
+										<button type="button" id="btn-remove-wallpaper" onclick="window.removeWallpaper()" class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 py-2 px-3 rounded-lg text-sm shadow-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition hidden">
+											<i class="fa-solid fa-trash"></i>
+										</button>
+									</div>
+
+									<div id="wallpaper-settings-container" class="flex flex-col gap-3 mt-4 hidden">
+										<div id="setting-brightness-box" class="flex flex-col gap-1 hidden">
+											<div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+												<span>ความสว่างของภาพพื้นหลัง</span>
+												<span id="wallpaper-brightness-value">100%</span>
+											</div>
+											<input type="range" id="input-wallpaper-brightness" min="10" max="100" value="100" oninput="window.previewWallpaperBrightness(this.value)" onchange="window.saveWallpaperBrightness(this.value)" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary-500">
+										</div>
+
+										<div id="setting-glass-box" class="flex flex-col gap-1 hidden">
+											<div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+												<span>ความทึบของการ์ดกระจก (Glass Opacity)</span>
+												<span id="glass-opacity-value">25%</span>
+											</div>
+											<input type="range" id="input-glass-opacity" min="0" max="95" value="25" oninput="window.previewGlassOpacity(this.value)" onchange="window.saveGlassOpacity(this.value)" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary-500">
+										</div>
+									</div>
+									<p class="text-[11px] text-gray-500 mt-2">* รูปภาพบันทึกในเครื่องและไฟล์ Backup เท่านั้น</p>
 								</div>
 
 								<div class="pt-4">
@@ -1872,31 +1923,31 @@
             </div>
         </div>
     </div>
-		<div id="notification-modal" class="fixed inset-0 bg-black/80 z-[90] flex items-center justify-center p-4 hidden backdrop-blur-sm transition-opacity duration-300">
-		<div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden transform scale-100 transition-transform duration-300">
-			<div class="bg-gradient-to-r from-primary-600 to-indigo-600 p-6 flex items-center gap-4">
-				<div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
-					<i class="fa-solid fa-bell text-4xl text-white"></i>
+		<div id="notification-modal" class="fixed inset-0 bg-slate-900/10 dark:bg-black/60 z-[90] flex items-center justify-center p-4 hidden backdrop-blur-sm transition-opacity duration-300">
+			<div class="bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden transform scale-100 transition-transform duration-300">
+				<div class="bg-primary-600/20 dark:bg-primary-600/30 border-b border-white/30 dark:border-gray-700/50 p-6 flex items-center gap-4 backdrop-blur-md">
+					<div class="w-16 h-16 bg-white/30 dark:bg-gray-800/50 rounded-full flex items-center justify-center animate-bounce border border-white/50">
+						<i class="fa-solid fa-bell text-4xl text-primary-600 dark:text-primary-400 drop-shadow-sm"></i>
+					</div>
+					<div>
+						<h2 class="text-3xl font-bold text-gray-800 dark:text-white drop-shadow-sm">แจ้งเตือน</h2>
+						<p class="text-primary-700 dark:text-primary-300 text-lg drop-shadow-sm font-medium">มีรายการที่ต้องจัดการ</p>
+					</div>
 				</div>
-				<div>
-					<h2 class="text-3xl font-bold text-white">แจ้งเตือน</h2>
-					<p class="text-primary-100 text-lg">มีรายการที่ต้องจัดการ</p>
-				</div>
-			</div>
-			
-			<div id="notification-content" class="p-8 space-y-4 max-h-[60vh] overflow-y-auto">
-				</div>
+				
+				<div id="notification-content" class="p-8 space-y-4 max-h-[60vh] overflow-y-auto bg-transparent">
+					</div>
 
-			<div class="p-6 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
-				<button id="btn-notify-ack" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-lg font-bold py-4 px-6 rounded-2xl shadow-lg transition transform active:scale-95">
-					รับทราบ
-				</button>
-				<button id="btn-notify-ignore" class="flex-1 bg-white border-2 border-gray-300 text-gray-500 hover:bg-gray-100 text-lg font-bold py-4 px-6 rounded-2xl transition">
-					ไม่ต้องแจ้งเตือนรายการนี้อีก
-				</button>
+				<div class="p-6 bg-white/10 dark:bg-gray-800/10 border-t border-white/30 dark:border-gray-700/50 flex flex-col sm:flex-row gap-4">
+					<button id="btn-notify-ack" class="flex-1 bg-primary-600/80 hover:bg-primary-600 text-white backdrop-blur-md border border-white/40 text-lg font-bold py-4 px-6 rounded-2xl shadow-lg transition transform active:scale-95">
+						รับทราบ
+					</button>
+					<button id="btn-notify-ignore" class="flex-1 bg-white/30 dark:bg-gray-800/40 border border-white/50 dark:border-gray-600/50 text-gray-700 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50 text-lg font-bold py-4 px-6 rounded-2xl transition backdrop-blur-md shadow-sm">
+						ไม่ต้องแจ้งเตือนรายการนี้อีก
+					</button>
+				</div>
 			</div>
 		</div>
-	</div>
 	
 	<div id="quick-draft-modal" class="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center p-4 hidden z-[80] backdrop-blur-sm">
 		<div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-sm transform scale-100 transition-all border border-gray-100 dark:border-gray-700">
@@ -2093,63 +2144,63 @@
 		</div>
 	</div>
 	
-	<div id="welcome-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-opacity duration-300">
-		<div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all border border-primary-100 dark:border-gray-700">
+	<div id="welcome-modal" class="fixed inset-0 bg-slate-900/10 dark:bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-opacity duration-300">
+		<div class="bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all border border-white/50 dark:border-gray-700/50">
 			
-			<div class="bg-gradient-to-br from-primary-600 to-indigo-600 p-8 text-center relative overflow-hidden">
+			<div class="bg-gradient-to-br from-primary-600/60 to-indigo-600/60 p-8 text-center relative overflow-hidden backdrop-blur-md border-b border-white/30">
 				<div class="absolute inset-0 bg-white/10 pattern-dots"></div>
-				<div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-4xl shadow-inner relative z-10 backdrop-blur-sm">
-					<i class="fa-solid fa-wallet"></i>
+				<div class="w-20 h-20 bg-white/30 rounded-full border border-white/50 flex items-center justify-center mx-auto mb-4 text-white text-4xl shadow-inner relative z-10 backdrop-blur-sm">
+					<i class="fa-solid fa-wallet drop-shadow-md"></i>
 				</div>
-				<h2 class="text-2xl font-bold text-white relative z-10">ยินดีต้อนรับ!</h2>
-				<p class="text-primary-100 text-sm mt-2 relative z-10 font-medium">Finance Manager Pro</p>
+				<h2 class="text-2xl font-bold text-white relative z-10 drop-shadow-md">ยินดีต้อนรับ!</h2>
+				<p class="text-white/90 text-sm mt-2 relative z-10 font-medium drop-shadow-md">Finance Manager Pro</p>
 			</div>
 			
-			<div class="p-6 space-y-4">
+			<div class="p-6 space-y-4 bg-transparent">
 				
 				<div class="text-center mb-6">
-					<p class="text-sm text-gray-800 dark:text-gray-200 font-bold mb-1">เริ่มต้นจัดการการเงินของคุณง่ายๆ 💸</p>
-					<p class="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed">เพื่อความปลอดภัยและการใช้งานที่ลื่นไหลที่สุด ขอแนะนำให้ทำ 2 ขั้นตอนนี้ก่อนเริ่มใช้งานครับ</p>
+					<p class="text-sm text-gray-800 dark:text-gray-200 font-bold mb-1 drop-shadow-sm">เริ่มต้นจัดการการเงินของคุณง่ายๆ 💸</p>
+					<p class="text-[12px] text-gray-600 dark:text-gray-300 leading-relaxed drop-shadow-sm">เพื่อความปลอดภัยและการใช้งานที่ลื่นไหลที่สุด ขอแนะนำให้ทำ 2 ขั้นตอนนี้ก่อนเริ่มใช้งานครับ</p>
 				</div>
 				
-				<button id="btn-welcome-password" class="w-full py-4 px-5 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-2xl transition-all flex items-center justify-between group">
+				<button id="btn-welcome-password" class="w-full py-4 px-5 bg-white/40 hover:bg-white/60 dark:bg-gray-800/40 dark:hover:bg-gray-700/50 border border-white/50 dark:border-gray-600/50 rounded-2xl transition-all flex items-center justify-between group backdrop-blur-md shadow-sm">
 					<div class="flex items-center gap-4">
-						<div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg shadow-sm">
+						<div class="w-10 h-10 rounded-full bg-blue-100/60 dark:bg-blue-900/50 border border-blue-200/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg shadow-sm backdrop-blur-sm">
 							<i class="fa-solid fa-shield-halved"></i>
 						</div>
 						<div class="text-left">
-							<span class="block text-sm font-bold text-gray-800 dark:text-white">1. ตั้งรหัสผ่านแอป</span>
-							<span class="block text-[11px] text-gray-500 font-normal mt-0.5">ล็อคแอป ป้องกันข้อมูลส่วนตัว</span>
+							<span class="block text-sm font-bold text-gray-800 dark:text-white drop-shadow-sm">1. ตั้งรหัสผ่านแอป</span>
+							<span class="block text-[11px] text-gray-600 dark:text-gray-400 font-normal mt-0.5">ล็อคแอป ป้องกันข้อมูลส่วนตัว</span>
 						</div>
 					</div>
-					<i class="fa-solid fa-chevron-right text-gray-300 group-hover:text-blue-500 transition-colors"></i>
+					<i class="fa-solid fa-chevron-right text-gray-400 group-hover:text-blue-500 transition-colors"></i>
 				</button>
 
-				<button id="btn-welcome-install" class="pwa-trigger-btn w-full py-4 px-5 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-2xl transition-all flex items-center justify-between group">
+				<button id="btn-welcome-install" class="pwa-trigger-btn w-full py-4 px-5 bg-white/40 hover:bg-white/60 dark:bg-gray-800/40 dark:hover:bg-gray-700/50 border border-white/50 dark:border-gray-600/50 rounded-2xl transition-all flex items-center justify-between group backdrop-blur-md shadow-sm">
 					<div class="flex items-center gap-4">
-						<div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 flex items-center justify-center text-lg shadow-sm">
+						<div class="w-10 h-10 rounded-full bg-green-100/60 dark:bg-green-900/50 border border-green-200/50 text-green-600 dark:text-green-400 flex items-center justify-center text-lg shadow-sm backdrop-blur-sm">
 							<i class="fa-solid fa-download"></i>
 						</div>
 						<div class="text-left">
-							<span class="block text-sm font-bold text-gray-800 dark:text-white">2. ติดตั้งแอปลงเครื่อง</span>
-							<span class="block text-[11px] text-gray-500 font-normal mt-0.5">เข้าใช้งานง่าย ไม่ต้องรอโหลด</span>
+							<span class="block text-sm font-bold text-gray-800 dark:text-white drop-shadow-sm">2. ติดตั้งแอปลงเครื่อง</span>
+							<span class="block text-[11px] text-gray-600 dark:text-gray-400 font-normal mt-0.5">เข้าใช้งานง่าย ไม่ต้องรอโหลด</span>
 						</div>
 					</div>
-					<i class="fa-solid fa-chevron-right text-gray-300 group-hover:text-green-500 transition-colors"></i>
+					<i class="fa-solid fa-chevron-right text-gray-400 group-hover:text-green-500 transition-colors"></i>
 				</button>
 				
 				<div class="relative py-2">
 					<div class="absolute inset-0 flex items-center">
-						<div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
+						<div class="w-full border-t border-white/40 dark:border-gray-700/50"></div>
 					</div>
 					<div class="relative flex justify-center">
-						<span class="bg-white dark:bg-gray-800 px-3 text-[10px] text-gray-400 uppercase tracking-wider">หรือ</span>
+						<span class="bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border border-white/50 px-3 py-0.5 rounded-full text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold shadow-sm">หรือ</span>
 					</div>
 				</div>
 
-				<button id="btn-welcome-close" class="w-full py-3.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 group">
+				<button id="btn-welcome-close" class="w-full py-3.5 px-4 bg-red-50/50 hover:bg-red-100/60 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/50 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 group backdrop-blur-md shadow-sm">
 					ข้าม และเริ่มใช้งานทันที
-					<i class="fa-solid fa-arrow-right-to-bracket text-red-400 group-hover:translate-x-1 transition-transform"></i>
+					<i class="fa-solid fa-arrow-right-to-bracket text-red-500 dark:text-red-400 group-hover:translate-x-1 transition-transform drop-shadow-sm"></i>
 				</button>
 
 			</div>
@@ -2221,23 +2272,24 @@
 		</div>
 	</div>
 	
-	<div id="persistent-log-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
-		<div class="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md mx-4 h-[80vh] max-h-[700px] flex flex-col shadow-2xl overflow-hidden transform transition-all">
+	<div id="persistent-log-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/10 dark:bg-black/60 backdrop-blur-sm transition-opacity" onclick="if(event.target === this) closePersistentLogModal()">
+		
+		<div class="bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 rounded-xl shadow-xl w-full max-w-md mx-4 h-[80vh] max-h-[700px] flex flex-col overflow-hidden transform transition-all">
 			
-			<div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
-				<h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center">
-					<i class="fa-solid fa-clock-rotate-left mr-2 text-primary-600 dark:text-primary-400"></i> ประวัติกิจกรรมระบบ
+			<div class="p-4 border-b border-white/30 dark:border-gray-700/30 flex justify-between items-center bg-transparent">
+				<h3 class="text-base font-bold text-primary-600 dark:text-primary-400 flex items-center drop-shadow-sm">
+					<i class="fa-solid fa-clock-rotate-left mr-2"></i> ประวัติกิจกรรมระบบ
 				</h3>
-				<button type="button" onclick="closePersistentLogModal()" class="text-gray-400 hover:text-red-500 transition-colors bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-full w-9 h-9 flex items-center justify-center shadow-sm">
+				<button type="button" onclick="closePersistentLogModal()" class="text-gray-500 hover:text-red-500 transition-colors bg-white/30 hover:bg-white/50 dark:bg-gray-800/30 border border-white/50 dark:border-gray-600/30 rounded-lg w-8 h-8 flex items-center justify-center shadow-sm">
 					<i class="fa-solid fa-xmark text-lg"></i>
 				</button>
 			</div>
 			
-			<div id="persistent-log-list" class="overflow-y-auto p-4 flex-1 space-y-3 bg-gray-50/50 dark:bg-gray-900/50">
+			<div id="persistent-log-list" class="overflow-y-auto p-4 flex-1 space-y-3 bg-transparent">
 				</div>
 			
-			<div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center items-center">
-				<span class="text-xs text-gray-500 dark:text-gray-400"><i class="fa-solid fa-shield-halved mr-1"></i> ระบบจัดเก็บข้อมูลความปลอดภัยย้อนหลัง 30 วัน</span>
+			<div class="p-3 border-t border-white/30 dark:border-gray-700/30 bg-transparent flex justify-center items-center">
+				<span class="text-xs text-gray-500 dark:text-gray-400 drop-shadow-sm"><i class="fa-solid fa-shield-halved mr-1"></i> ระบบจัดเก็บข้อมูลย้อนหลัง 30 วัน</span>
 			</div>
 		</div>
 	</div>
@@ -2425,40 +2477,40 @@
 		})();
 	</script>
 
- <div id="update-alert-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4 transition-opacity duration-300">
-        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all border border-primary-100 dark:border-gray-700 text-center p-5 md:p-6">
-            <div class="w-16 h-16 md:w-20 md:h-20 bg-primary-100 dark:bg-primary-900/50 rounded-full flex items-center justify-center mx-auto mb-4 text-primary-600 dark:text-primary-400 text-3xl md:text-4xl shadow-inner">
+	<div id="update-alert-modal" class="fixed inset-0 bg-slate-900/10 dark:bg-black/60 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all border border-white/50 dark:border-gray-700/50 text-center p-5 md:p-6">
+            <div class="w-16 h-16 md:w-20 md:h-20 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/50 rounded-full flex items-center justify-center mx-auto mb-4 text-primary-600 dark:text-primary-400 text-3xl md:text-4xl shadow-sm backdrop-blur-md">
                 <i class="fa-solid fa-cloud-arrow-down animate-bounce"></i>
             </div>
-            <h2 class="text-lg md:text-2xl font-bold text-gray-800 dark:text-white mb-2">มีอัปเดตใหม่!</h2>
-            <p class="text-[13px] md:text-sm text-gray-500 dark:text-gray-400 mb-5">กรุณาอัปเดตเพื่อให้การใช้งานลื่นไหลและสมบูรณ์ที่สุดครับ</p>
+            <h2 class="text-lg md:text-2xl font-bold text-gray-800 dark:text-white mb-2 drop-shadow-sm">มีอัปเดตใหม่!</h2>
+            <p class="text-[13px] md:text-sm text-gray-600 dark:text-gray-300 mb-5 drop-shadow-sm">กรุณาอัปเดตเพื่อให้การใช้งานลื่นไหลและสมบูรณ์ที่สุดครับ</p>
             
-			<div class="bg-gray-50 dark:bg-gray-900/30 p-3 md:p-4 rounded-xl mb-4 flex justify-between items-center border border-gray-100 dark:border-gray-700 shadow-sm">
+			<div class="bg-white/30 dark:bg-gray-800/30 backdrop-blur-md p-3 md:p-4 rounded-xl mb-4 flex justify-between items-center border border-white/50 dark:border-gray-600/50 shadow-sm">
                 <div class="text-center w-full">
-                    <span class="block text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1.5">เวอร์ชันปัจจุบัน</span>
-                    <span id="display-current-version" class="inline-block bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg text-sm md:text-base font-bold min-w-[70px]">-</span>
+                    <span class="block text-xs md:text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wider font-bold mb-1.5 drop-shadow-sm">เวอร์ชันปัจจุบัน</span>
+                    <span id="display-current-version" class="inline-block bg-white/40 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200 px-3 py-1.5 rounded-lg text-sm md:text-base font-bold min-w-[70px] shadow-sm border border-white/40">-</span>
                 </div>
-                <div class="text-primary-400 mx-2 text-lg md:text-2xl"><i class="fa-solid fa-arrow-right-long"></i></div>
+                <div class="text-primary-500 dark:text-primary-400 mx-2 text-lg md:text-2xl drop-shadow-sm"><i class="fa-solid fa-arrow-right-long"></i></div>
                 <div class="text-center w-full">
-                    <span class="block text-xs md:text-sm text-primary-500 dark:text-primary-400 uppercase tracking-wider font-bold mb-1.5">เวอร์ชันใหม่</span>
-                    <span id="display-new-version" class="inline-block bg-primary-200 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 px-3 py-1.5 rounded-lg text-lg md:text-lg font-bold min-w-[70px] animate-pulse">-</span>
+                    <span class="block text-xs md:text-sm text-primary-600 dark:text-primary-400 uppercase tracking-wider font-bold mb-1.5 drop-shadow-sm">เวอร์ชันใหม่</span>
+                    <span id="display-new-version" class="inline-block bg-primary-200/50 dark:bg-primary-900/40 text-primary-800 dark:text-primary-300 border border-primary-300/50 px-3 py-1.5 rounded-lg text-lg md:text-lg font-bold min-w-[70px] animate-pulse shadow-sm">-</span>
                 </div>
             </div>
 
-            <div class="bg-blue-50/50 dark:bg-blue-900/10 p-3 md:p-4 rounded-xl mb-6 text-left border border-blue-100 dark:border-blue-800/30">
-                <h3 class="text-[11px] md:text-xs font-bold text-blue-600 dark:text-blue-400 mb-2 flex items-center">
+            <div class="bg-blue-50/40 dark:bg-blue-900/20 backdrop-blur-md p-3 md:p-4 rounded-xl mb-6 text-left border border-white/50 dark:border-blue-800/40 shadow-sm">
+                <h3 class="text-[11px] md:text-xs font-bold text-blue-700 dark:text-blue-300 mb-2 flex items-center drop-shadow-sm">
                     <i class="fa-solid fa-bullhorn mr-1.5"></i> รายละเอียดการอัปเดต:
                 </h3>
-                <div id="display-update-notes" class="text-[12px] md:text-[13px] text-gray-600 dark:text-gray-300 h-48 overflow-y-auto pr-2 leading-relaxed whitespace-pre-wrap">
+                <div id="display-update-notes" class="text-[12px] md:text-[13px] text-gray-700 dark:text-gray-200 h-48 overflow-y-auto pr-2 leading-relaxed whitespace-pre-wrap">
                     กำลังโหลดข้อมูลการอัปเดต...
                 </div>
             </div>
 
             <div class="flex gap-3">
-                <button id="btn-cancel-update" class="flex-1 py-2.5 md:py-3 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl text-[13px] md:text-sm font-bold transition-all">
+                <button id="btn-cancel-update" class="flex-1 py-2.5 md:py-3 px-3 bg-white/40 hover:bg-white/60 dark:bg-gray-800/50 dark:hover:bg-gray-700/60 border border-white/50 dark:border-gray-600/50 text-gray-800 dark:text-gray-200 rounded-xl text-[13px] md:text-sm font-bold transition-all backdrop-blur-md shadow-sm">
                     ไว้ภายหลัง
                 </button>
-                <button id="btn-confirm-update" class="flex-1 py-2.5 md:py-3 px-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-[13px] md:text-sm font-bold shadow-lg transition-all active:scale-95">
+                <button id="btn-confirm-update" class="flex-1 py-2.5 md:py-3 px-3 bg-primary-600/80 hover:bg-primary-600 text-white border border-white/40 rounded-xl text-[13px] md:text-sm font-bold shadow-lg transition-all active:scale-95 backdrop-blur-md">
                     <i class="fa-solid fa-rotate mr-1"></i> อัปเดตทันที
                 </button>
             </div>
