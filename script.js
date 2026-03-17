@@ -1511,6 +1511,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		const notiHistory = await dbGet(STORE_CONFIG, 'notification_history');
 		if (notiHistory) state.notificationHistory = notiHistory.value || [];
 		
+		// โหลดการตั้งค่าแสดงปุ่ม Smart Voice
+		const showSmartVoiceBtnConfig = await dbGet(STORE_CONFIG, 'showSmartVoiceBtn');
+		state.showSmartVoiceBtn = showSmartVoiceBtnConfig ? showSmartVoiceBtnConfig.value : true;
+		
 		updateNotificationBadge();
 		// [แก้ไขใหม่] วาดรายการแจ้งเตือนทันทีที่โหลดข้อมูลจากฐานข้อมูลเสร็จ
 		if (typeof renderCustomNotifyList === 'function') {
@@ -2280,7 +2284,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				
 				// 3. โหลดข้อมูล State ทั้งหมด (บัญชี, หมวดหมู่, รายการ)
 				// สำคัญ: ต้องรอให้บรรทัดนี้เสร็จสมบูรณ์ 100% ก่อนไปต่อ
-				await loadStateFromDB();  
+				await loadStateFromDB();
+				
+				applySmartVoiceBtnVisibility();
 				
 				setupEventListeners();    // 4. เตรียม Event ต่างๆ
 				await checkAndProcessRecurring(); // 5. เช็ครายการประจำ
@@ -2769,6 +2775,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				importedCalendar = null;
 			}
 		}
+		
+		function applySmartVoiceBtnVisibility() {
+			const container = document.getElementById('smart-voice-container');
+			if (container) {
+				if (state.showSmartVoiceBtn) {
+					container.classList.remove('hidden');
+				} else {
+					container.classList.add('hidden');
+				}
+			}
+		}
 
 		function setupDarkModeListener() {
 			const getEl = (id) => document.getElementById(id);
@@ -3096,16 +3113,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// +++ พระเอกของเราอยู่ตรงนี้ครับ! เรียกฟังก์ชันจัดการสีและหน้าจอ +++
 				if (typeof applyThemeColor === 'function') {
-					applyThemeColor(); // บังคับเปลี่ยนสีธีมทันที!
+					applyThemeColor();
 				}
 				if (typeof applyDarkModePreference === 'function') {
-					applyDarkModePreference(); // อัปเดตโหมดมืดสว่าง (ถ้ามี)
-				}
-				if (typeof loadSettings === 'function') {
-					loadSettings(); // อัปเดตพวกปุ่มสวิตช์ในหน้าตั้งค่า
+					applyDarkModePreference();
 				}
 				if (typeof renderAll === 'function') {
-					renderAll(); // สั่งให้แอปวาดตารางและกราฟใหม่ทั้งหมดด้วยข้อมูลที่เพิ่งซิงค์มา
+					renderAll();
+				}
+				// +++ เพิ่มการเรียก renderSettings เพื่ออัปเดต UI ในหน้าตั้งค่า (รวมถึง last-cloud-sync-time) +++
+				if (typeof renderSettings === 'function') {
+					renderSettings();
 				}
 				// +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -3666,8 +3684,18 @@ document.addEventListener('DOMContentLoaded', () => {
 			dbPut(STORE_CONFIG, { key: LIST_ITEMS_PER_PAGE_KEY, value: state.listItemsPerPage })
 				.catch(err => console.error('Failed to save list items per page', err));
 		});
+		
+		// สวิตช์แสดงปุ่ม Smart Voice
+		const toggleSmartVoiceBtn = document.getElementById('toggle-smart-voice-btn');
+		if (toggleSmartVoiceBtn) {
+			toggleSmartVoiceBtn.addEventListener('change', async (e) => {
+				state.showSmartVoiceBtn = e.target.checked;
+				await dbPut(STORE_CONFIG, { key: 'showSmartVoiceBtn', value: state.showSmartVoiceBtn });
+				applySmartVoiceBtnVisibility();
+				showToast(e.target.checked ? 'แสดงปุ่ม Smart Voice แล้ว' : 'ซ่อนปุ่ม Smart Voice แล้ว', 'info');
+			});
+		}
 
-        
         const handleViewReceiptClick = (btn) => {
             const base64 = btn.dataset.base64;
             if (base64) {
@@ -8264,6 +8292,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				});
 			});
 		}
+		
+		const toggleSmartVoiceBtn = getEl('toggle-smart-voice-btn');
+		if (toggleSmartVoiceBtn) {
+			toggleSmartVoiceBtn.checked = state.showSmartVoiceBtn;
+		}
 
 		const clearAllBtn = document.getElementById('btn-clear-all-voice');
 		if (clearAllBtn) {
@@ -12574,18 +12607,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    async function refreshAllUI() {
-                renderSettings();
-                if (currentPage === 'home') {
-                    renderAll();
-                } else if (currentPage === 'list') {
-                    renderListPage();
-                } else if (currentPage === 'calendar') { 
-                    renderCalendarView();
-                }
-				
-				renderBudgetWidget();
-            }
+		async function refreshAllUI() {
+			renderSettings();
+			if (currentPage === 'home') {
+				renderAll();
+			} else if (currentPage === 'list') {
+				renderListPage();
+			} else if (currentPage === 'calendar') { 
+				renderCalendarView();
+			}
+			renderBudgetWidget();
+			applySmartVoiceBtnVisibility(); // +++ เพิ่มตรงนี้
+		}
 
 
 		async function promptForPassword(promptTitle = 'กรุณาใส่รหัสผ่าน') {
