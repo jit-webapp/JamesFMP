@@ -771,67 +771,182 @@
 								</div>
 							</div>
 						</div>
-
-						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border-2 border-red-500 dark:border-red-500 transition-colors">
-							<h2 class="text-lg font-bold text-red-500 dark:text-red-400 mb-5 flex items-center">
-								<i class="fa-solid fa-shield-halved mr-2"></i> ความปลอดภัย
+						
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border-2 border-green-500 dark:border-green-500 transition-colors">
+							<h2 class="text-lg font-bold text-green-600 dark:text-green-400 mb-5 flex items-center">
+								<i class="fa-solid fa-bell mr-2"></i> การแจ้งเตือน
 							</h2>
-							<button id="btn-manage-password" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-xl shadow-md transition duration-300 mb-5 text-lg flex items-center justify-center gap-2">
-								<i class="fa-solid fa-key"></i> ตั้งค่ารหัสผ่านแอป
-							</button>
-							<div class="space-y-4 divide-y divide-gray-100 dark:divide-gray-700">
-								<div class="pt-4 first:pt-0">
-									<div class="flex items-center justify-between mb-2">
-										<div class="flex items-center gap-3">
-											<div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-												<i class="fa-solid fa-fingerprint"></i>
-											</div>
-											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">เข้าใช้งานด้วย Biometric</span>
+							<div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-600 transition-colors">
+								<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-line-content">
+									<h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center text-sm md:text-base">
+										<i class="fa-brands fa-line text-green-500 mr-2 text-lg"></i> แจ้งเตือนผ่าน LINE
+									</h3>
+									<div class="flex items-center gap-2">
+										<a id="line-oa-link" href="#" target="_blank" class="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-200 transition-colors font-bold" onclick="event.stopPropagation()">
+											<i class="fa-solid fa-user-plus mr-1"></i> แอดบอท
+										</a>
+										<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
+									</div>
+								</div>
+								
+								<div id="settings-line-content" class="transition-all mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+									<div class="flex flex-col gap-2 mb-4">
+										<h4 class="font-bold text-gray-700 dark:text-gray-300 mb-2 text-sm">เงื่อนไขการแจ้งเตือน:</h4>
+										<div class="space-y-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+											<label class="flex items-center justify-between cursor-pointer">
+												<span class="text-sm text-gray-700 dark:text-gray-300">➕ เพิ่มรายการใหม่</span>
+												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
+													<input type="checkbox" id="notify-on-add" class="sr-only peer">
+													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+												</label>
+											</label>
+											<label class="flex items-center justify-between cursor-pointer">
+												<span class="text-sm text-gray-700 dark:text-gray-300">✏️ แก้ไขรายการ</span>
+												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
+													<input type="checkbox" id="notify-on-edit" class="sr-only peer">
+													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+												</label>
+											</label>
+											<label class="flex items-center justify-between cursor-pointer">
+												<span class="text-sm text-gray-700 dark:text-gray-300">🗑️ ลบรายการ</span>
+												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
+													<input type="checkbox" id="notify-on-delete" class="sr-only peer">
+													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+												</label>
+											</label>
 										</div>
-										<button id="btn-biometric-settings" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition-colors shrink-0">
-											ตั้งค่า
+									</div>
+									
+									<div class="flex flex-col gap-3 mb-3">
+										<h4 class="font-bold text-gray-700 dark:text-gray-300 text-sm">ตั้งค่าผู้รับ (LINE User ID):</h4>
+											<div class="flex flex-col gap-2">
+												<input type="text" id="input-line-nickname" class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:border-primary-500" placeholder="ชื่อเล่น">
+												<input type="text" id="input-line-user-id" class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:border-primary-500" placeholder="User ID (U...)">
+											</div>										<button id="btn-add-line-id" class="bg-green-500 hover:bg-green-600 text-white w-full py-2.5 rounded-lg transition-colors font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+											<i class="fa-solid fa-plus"></i> เพิ่มผู้รับ
 										</button>
 									</div>
-									<p id="bio-status-text" class="text-sm text-gray-500 dark:text-gray-400 ml-14">ใช้ลายนิ้วมือหรือใบหน้าแทนรหัสผ่าน (เฉพาะเครื่องนี้)</p>
-								</div>
 
-								<div class="pt-4">
-									<div class="flex items-center justify-between mb-2">
-										<div class="flex items-center gap-3">
-											<div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0">
-												<i class="fa-solid fa-wand-magic-sparkles"></i>
-											</div>
-											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">ยืนยันรหัสผ่านอัตโนมัติ</span>
-										</div>
-										<label class="relative inline-flex items-center cursor-pointer shrink-0">
-											<input type="checkbox" id="toggle-auto-confirm-password" class="sr-only peer">
-											<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-600"></div>
-										</label>
-									</div>
-									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">ตรวจสอบและยืนยันทันทีเมื่อพิมพ์รหัสผ่านถูกต้อง</p>
-								</div>
+									<div id="line-id-list" class="space-y-2 mb-3"></div>
 
-								<div class="pt-4">
-									<div class="flex items-center justify-between mb-2">
-										<div class="flex items-center gap-3">
-											<div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-												<i class="fa-solid fa-user-lock"></i>
-											</div>
-											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">ตั้งค่า Auto Lock</span>
-										</div>
-										<select id="auto-lock-select" class="form-select text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2 px-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white shrink-0">
-											<option value="0">ปิด</option>
-											<option value="1">1 นาที</option>
-											<option value="5">5 นาที</option>
-											<option value="10">10 นาที</option>
-											<option value="30">30 นาที</option>
-											<option value="60">60 นาที</option>
-										</select>
+									<div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800/50">
+										<p class="text-[11px] sm:text-xs text-yellow-700 dark:text-yellow-400">
+											<i class="fa-solid fa-circle-info mr-1"></i><strong>วิธีใช้:</strong>
+											1. กดปุ่ม "แอดบอท" ด้านบน<br>
+											<span class="ml-4">2. พิมพ์คำว่า <code class="bg-white dark:bg-gray-800 px-1 rounded">id</code> ในแชทบอท</span><br>
+											<span class="ml-4">3. นำรหัส U... มาใส่ในช่อง User ID</span>
+										</p>
 									</div>
-									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">ล็อกหน้าจออัตโนมัติเมื่อไม่มีกิจกรรม (ใช้ได้เมื่อตั้งรหัสผ่าน)</p>
 								</div>
 							</div>
 						</div>
+
+						<div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border-2 border-purple-500 dark:border-purple-500 transition-colors">
+							<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-notification-content">
+								<h3 class="font-bold flex items-center text-sm md:text-base" style="color: #9333ea !important;">
+									<i class="fa-solid fa-mobile-screen mr-2 text-lg" style="color: #a855f7 !important;"></i> แจ้งเตือนในแอปพลิเคชัน
+								</h3>
+								<i class="fa-solid fa-chevron-down transition-transform duration-300 rotate-180" style="color: #a855f7 !important;"></i>
+							</div>
+
+							<div id="settings-notification-content" class="mt-4 transition-all pt-4 border-t border-purple-200 dark:border-purple-800/50">
+								<div class="flex flex-wrap items-center gap-x-5 gap-y-4 mb-5 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+									<label class="inline-flex items-center cursor-pointer group w-full sm:w-auto">
+										<input type="checkbox" id="toggle-notify-scheduled" class="form-checkbox w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
+										<span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary-600 transition-colors">รายการล่วงหน้า</span>
+									</label>
+									
+									<label class="inline-flex items-center cursor-pointer group w-full sm:w-auto">
+										<input type="checkbox" id="toggle-notify-recurring" class="form-checkbox w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
+										<span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary-600 transition-colors">รายการประจำ</span>
+									</label>
+
+									<div class="w-full mt-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+										<span class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">แจ้งเตือน "งบประมาณ" ใกล้หมด:</span>
+										<div class="flex flex-wrap items-center gap-4">
+											<div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
+												<input type="checkbox" id="toggle-notify-budget-1" class="form-checkbox w-5 h-5 text-primary-600 border-gray-300 rounded cursor-pointer transition">
+												<div class="flex items-center relative">
+													<span class="text-xs text-gray-500 mr-2">ระดับ 1</span>
+													<input type="number" id="input-notify-budget-percent-1" value="50" min="1" max="100" class="w-16 py-1 px-2 text-center text-sm font-bold text-primary-700 dark:text-primary-400 rounded-md border border-gray-300 dark:border-gray-500 dark:bg-gray-800 focus:ring-1 focus:ring-primary-500 pr-5">
+													<span class="absolute right-2 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
+												</div>
+											</div>
+											<div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
+												<input type="checkbox" id="toggle-notify-budget-2" class="form-checkbox w-5 h-5 text-primary-600 border-gray-300 rounded cursor-pointer transition">
+												<div class="flex items-center relative">
+													<span class="text-xs text-gray-500 mr-2">ระดับ 2</span>
+													<input type="number" id="input-notify-budget-percent-2" value="90" min="1" max="100" class="w-16 py-1 px-2 text-center text-sm font-bold text-primary-700 dark:text-primary-400 rounded-md border border-gray-300 dark:border-gray-500 dark:bg-gray-800 focus:ring-1 focus:ring-primary-500 pr-5">
+													<span class="absolute right-2 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+									<h4 class="font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center text-sm">
+										<i class="fa-solid fa-star text-orange-500 mr-2"></i> การแจ้งเตือนพิเศษแบบกำหนดเอง
+									</h4>
+									<button onclick="openCustomNotifyModal()" class="w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 py-2.5 rounded-xl mb-4 font-bold transition shadow-sm flex items-center justify-center gap-2">
+										<i class="fa-solid fa-plus"></i> สร้างการแจ้งเตือนใหม่
+									</button>
+									<div id="active-custom-notify-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+									<div class="flex justify-end mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+										<button id="btn-clear-custom-expired" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+											<i class="fa-solid fa-broom"></i> ล้างรายการที่แจ้งเตือนแล้ว
+										</button>
+									</div>
+								</div>
+							</div>
+							<button type="button" onclick="openPersistentLogModal()" class="w-full mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-left px-4 py-3 rounded-xl flex items-center justify-between transition-colors shadow-sm">
+								<div class="flex items-center">
+									<div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center mr-3">
+										<i class="fa-solid fa-clock-rotate-left"></i>
+									</div>
+									<div>
+										<h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">ประวัติกิจกรรมระบบ</h4>
+										<p class="text-xs text-gray-500 dark:text-gray-400">ดูประวัติการบันทึกย้อนหลัง 30 วัน</p>
+									</div>
+								</div>
+								<i class="fa-solid fa-chevron-right text-gray-400"></i>
+							</button>
+						</div>
+
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border-2 border-cyan-500 dark:border-cyan-500 transition-colors">
+							<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-voice-commands-content">
+								<h2 class="text-lg font-bold text-cyan-600 dark:text-cyan-400 flex items-center">
+									<i class="fa-solid fa-microphone-lines mr-2"></i> คำสั่งเสียงอัจฉริยะ (AI Smart Voice)
+								</h2>
+								<i class="fa-solid fa-chevron-down text-cyan-500 transition-transform duration-300 rotate-180"></i>
+							</div>
+							
+							<div id="settings-voice-commands-content" class="mt-4 transition-all pt-4 border-t border-gray-100 dark:border-gray-700">
+								<div class="flex justify-between items-center mb-4">
+									<p class="text-sm text-gray-500 dark:text-gray-400">สอนให้ระบบเข้าใจคำสั่งเสียงของคุณเอง</p>
+									<button onclick="openVoiceCommandModal()" class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2 shrink-0">
+										<i class="fa-solid fa-plus"></i> สอนคำสั่ง
+									</button>
+								</div>
+								
+								<div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl border border-gray-200 dark:border-gray-600 mb-3">
+									<div id="voice-commands-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+								</div>
+								
+								<div class="flex justify-end">
+									<button id="btn-clear-all-voice" class="text-xs text-red-500 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+										<i class="fa-solid fa-trash-can"></i> ล้างคำสั่งทั้งหมด
+									</button>
+								</div>
+							</div>
+						</div>
+
+						
+					</div>
+
+					<div class="flex flex-col gap-4 md:gap-6">
+					
+						
 
 						<div class="theme-border-target bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg transition-colors" style="border-width: 2px !important; border-style: solid !important;">
 							<h2 class="text-lg font-bold text-primary-600 dark:text-primary-400 mb-5 flex items-center">
@@ -1009,176 +1124,64 @@
 								</div>
 							</div>
 						</div>
-					</div>
-
-					<div class="flex flex-col gap-4 md:gap-6">
-
-						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border-2 border-green-500 dark:border-green-500 transition-colors">
-							<h2 class="text-lg font-bold text-green-600 dark:text-green-400 mb-5 flex items-center">
-								<i class="fa-solid fa-bell mr-2"></i> การแจ้งเตือน
+						
+						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border-2 border-red-500 dark:border-red-500 transition-colors">
+							<h2 class="text-lg font-bold text-red-500 dark:text-red-400 mb-5 flex items-center">
+								<i class="fa-solid fa-shield-halved mr-2"></i> ความปลอดภัย
 							</h2>
-							<div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-600 transition-colors">
-								<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-line-content">
-									<h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center text-sm md:text-base">
-										<i class="fa-brands fa-line text-green-500 mr-2 text-lg"></i> แจ้งเตือนผ่าน LINE
-									</h3>
-									<div class="flex items-center gap-2">
-										<a id="line-oa-link" href="#" target="_blank" class="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-200 transition-colors font-bold" onclick="event.stopPropagation()">
-											<i class="fa-solid fa-user-plus mr-1"></i> แอดบอท
-										</a>
-										<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
-									</div>
-								</div>
-								
-								<div id="settings-line-content" class="transition-all mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-									<div class="flex flex-col gap-2 mb-4">
-										<h4 class="font-bold text-gray-700 dark:text-gray-300 mb-2 text-sm">เงื่อนไขการแจ้งเตือน:</h4>
-										<div class="space-y-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
-											<label class="flex items-center justify-between cursor-pointer">
-												<span class="text-sm text-gray-700 dark:text-gray-300">➕ เพิ่มรายการใหม่</span>
-												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
-													<input type="checkbox" id="notify-on-add" class="sr-only peer">
-													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-												</label>
-											</label>
-											<label class="flex items-center justify-between cursor-pointer">
-												<span class="text-sm text-gray-700 dark:text-gray-300">✏️ แก้ไขรายการ</span>
-												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
-													<input type="checkbox" id="notify-on-edit" class="sr-only peer">
-													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-												</label>
-											</label>
-											<label class="flex items-center justify-between cursor-pointer">
-												<span class="text-sm text-gray-700 dark:text-gray-300">🗑️ ลบรายการ</span>
-												<label class="relative inline-flex items-center cursor-pointer pointer-events-none">
-													<input type="checkbox" id="notify-on-delete" class="sr-only peer">
-													<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-												</label>
-											</label>
-										</div>
-									</div>
-									
-									<div class="flex flex-col gap-3 mb-3">
-										<h4 class="font-bold text-gray-700 dark:text-gray-300 text-sm">ตั้งค่าผู้รับ (LINE User ID):</h4>
-										<div class="flex gap-2">
-											<input type="text" id="input-line-nickname" class="w-1/3 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:border-primary-500" placeholder="ชื่อเล่น">
-											<input type="text" id="input-line-user-id" class="flex-1 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:border-primary-500" placeholder="User ID (U...)">
-										</div>
-										<button id="btn-add-line-id" class="bg-green-500 hover:bg-green-600 text-white w-full py-2.5 rounded-lg transition-colors font-bold text-sm shadow-sm flex items-center justify-center gap-2">
-											<i class="fa-solid fa-plus"></i> เพิ่มผู้รับ
-										</button>
-									</div>
-
-									<div id="line-id-list" class="space-y-2 mb-3"></div>
-
-									<div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800/50">
-										<p class="text-[11px] sm:text-xs text-yellow-700 dark:text-yellow-400">
-											<i class="fa-solid fa-circle-info mr-1"></i><strong>วิธีใช้:</strong>
-											1. กดปุ่ม "แอดบอท" ด้านบน<br>
-											<span class="ml-4">2. พิมพ์คำว่า <code class="bg-white dark:bg-gray-800 px-1 rounded">id</code> ในแชทบอท</span><br>
-											<span class="ml-4">3. นำรหัส U... มาใส่ในช่อง User ID</span>
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border-2 border-purple-500 dark:border-purple-500 transition-colors">
-							<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-notification-content">
-								<h3 class="font-bold flex items-center text-sm md:text-base" style="color: #9333ea !important;">
-									<i class="fa-solid fa-mobile-screen mr-2 text-lg" style="color: #a855f7 !important;"></i> แจ้งเตือนในแอปพลิเคชัน
-								</h3>
-								<i class="fa-solid fa-chevron-down transition-transform duration-300 rotate-180" style="color: #a855f7 !important;"></i>
-							</div>
-
-							<div id="settings-notification-content" class="mt-4 transition-all pt-4 border-t border-purple-200 dark:border-purple-800/50">
-								<div class="flex flex-wrap items-center gap-x-5 gap-y-4 mb-5 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-									<label class="inline-flex items-center cursor-pointer group w-full sm:w-auto">
-										<input type="checkbox" id="toggle-notify-scheduled" class="form-checkbox w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
-										<span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary-600 transition-colors">รายการล่วงหน้า</span>
-									</label>
-									
-									<label class="inline-flex items-center cursor-pointer group w-full sm:w-auto">
-										<input type="checkbox" id="toggle-notify-recurring" class="form-checkbox w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-600 dark:border-gray-500 cursor-pointer transition">
-										<span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary-600 transition-colors">รายการประจำ</span>
-									</label>
-
-									<div class="w-full mt-2 pt-3 border-t border-gray-100 dark:border-gray-700">
-										<span class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">แจ้งเตือน "งบประมาณ" ใกล้หมด:</span>
-										<div class="flex flex-wrap items-center gap-4">
-											<div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
-												<input type="checkbox" id="toggle-notify-budget-1" class="form-checkbox w-5 h-5 text-primary-600 border-gray-300 rounded cursor-pointer transition">
-												<div class="flex items-center relative">
-													<span class="text-xs text-gray-500 mr-2">ระดับ 1</span>
-													<input type="number" id="input-notify-budget-percent-1" value="50" min="1" max="100" class="w-16 py-1 px-2 text-center text-sm font-bold text-primary-700 dark:text-primary-400 rounded-md border border-gray-300 dark:border-gray-500 dark:bg-gray-800 focus:ring-1 focus:ring-primary-500 pr-5">
-													<span class="absolute right-2 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
-												</div>
-											</div>
-											<div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
-												<input type="checkbox" id="toggle-notify-budget-2" class="form-checkbox w-5 h-5 text-primary-600 border-gray-300 rounded cursor-pointer transition">
-												<div class="flex items-center relative">
-													<span class="text-xs text-gray-500 mr-2">ระดับ 2</span>
-													<input type="number" id="input-notify-budget-percent-2" value="90" min="1" max="100" class="w-16 py-1 px-2 text-center text-sm font-bold text-primary-700 dark:text-primary-400 rounded-md border border-gray-300 dark:border-gray-500 dark:bg-gray-800 focus:ring-1 focus:ring-primary-500 pr-5">
-													<span class="absolute right-2 text-[10px] font-bold text-gray-400 pointer-events-none">%</span>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-
-								<div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-									<h4 class="font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center text-sm">
-										<i class="fa-solid fa-star text-orange-500 mr-2"></i> การแจ้งเตือนพิเศษแบบกำหนดเอง
-									</h4>
-									<button onclick="openCustomNotifyModal()" class="w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 py-2.5 rounded-xl mb-4 font-bold transition shadow-sm flex items-center justify-center gap-2">
-										<i class="fa-solid fa-plus"></i> สร้างการแจ้งเตือนใหม่
-									</button>
-									<div id="active-custom-notify-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-									<div class="flex justify-end mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-										<button id="btn-clear-custom-expired" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-											<i class="fa-solid fa-broom"></i> ล้างรายการที่แจ้งเตือนแล้ว
-										</button>
-									</div>
-								</div>
-							</div>
-							<button type="button" onclick="openPersistentLogModal()" class="w-full mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-left px-4 py-3 rounded-xl flex items-center justify-between transition-colors shadow-sm">
-								<div class="flex items-center">
-									<div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center mr-3">
-										<i class="fa-solid fa-clock-rotate-left"></i>
-									</div>
-									<div>
-										<h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">ประวัติกิจกรรมระบบ</h4>
-										<p class="text-xs text-gray-500 dark:text-gray-400">ดูประวัติการบันทึกย้อนหลัง 30 วัน</p>
-									</div>
-								</div>
-								<i class="fa-solid fa-chevron-right text-gray-400"></i>
+							<button id="btn-manage-password" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-xl shadow-md transition duration-300 mb-5 text-lg flex items-center justify-center gap-2">
+								<i class="fa-solid fa-key"></i> ตั้งค่ารหัสผ่านแอป
 							</button>
-						</div>
+							<div class="space-y-4 divide-y divide-gray-100 dark:divide-gray-700">
+								<div class="pt-4 first:pt-0">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+												<i class="fa-solid fa-fingerprint"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">เข้าใช้งานด้วย Biometric</span>
+										</div>
+										<button id="btn-biometric-settings" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition-colors shrink-0">
+											ตั้งค่า
+										</button>
+									</div>
+									<p id="bio-status-text" class="text-sm text-gray-500 dark:text-gray-400 ml-14">ใช้ลายนิ้วมือหรือใบหน้าแทนรหัสผ่าน (เฉพาะเครื่องนี้)</p>
+								</div>
 
-						<div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border-2 border-cyan-500 dark:border-cyan-500 transition-colors">
-							<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="settings-voice-commands-content">
-								<h2 class="text-lg font-bold text-cyan-600 dark:text-cyan-400 flex items-center">
-									<i class="fa-solid fa-microphone-lines mr-2"></i> คำสั่งเสียงอัจฉริยะ (AI Smart Voice)
-								</h2>
-								<i class="fa-solid fa-chevron-down text-cyan-500 transition-transform duration-300 rotate-180"></i>
-							</div>
-							
-							<div id="settings-voice-commands-content" class="mt-4 transition-all pt-4 border-t border-gray-100 dark:border-gray-700">
-								<div class="flex justify-between items-center mb-4">
-									<p class="text-sm text-gray-500 dark:text-gray-400">สอนให้ระบบเข้าใจคำสั่งเสียงของคุณเอง</p>
-									<button onclick="openVoiceCommandModal()" class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2 shrink-0">
-										<i class="fa-solid fa-plus"></i> สอนคำสั่ง
-									</button>
+								<div class="pt-4">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0">
+												<i class="fa-solid fa-wand-magic-sparkles"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">ยืนยันรหัสผ่านอัตโนมัติ</span>
+										</div>
+										<label class="relative inline-flex items-center cursor-pointer shrink-0">
+											<input type="checkbox" id="toggle-auto-confirm-password" class="sr-only peer">
+											<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-600"></div>
+										</label>
+									</div>
+									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">ตรวจสอบและยืนยันทันทีเมื่อพิมพ์รหัสผ่านถูกต้อง</p>
 								</div>
-								
-								<div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl border border-gray-200 dark:border-gray-600 mb-3">
-									<div id="voice-commands-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-								</div>
-								
-								<div class="flex justify-end">
-									<button id="btn-clear-all-voice" class="text-xs text-red-500 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-										<i class="fa-solid fa-trash-can"></i> ล้างคำสั่งทั้งหมด
-									</button>
+
+								<div class="pt-4">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+												<i class="fa-solid fa-user-lock"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">ตั้งค่า Auto Lock</span>
+										</div>
+										<select id="auto-lock-select" class="form-select text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2 px-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white shrink-0">
+											<option value="0">ปิด</option>
+											<option value="1">1 นาที</option>
+											<option value="5">5 นาที</option>
+											<option value="10">10 นาที</option>
+											<option value="30">30 นาที</option>
+											<option value="60">60 นาที</option>
+										</select>
+									</div>
+									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">ล็อกหน้าจออัตโนมัติเมื่อไม่มีกิจกรรม (ใช้ได้เมื่อตั้งรหัสผ่าน)</p>
 								</div>
 							</div>
 						</div>

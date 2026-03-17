@@ -751,3 +751,54 @@ body.dark #unlock-password:focus {
     border-color: rgb(var(--theme-500)) !important;
     box-shadow: 0 0 0 4px rgb(var(--theme-800)) !important;
 }
+
+/* =========================================
+   ปรับปรุงส่วนจัดการ LINE User ID (มือถือและ PC)
+   ========================================= */
+
+/* ทำให้รายการ ID มีระยะห่างและพื้นที่สัมผัสที่ดี */
+#line-id-list > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+}
+
+/* ให้ส่วนแสดงชื่อและ ID ยืดหยุ่นและหดได้ ไม่ล้น */
+#line-id-list .flex-col {
+    flex: 1;
+    min-width: 0;
+}
+
+/* จัดการข้อความ ID ที่ยาวให้ตัดบรรทัด */
+#line-id-list .text-gray-500.font-mono {
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* ขยายขนาดฟอนต์และปุ่มบนมือถือ */
+@media (max-width: 640px) {
+    #line-id-list .text-xs {
+        font-size: 0.875rem !important;
+    }
+    #line-id-list .text-\[10px\] {
+        font-size: 0.75rem !important;
+    }
+    #line-id-list button {
+        padding: 0.75rem !important;
+    }
+}
+
+/* เพิ่มขนาดฟอนต์และพื้นที่บนจอใหญ่ (PC) เพื่อให้อ่านง่ายขึ้น */
+@media (min-width: 1024px) {
+    #line-id-list .text-xs {
+        font-size: 0.875rem !important;
+    }
+    #line-id-list .text-\[10px\] {
+        font-size: 0.8125rem !important;
+    }
+    #line-id-list button {
+        padding: 0.625rem !important;
+    }
+}

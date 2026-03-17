@@ -3,7 +3,7 @@
 // ============================================
 
 // เวอร์ชันหลัก
-var APP_VERSION = 'v8.6.58';
+var APP_VERSION = 'v8.6.59';
 var APP_LAST_UPDATED = '17-03-2026';
 var APP_LAST_UPDATED_TH = '17 มีนาคม 2569';
 

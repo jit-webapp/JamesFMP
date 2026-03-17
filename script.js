@@ -3091,8 +3091,24 @@ document.addEventListener('DOMContentLoaded', () => {
 					icon.classList.remove('fa-spin', 'text-green-500');
 					icon.classList.add('text-blue-500');
 				});
-				window.appVibrate([50, 50, 50]); // +++ สั่นยืนยันเมื่อรีเฟรชคลาวด์เสร็จสิ้น +++
+				window.appVibrate([50, 50, 50]); // สั่นยืนยันเมื่อรีเฟรชคลาวด์เสร็จสิ้น
 				showToast('รีเฟรชข้อมูลสำเร็จ', 'success');
+
+				// +++ พระเอกของเราอยู่ตรงนี้ครับ! เรียกฟังก์ชันจัดการสีและหน้าจอ +++
+				if (typeof applyThemeColor === 'function') {
+					applyThemeColor(); // บังคับเปลี่ยนสีธีมทันที!
+				}
+				if (typeof applyDarkModePreference === 'function') {
+					applyDarkModePreference(); // อัปเดตโหมดมืดสว่าง (ถ้ามี)
+				}
+				if (typeof loadSettings === 'function') {
+					loadSettings(); // อัปเดตพวกปุ่มสวิตช์ในหน้าตั้งค่า
+				}
+				if (typeof renderAll === 'function') {
+					renderAll(); // สั่งให้แอปวาดตารางและกราฟใหม่ทั้งหมดด้วยข้อมูลที่เพิ่งซิงค์มา
+				}
+				// +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 			} catch (err) {
 				console.error('Refresh error:', err);
 				if (typeof Swal !== 'undefined') Swal.close();
