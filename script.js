@@ -1090,6 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		lineNotifyActions: { add: true, edit: true, delete: true }, // ค่าเริ่มต้น
 		manualBackupLastTime: null,   // เวลาสำรองแบบ Manual (JSON)
 		cloudSyncLastTime: null,      // เวลาซิงค์ขึ้น Cloud แบบ Manual
+		showVoiceTooltip: true, // ค่าเริ่มต้น: แสดงคำแนะนำ
         settingsCollapse: {},
         autoLockTimeout: 0,
 		budgets: [],
@@ -1514,6 +1515,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		// โหลดการตั้งค่าแสดงปุ่ม Smart Voice
 		const showSmartVoiceBtnConfig = await dbGet(STORE_CONFIG, 'showSmartVoiceBtn');
 		state.showSmartVoiceBtn = showSmartVoiceBtnConfig ? showSmartVoiceBtnConfig.value : true;
+		
+		// โหลดค่าการแสดงคำแนะนำปุ่มไมค์
+		const voiceTooltipConfig = await dbGet(STORE_CONFIG, 'showVoiceTooltip');
+		if (voiceTooltipConfig) {
+			state.showVoiceTooltip = voiceTooltipConfig.value;
+		}
 		
 		updateNotificationBadge();
 		// [แก้ไขใหม่] วาดรายการแจ้งเตือนทันทีที่โหลดข้อมูลจากฐานข้อมูลเสร็จ
@@ -8324,6 +8331,35 @@ document.addEventListener('DOMContentLoaded', () => {
 		const toggleSmartVoiceBtn = getEl('toggle-smart-voice-btn');
 		if (toggleSmartVoiceBtn) {
 			toggleSmartVoiceBtn.checked = state.showSmartVoiceBtn;
+		}
+		
+		// +++ สวิตช์แสดงคำแนะนำปุ่มไมค์ +++
+		const toggleVoiceTooltip = document.getElementById('toggle-voice-tooltip');
+		if (toggleVoiceTooltip) {
+			toggleVoiceTooltip.checked = state.showVoiceTooltip;
+			toggleVoiceTooltip.addEventListener('change', async (e) => {
+				window.appVibrate(50);  // <-- เพิ่มตรงนี้
+				const isChecked = e.target.checked;
+				state.showVoiceTooltip = isChecked;
+				await dbPut(STORE_CONFIG, { key: 'showVoiceTooltip', value: isChecked });
+
+				// จัดการกับ tooltip ที่กำลังแสดง
+				if (!isChecked) {
+					// ปิด: หยุด loop tooltip และซ่อน tooltip ที่แสดงอยู่
+					if (window._smartVoiceControls) {
+						window._smartVoiceControls.stopTooltipLoop();
+						window._smartVoiceControls.hideTooltip();
+					}
+				} else {
+					// เปิด: ถ้าปุ่มกำลังกระดิกอยู่ ให้เริ่ม loop tooltip อีกครั้ง
+					const btn = document.getElementById('smart-voice-btn');
+					if (btn && btn.classList.contains('smart-voice-wiggle') && window._smartVoiceControls) {
+						window._smartVoiceControls.startTooltipLoop();
+					}
+				}
+
+				showToast(isChecked ? 'เปิดคำแนะนำปุ่มไมค์แล้ว' : 'ปิดคำแนะนำปุ่มไมค์แล้ว', 'success');
+			});
 		}
 
 		const clearAllBtn = document.getElementById('btn-clear-all-voice');
@@ -16986,10 +17022,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		function initDraggableVoiceButton() {
 			const container = document.getElementById('smart-voice-container');
 			const btn = document.getElementById('smart-voice-btn');
-
 			if (!container) return;
 
-			// รีเซ็ตสถานะ global
 			window.isSmartVoiceDragging = false;
 
 			// โหลดตำแหน่งจาก localStorage
@@ -17007,16 +17041,167 @@ document.addEventListener('DOMContentLoaded', () => {
 			setTimeout(repositionButtonIfOutOfBounds, 100);
 			window.addEventListener('resize', repositionButtonIfOutOfBounds);
 
-			// เริ่มจับเวลากระดิก
+			// ตัวแปรสำหรับการกระดิกและ tooltip
+			let wiggleTimer = null;
+			let tooltipHideTimer = null;
+			let tooltipShowInterval = null;
+			let wiggleTooltip = null;
+
+			const WIGGLE_DELAY = 20000; // 20 วินาที เริ่มกระดิก
+			const TOOLTIP_SHOW_INTERVAL = 30000; // 30 วินาที แสดง tooltip ซ้ำ
+			const TOOLTIP_DISPLAY_DURATION = 10000; // 10 วินาที แสดง tooltip แต่ละครั้ง
+
+			const WIGGLE_MESSAGES = [
+				"คุณสามารถลากฉันไปไว้ที่ตำแหน่งไหนก็ได้นะ",
+				"คุณลากฉันไปไว้ที่ตำแหน่งไหนก็ได้นะ",
+				"ฉันอยู่ตรงนี้นะ",
+				"ฉันรอคำสั่งจากคุณอยู่นะ",
+				"ให้ช่วยเหลืออะไร บอกฉันมาได้เลย",
+				"คุณสามารถสอนฉันได้นะ",
+				"ไปหน้าตั้งค่าเพื่อสอนฉัน",
+				"ลองพูด'เปิดหน้าแรก' สิ",
+				"พูด'รายจ่ายวันนี้' ฉันสรุปให้",
+				"พูด'เพิ่มรายรับเงินเดือน 50000บาท",
+				"ฉันช่วยคุณค้นหารายการได้นะ",
+				"พูด'เพิ่มรายรับ,เพิ่มรายจ่าย,เพิ่มโอนย้าย",
+				"ลองพูด 'ข้าวมันไก่ 50 บาท'",
+				"สั่งงานฉันด้วยเสียงได้เลย",
+				"อยากดูปฏิทิน พูด'ปฏิทิน'",
+				"พูด'โหมดมืด' เพื่อเปลี่ยนธีม",
+				"ลองพูด'สำรองข้อมูล'",
+				"ฉันจำคำสั่งคุณได้ด้วยนะ",
+				"พูด'คู่มือ'เพื่อดูวิธีใช้",
+				"ลองพูด'ค้นหาค่ากาแฟ'",
+				"พูด'รายรับเดือนนี้' ดูสรุป",
+				"พูด'รายจ่ายปีนี้' ดูสรุป",
+				"พูด'อาหารเดือนนี้' ดูสรุป",
+				"ลองพูด 'ตั้งค่างบประมาณ'",
+				"ฉันช่วยคุณลืมรหัสผ่าน พูด 'ช่วยเหลือ'",
+				"พูด'บันทึก' เพื่อยืนยันรายการ",
+				"พูด'รายจ่าย' เพื่อดูสถิติ",
+				"ลองพูด'ปิดหน้าต่าง' เพื่อยกเลิก",
+				"พูด'ย้อนกลับ' เพื่อ undo รายการ"
+			];
+
+			function ensureTooltip() {
+				if (!wiggleTooltip) {
+					wiggleTooltip = document.createElement('div');
+					wiggleTooltip.id = 'smart-voice-wiggle-tooltip';
+					wiggleTooltip.style.position = 'fixed';
+					wiggleTooltip.style.backgroundColor = 'rgba(0,0,0,0.8)';
+					wiggleTooltip.style.color = 'white';
+					wiggleTooltip.style.padding = '8px 16px';
+					wiggleTooltip.style.borderRadius = '20px';
+					wiggleTooltip.style.fontSize = '14px';
+					wiggleTooltip.style.fontWeight = 'bold';
+					wiggleTooltip.style.whiteSpace = 'nowrap';
+					wiggleTooltip.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+					wiggleTooltip.style.zIndex = '10000';
+					wiggleTooltip.style.pointerEvents = 'none';
+					wiggleTooltip.style.transition = 'opacity 0.2s';
+					document.body.appendChild(wiggleTooltip);
+				}
+				return wiggleTooltip;
+			}
+
+			function showTooltipWithRandomMessage() {
+				// +++ ตรวจสอบ state.showVoiceTooltip ก่อนแสดง +++
+				if (!state.showVoiceTooltip) return;
+
+				const tooltip = ensureTooltip();
+				const randomIndex = Math.floor(Math.random() * WIGGLE_MESSAGES.length);
+				const msg = WIGGLE_MESSAGES[randomIndex];
+
+				tooltip.textContent = msg;
+				tooltip.style.opacity = '0';
+				tooltip.style.display = 'block';
+
+				const tooltipWidth = tooltip.offsetWidth;
+				const tooltipHeight = tooltip.offsetHeight;
+				const rect = btn.getBoundingClientRect();
+				let targetX = rect.left + rect.width / 2;
+				let targetY = rect.top - tooltipHeight - 5;
+				const margin = 10;
+				const winWidth = window.innerWidth;
+
+				let left = targetX - tooltipWidth / 2;
+				if (left < margin) left = margin;
+				if (left + tooltipWidth > winWidth - margin) left = winWidth - tooltipWidth - margin;
+
+				tooltip.style.left = left + 'px';
+				tooltip.style.top = targetY + 'px';
+				tooltip.style.transform = 'none';
+				tooltip.style.opacity = '0.5';
+
+				if (tooltipHideTimer) clearTimeout(tooltipHideTimer);
+				tooltipHideTimer = setTimeout(() => {
+					hideTooltip();
+				}, TOOLTIP_DISPLAY_DURATION);
+			}
+
+			function hideTooltip() {
+				if (wiggleTooltip) {
+					wiggleTooltip.style.opacity = '0';
+					setTimeout(() => {
+						if (wiggleTooltip && wiggleTooltip.style.opacity === '0') {
+							wiggleTooltip.style.display = 'none';
+						}
+					}, 200);
+				}
+				if (tooltipHideTimer) {
+					clearTimeout(tooltipHideTimer);
+					tooltipHideTimer = null;
+				}
+			}
+
+			function startTooltipLoop() {
+				if (!state.showVoiceTooltip) return; // ปิดอยู่ไม่ต้องเริ่ม
+				if (tooltipShowInterval) clearInterval(tooltipShowInterval);
+				showTooltipWithRandomMessage();
+				tooltipShowInterval = setInterval(() => {
+					showTooltipWithRandomMessage();
+				}, TOOLTIP_SHOW_INTERVAL);
+			}
+
+			function stopTooltipLoop() {
+				if (tooltipShowInterval) {
+					clearInterval(tooltipShowInterval);
+					tooltipShowInterval = null;
+				}
+			}
+
+			function startWiggleTimer() {
+				if (wiggleTimer) clearTimeout(wiggleTimer);
+				wiggleTimer = setTimeout(() => {
+					if (btn) {
+						btn.classList.add('smart-voice-wiggle');
+						startTooltipLoop(); // เริ่ม loop tooltip (ถ้าเปิดอยู่)
+					}
+				}, WIGGLE_DELAY);
+			}
+
+			function stopWiggle() {
+				if (wiggleTimer) {
+					clearTimeout(wiggleTimer);
+					wiggleTimer = null;
+				}
+				if (btn) {
+					btn.classList.remove('smart-voice-wiggle');
+				}
+				stopTooltipLoop();
+				hideTooltip();
+			}
+
+			// เริ่มจับเวลากระดิกครั้งแรก
 			startWiggleTimer();
 
-			// --- ตัวแปรสำหรับลาก ---
+			// --- ตัวแปรและฟังก์ชันสำหรับการลาก ---
 			let isDragging = false;
 			let dragStartX, dragStartY, dragStartLeft, dragStartTop;
 			let dragTimeout;
 
 			const startDrag = (e) => {
-				stopWiggle();
+				stopWiggle(); // หยุดกระดิกขณะลาก
 				if (dragTimeout) clearTimeout(dragTimeout);
 
 				const isTouch = e.type === 'touchstart';
@@ -17032,18 +17217,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				isDragging = false;
 				window.isSmartVoiceDragging = false;
 
-				dragTimeout = setTimeout(() => {
-					// ไม่ต้องทำอะไร
-				}, 200);
+				dragTimeout = setTimeout(() => {}, 200);
 
-				// ใส่ { passive: false } ให้ touchmove เพื่อให้ e.preventDefault() ทำงานได้
 				document.addEventListener(isTouch ? 'touchmove' : 'mousemove', onDrag, { passive: false });
 				document.addEventListener(isTouch ? 'touchend' : 'mouseup', stopDrag);
 
-				// *** แก้ไข Bug บนมือถือ: ยกเลิก e.preventDefault() สำหรับ touch เพื่อไม่ให้บล็อก click event ***
-				if (!isTouch) {
-					e.preventDefault(); // ใช้สำหรับ Desktop เพื่อป้องกันการคลุมข้อความ/ลากภาพ
-				}
+				if (!isTouch) e.preventDefault();
 			};
 
 			const onDrag = (e) => {
@@ -17063,13 +17242,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 					container.style.cursor = 'grabbing';
 					btn.style.pointerEvents = 'none';
-					
-					// +++ สั่นต่อเนื่องเมื่อเริ่มลากปุ่ม +++
-					window.appVibrate([20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20]); // สั่น 20 รอบ
+					window.appVibrate([20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20, 50, 20]);
 				}
 
 				if (isDragging) {
-					// *** ป้องกันการเลื่อนหน้าจอขณะกำลังลากปุ่มบนมือถือ ***
 					if (e.cancelable) e.preventDefault();
 
 					let newLeft = dragStartLeft + dx;
@@ -17079,8 +17255,8 @@ document.addEventListener('DOMContentLoaded', () => {
 					const winHeight = window.innerHeight;
 					const containerWidth = container.offsetWidth;
 					const containerHeight = container.offsetHeight;
-
 					const margin = 10;
+
 					newLeft = Math.max(margin, Math.min(winWidth - containerWidth - margin, newLeft));
 					newTop = Math.max(margin, Math.min(winHeight - containerHeight - margin, newTop));
 
@@ -17096,8 +17272,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				document.removeEventListener('mouseup', stopDrag);
 				document.removeEventListener('touchmove', onDrag);
 				document.removeEventListener('touchend', stopDrag);
-				
-				// +++ หยุดสั่นเมื่อปล่อยปุ่ม +++
+
 				window.appVibrate(20);
 
 				if (dragTimeout) {
@@ -17106,7 +17281,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				if (isDragging) {
-					// บันทึกตำแหน่ง
 					const left = container.style.left;
 					const top = container.style.top;
 					if (left && top) {
@@ -17114,21 +17288,17 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 					container.style.cursor = '';
 					btn.style.pointerEvents = 'auto';
-					
-					// หน่วงเวลาการรีเซ็ตสถานะ เพื่อป้องกัน click event ที่ลั่นตามมาหลังลากเสร็จ
 					setTimeout(() => {
 						window.isSmartVoiceDragging = false;
 					}, 100);
 				} else {
 					window.isSmartVoiceDragging = false;
-					
-					// *** ฟอลแบคความปลอดภัยมือถือ: หากแค่แตะแล้วปล่อย ให้จำลองการเรียกใช้งานเสียงทันที ***
 					if (e.type === 'touchend') {
 						const touch = e.changedTouches ? e.changedTouches[0] : null;
 						if (touch) {
 							const target = document.elementFromPoint(touch.clientX, touch.clientY);
 							if (target && target.closest('#smart-voice-btn')) {
-								if (e.cancelable) e.preventDefault(); 
+								if (e.cancelable) e.preventDefault();
 								if (typeof window.activateGlobalVoice === 'function') {
 									window.activateGlobalVoice();
 								}
@@ -17138,26 +17308,21 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				isDragging = false;
-				startWiggleTimer();
+				startWiggleTimer(); // เริ่มจับเวลากระดิกใหม่เมื่อปล่อย
 			};
 
-			// เพิ่ม event listeners สำหรับ container (สำหรับการลาก)
+			// เพิ่ม event listeners สำหรับการลาก
 			container.addEventListener('mousedown', startDrag);
 			container.addEventListener('touchstart', startDrag, { passive: false });
 
-			// เพิ่ม event listener สำหรับคลิกที่ปุ่มโดยตรง (เผื่อกรณี)
 			if (btn) {
 				btn.addEventListener('click', (e) => {
-					// ถ้ากำลังลากอยู่ ไม่ต้องทำอะไร
 					if (window.isSmartVoiceDragging) return;
-					
-					// เรียกใช้งานฟังก์ชันเสียง
 					if (typeof window.activateGlobalVoice === 'function') {
 						window.activateGlobalVoice();
 					}
 				});
 
-				// รีเซ็ตการกระดิกเมื่อมีการโต้ตอบกับปุ่ม
 				const resetWiggle = () => {
 					stopWiggle();
 					startWiggleTimer();
@@ -17165,6 +17330,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				btn.addEventListener('mousedown', resetWiggle);
 				btn.addEventListener('touchstart', resetWiggle, { passive: true });
 			}
+
+			// +++ Expose ฟังก์ชันควบคุมผ่าน window เพื่อให้เรียกจาก renderSettings ได้ +++
+			window._smartVoiceControls = {
+				startTooltipLoop,
+				stopTooltipLoop,
+				hideTooltip
+			};
 		}
 			
 			// ============================================
