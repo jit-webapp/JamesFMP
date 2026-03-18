@@ -45,6 +45,7 @@
     
     <link rel="stylesheet" href="./libs/cropper.min.css" />
     <script src="./libs/cropper.min.js"></script>
+	<script src="./libs/iro.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore-compat.js"></script>
@@ -992,40 +993,61 @@
 
 								<div class="pt-4 border-t border-gray-100 dark:border-gray-700 mt-4">
 									<div class="flex flex-col mb-2">
-										<div class="flex items-center gap-3 mb-3">
+										<div class="flex items-center gap-3 mb-2 px-1">
 											<div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 shrink-0 transition-colors">
 												<i class="fa-solid fa-palette"></i>
 											</div>
 											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">สีธีมแอปพลิเคชัน</span>
 										</div>
-										<div class="flex flex-wrap items-center gap-2 ml-14" id="theme-color-selector">
-											<button type="button" class="theme-color-btn w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#9333ea" style="background-color: #9333ea;" title="ม่วง (Purple)"></button>
-											<button type="button" class="theme-color-btn w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#3b82f6" style="background-color: #3b82f6;" title="ฟ้า (Blue)"></button>
-											<button type="button" class="theme-color-btn w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#22c55e" style="background-color: #22c55e;" title="เขียว (Green)"></button>
-											<button type="button" class="theme-color-btn w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#ef4444" style="background-color: #ef4444;" title="แดง (Red)"></button>
-											<button type="button" class="theme-color-btn w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#f97316" style="background-color: #f97316;" title="ส้ม (Orange)"></button>
-											<button type="button" class="theme-color-btn w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#ec4899" style="background-color: #ec4899;" title="ชมพู (Pink)"></button>
-											<button type="button" class="theme-color-btn w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#171717" style="background-color: #171717;" title="ดำ (Black)"></button>
+										
+										<div class="flex flex-nowrap items-center gap-3 overflow-x-auto no-scrollbar py-2 px-2 w-full" id="theme-color-selector">
+											<button type="button" class="theme-color-btn shrink-0 w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#9333ea" style="background-color: #9333ea;" title="ม่วง (Purple)"></button>
+											<button type="button" class="theme-color-btn shrink-0 w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#3b82f6" style="background-color: #3b82f6;" title="ฟ้า (Blue)"></button>
+											<button type="button" class="theme-color-btn shrink-0 w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#22c55e" style="background-color: #22c55e;" title="เขียว (Green)"></button>
+											<button type="button" class="theme-color-btn shrink-0 w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#ef4444" style="background-color: #ef4444;" title="แดง (Red)"></button>
+											<button type="button" class="theme-color-btn shrink-0 w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#f97316" style="background-color: #f97316;" title="ส้ม (Orange)"></button>
+											<button type="button" class="theme-color-btn shrink-0 w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#ec4899" style="background-color: #ec4899;" title="ชมพู (Pink)"></button>
+											<button type="button" class="theme-color-btn shrink-0 w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none shadow-sm" data-color="#171717" style="background-color: #171717;" title="ดำ (Black)"></button>
 											
-											<div class="flex items-center gap-2 ml-1 pl-2 border-l-2 border-gray-200 dark:border-gray-700">
-												<button type="button" id="custom-color-wrapper" class="relative w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300 dark:border-gray-500 hover:scale-110 transition-transform cursor-pointer flex items-center justify-center bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 shadow-sm" title="ใช้สีที่ตั้งค่าไว้ล่าสุด">
+											<div class="flex items-center gap-2 ml-1 pl-3 pr-2 border-l-2 border-gray-200 dark:border-gray-700 shrink-0">
+												<button type="button" id="custom-color-wrapper" class="relative shrink-0 w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300 dark:border-gray-500 hover:scale-110 transition-transform cursor-pointer flex items-center justify-center bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 shadow-sm" title="ใช้สีที่ตั้งค่าไว้ล่าสุด">
 													<i class="fa-solid fa-plus text-white text-xs drop-shadow-md pointer-events-none" id="custom-color-icon"></i>
 												</button>
-												<input type="color" id="custom-theme-picker" class="hidden">
-												<span class="text-xs text-gray-500 dark:text-gray-400 font-medium cursor-pointer hover:text-primary-600 transition-colors flex items-center gap-1" onclick="document.getElementById('custom-theme-picker').click()">
-													<i class="fa-solid fa-pen"></i> แก้ไขสี
-												</span>
+												<button type="button" onclick="toggleIroColorPicker()" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 font-medium cursor-pointer hover:text-primary-600 transition-colors shrink-0 whitespace-nowrap bg-transparent border-none outline-none">
+													<i class="fa-solid fa-fill-drip"></i> ผสมสีเอง
+												</button>
 											</div>
 										</div>
 										
-										<div id="custom-color-confirm-area" class="hidden ml-14 mt-3 items-center gap-3 bg-primary-50 dark:bg-gray-800 p-3 rounded-xl border border-primary-100 dark:border-gray-700 transition-all shadow-sm">
-											<div id="custom-color-preview" class="w-7 h-7 rounded-full border-2 border-white shadow-md"></div>
-											<span class="text-sm font-bold text-gray-700 dark:text-gray-200">ใช้สีนี้หรือไม่?</span>
-											<div class="ml-auto flex gap-2">
-												<button type="button" id="btn-cancel-custom-color" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs px-3 py-2 rounded-lg font-bold transition">ยกเลิก</button>
-												<button type="button" id="btn-confirm-custom-color" class="text-white text-xs px-3 py-2 rounded-lg font-bold shadow-sm transition hover:brightness-90">ยืนยัน</button>
+										<div id="iro-color-picker-area" class="hidden mt-4 mx-1 flex-col items-center gap-4 bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl transition-all">
+            
+											<div style="display: none !important;">
+												<div id="custom-color-confirm-area">
+													<input type="color" id="custom-theme-picker">
+													<div id="custom-color-preview"></div>
+													<button type="button" id="btn-cancel-custom-color">ยกเลิก</button>
+													<button type="button" id="btn-confirm-custom-color">ยืนยัน</button>
+												</div>
+											</div>
+
+											<div class="w-full flex justify-between items-center mb-1">
+												<span class="font-bold text-gray-700 dark:text-gray-200 text-sm"><i class="fa-solid fa-palette text-primary-500 mr-2"></i>ลากนิ้วเพื่อผสมสี</span>
+												<button type="button" onclick="toggleIroColorPicker()" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+											</div>
+											
+											<div id="iro-picker-container" class="flex justify-center w-full my-2"></div>
+											
+											<div class="flex items-center justify-between w-full border-t border-gray-100 dark:border-gray-700 pt-4 mt-1">
+												<div class="flex items-center gap-3">
+													<div id="iro-color-preview" class="w-10 h-10 rounded-full border-4 border-gray-200 dark:border-gray-600 shadow-sm transition-colors"></div>
+													<span class="text-sm font-mono font-bold text-gray-600 dark:text-gray-300 tracking-wider" id="iro-color-hex">#FFFFFF</span>
+												</div>
+												<button type="button" id="apply-color-btn" onclick="applyIroColor()" class="bg-primary-600 text-white hover:bg-primary-700 text-xs px-5 py-2.5 rounded-xl font-bold shadow-md transition-colors active:scale-95 flex items-center gap-2" style="transition: background-color 0.1s ease, color 0.1s ease;">
+													<i class="fa-solid fa-check"></i> ใช้สีนี้
+												</button>
 											</div>
 										</div>
+
 									</div>
 								</div>
 								

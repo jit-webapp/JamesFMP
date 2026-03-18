@@ -3,15 +3,16 @@
 // ============================================
 
 // เวอร์ชันหลัก
-var APP_VERSION = 'v8.6.63';
-var APP_LAST_UPDATED = '17-03-2026';
-var APP_LAST_UPDATED_TH = '17 มีนาคม 2569';
+var APP_VERSION = 'v8.6.65';
+var APP_LAST_UPDATED = '18-03-2026';
+var APP_LAST_UPDATED_TH = '18 มีนาคม 2569';
 
 // ช่องสำหรับพิมพ์รายละเอียดการอัปเดต (ให้พิมพ์ไว้ในเครื่องหมาย ` `)
 var APP_UPDATE_NOTES = `
 <b>⚙️ รายการอัพเดท </b>
 - แก้ไข เอฟเฟกต์กระจก (Glass Mode)
 - เพิ่มการแก้ไขรูปภาพก่อนตั้งเป็น Wallpaper
+- แก้ไขการแก้ไขสีใน ios
 `;
 
 var APP_STATUS = '';

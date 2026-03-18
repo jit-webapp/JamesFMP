@@ -909,11 +909,36 @@ body.has-wallpaper input, body.has-wallpaper select, body.has-wallpaper textarea
 /* 12. ล้างเอฟเฟกต์เบลอที่ค้างใน HTML เดิมเมื่อ ปิดสวิตช์กระจก */
 body:not(.use-glass) .backdrop-blur, body:not(.use-glass) [class*="backdrop-blur"] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 
-/* 13. แก้บั๊ก iOS (iPhone) กดตั้งค่าสี/เมนูไม่ได้ */
-[onclick], .cursor-pointer, [class*="theme-"], [id*="theme-"] { cursor: pointer !important; -webkit-tap-highlight-color: transparent !important; touch-action: manipulation !important; }
-input[type="color"] { -webkit-appearance: none !important; border: none !important; background: transparent !important; cursor: pointer !important; padding: 0 !important; width: 32px; height: 32px; }
-input[type="color"]::-webkit-color-swatch-wrapper { padding: 0 !important; }
-input[type="color"]::-webkit-color-swatch { border: none !important; border-radius: 50% !important; }
+/* =========================================
+   ซ่อมบั๊ก iPhone กดเปลี่ยนสีธีมไม่ได้ (iOS Color Picker Fix)
+   ========================================= */
+[onclick], .cursor-pointer, [class*="theme-"], [id*="theme-"] { 
+    cursor: pointer !important; 
+    -webkit-tap-highlight-color: transparent !important; 
+    touch-action: manipulation !important; 
+}
+
+/* ลบ -webkit-appearance ออก เพื่อให้ iPhone รู้จักว่าเป็นปุ่มสี */
+input[type="color"] { 
+    border: none !important; 
+    background: transparent !important; 
+    cursor: pointer !important; 
+    padding: 0 !important; 
+    width: 32px !important; 
+    height: 32px !important; 
+    border-radius: 50% !important;
+    overflow: hidden !important;
+}
+
+/* ให้พื้นที่สีเต็มกรอบพอดีสำหรับ iPhone */
+input[type="color"]::-webkit-color-swatch-wrapper { 
+    padding: 0 !important; 
+}
+
+input[type="color"]::-webkit-color-swatch { 
+    border: none !important; 
+    border-radius: 50% !important; 
+}
 
 /* =========================================
    ✨ V.20 - ลีนสุดๆ (ถอดกล่องครอบนอกสุดทิ้ง) ✨
@@ -1190,4 +1215,33 @@ body.has-wallpaper .chart-card {
 body.dark.use-glass .chart-card,
 body.dark.has-wallpaper .chart-card {
     border: 2px solid rgb(var(--theme-700)) !important;
+}
+
+/* =========================================
+   ทำให้ Welcome Modal เป็นพื้นทึบเสมอ (ไม่โปร่งใส)
+   ========================================= */
+
+/* ปรับทั้งตอนเปิดและปิดโหมดกระจก ให้ทึบเหมือนกัน */
+#welcome-modal > div {
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Dark mode */
+body.dark #welcome-modal > div {
+    background-color: #1a1a1a !important;
+}
+
+/* ถ้าเผื่อมีกรณี use-glass กับ has-wallpaper ให้ override ทับอีกชั้น */
+body.use-glass #welcome-modal > div,
+body.has-wallpaper #welcome-modal > div {
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+body.dark.use-glass #welcome-modal > div,
+body.dark.has-wallpaper #welcome-modal > div {
+    background-color: #1a1a1a !important;
 }

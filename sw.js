@@ -32,6 +32,7 @@ const ASSETS_TO_CACHE = [
   // เพิ่ม 2 บรรทัดนี้สำหรับระบบ Crop รูปภาพออฟไลน์ 👇
   `./libs/cropper.min.css?v=${APP_VERSION}`,
   `./libs/cropper.min.js?v=${APP_VERSION}`,
+  `./libs/iro.min.js?v=${APP_VERSION}`,
 ];
 
 // 2. Event Install: ติดตั้งและรอให้ผู้ใช้กดปุ่ม (ไม่บังคับอัปเดตอัตโนมัติ)

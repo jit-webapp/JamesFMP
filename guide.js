@@ -7,7 +7,7 @@ window.guideHTML = `
 			
 			<div class="relative z-10 flex flex-col items-center text-center">
 				<button class="speak-btn absolute top-0 right-0 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-colors" 
-					data-speak="ยินดีต้อนรับสู่คู่มือการใช้งาน Finance Manager Pro อัปเดตล่าสุด \${APP_LAST_UPDATED_TH} คู่มือนี้จะแนะนำคุณเกี่ยวกับระบบจัดการรายรับรายจ่ายอย่างละเอียด ประกอบด้วย 8 หัวข้อหลัก ได้แก่ เริ่มต้นใช้งาน, หน้าแรกศูนย์ควบคุม, รายการและวิเคราะห์เชิงลึก, ปฏิทินการเงิน, จัดการบัญชีและหมวดหมู่, ตั้งค่าและจัดการข้อมูล, ฟีเจอร์อัจฉริยะพิเศษ และการแก้ไขปัญหาเบื้องต้น คุณสามารถกดปุ่มลำโพงตามหัวข้อต่างๆ เพื่อฟังคำอธิบายเพิ่มเติมได้">
+					data-speak="ยินดีต้อนรับสู่คู่มือการใช้งาน Finance Manager Pro อัปเดตล่าสุด ${APP_LAST_UPDATED_TH} คู่มือนี้จะแนะนำคุณเกี่ยวกับระบบจัดการรายรับรายจ่ายอย่างละเอียด ประกอบด้วย 8 หัวข้อหลัก ได้แก่ เริ่มต้นใช้งาน, หน้าแรกศูนย์ควบคุม, รายการและวิเคราะห์เชิงลึก, ปฏิทินการเงิน, จัดการบัญชีและหมวดหมู่, ตั้งค่าและจัดการข้อมูล, ฟีเจอร์อัจฉริยะพิเศษ และการแก้ไขปัญหาเบื้องต้น คุณสามารถกดปุ่มลำโพงตามหัวข้อต่างๆ เพื่อฟังคำอธิบายเพิ่มเติมได้">
 					<i class="fa-solid fa-volume-high text-xl"></i>
 				</button>
 				<div class="w-28 h-28 bg-white/20 backdrop-blur-xl rounded-3xl flex items-center justify-center mb-6 shadow-2xl border border-white/30">
@@ -20,8 +20,8 @@ window.guideHTML = `
 					ฉบับสมบูรณ์
 				</p>
 				<p class="mt-6 text-lg opacity-80 flex items-center">
-				<i class="fa-regular fa-circle-check mr-2"></i> เวอร์ชัน \${APP_VERSION}
-				<i class="fa-regular fa-calendar ml-4 mr-2"></i>  อัปเดตล่าสุด \${APP_LAST_UPDATED_TH}
+				<i class="fa-regular fa-circle-check mr-2"></i> เวอร์ชัน ${APP_VERSION}
+				<i class="fa-regular fa-calendar ml-4 mr-2"></i>  อัปเดตล่าสุด ${APP_LAST_UPDATED_TH}
 				</p>
 			</div>
 		</div>

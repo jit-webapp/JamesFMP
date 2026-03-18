@@ -21550,6 +21550,133 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				}
 			};
+			
+			// ==========================================
+			// 🎨 ระบบวงล้อสีแบบ Professional + Real-time (iro.js) 🎨
+			// ==========================================
+			window.themeColorPicker = null;
+
+			// 🌟 1. ดักจับตอนเปิดแอปใหม่: ให้ดึงสีที่จำไว้มาทาสีปุ่ม [+] รอไว้เลยทันที!
+			document.addEventListener('DOMContentLoaded', function() {
+				setTimeout(() => {
+					const savedColor = localStorage.getItem('custom_theme_color');
+					if (savedColor) {
+						const customBtn = document.getElementById('custom-color-wrapper');
+						if (customBtn) {
+							customBtn.style.setProperty('background', savedColor, 'important');
+							customBtn.setAttribute('data-color', savedColor);
+						}
+					}
+				}, 500); // ดีเลย์นิดนึงรอให้แอปโหลดโครงสร้างเสร็จก่อน
+			});
+
+			// ฟังก์ชันเปิด/ปิดหน้าต่างวงล้อสี
+			window.toggleIroColorPicker = function() {
+				const pickerArea = document.getElementById('iro-color-picker-area');
+				const isDark = document.body.classList.contains('dark');
+
+				if (pickerArea.classList.contains('hidden')) {
+					pickerArea.classList.remove('hidden');
+					pickerArea.classList.add('flex');
+					
+					// หาว่าสีล่าสุดคืออะไร (ถ้าจำไม่ได้ให้ดูที่ปุ่ม [+])
+					let startColor = '#9333ea'; 
+					const savedColor = localStorage.getItem('custom_theme_color');
+					const customBtn = document.getElementById('custom-color-wrapper');
+					
+					if (customBtn && customBtn.getAttribute('data-color')) {
+						startColor = customBtn.getAttribute('data-color');
+					} else if (savedColor) {
+						startColor = savedColor;
+					} else {
+						// สำรอง: ดึงจาก CSS ของหน้าเว็บที่กำลังใช้อยู่
+						const currentThemeHex = getComputedStyle(document.documentElement).getPropertyValue('--primary-500').trim();
+						if (currentThemeHex) startColor = currentThemeHex;
+					}
+
+					if (!window.themeColorPicker) {
+						window.themeColorPicker = new iro.ColorPicker("#iro-picker-container", {
+							width: 220,
+							color: startColor,
+							borderWidth: 2,
+							borderColor: isDark ? '#374151' : '#ffffff',
+							wheelLightness: false,
+							layout: [
+								{ component: iro.ui.Wheel },
+								{ component: iro.ui.Slider, options: { sliderType: 'value', marginTop: 24 } }
+							]
+						});
+
+						updateIroUiRealTime(window.themeColorPicker.color);
+
+						window.themeColorPicker.on('color:change', function(color) {
+							updateIroUiRealTime(color);
+						});
+					} else {
+						// หมุนเข็มไปที่สีล่าสุดทันที
+						window.themeColorPicker.color.hexString = startColor;
+						updateIroUiRealTime(window.themeColorPicker.color);
+					}
+				} else {
+					pickerArea.classList.add('hidden');
+					pickerArea.classList.remove('flex');
+				}
+			};
+
+			// ฟังก์ชันเปลี่ยนสี UI ตามนิ้วลาก
+			function updateIroUiRealTime(iroColorObject) {
+				const hex = iroColorObject.hexString;
+				
+				const preview = document.getElementById('iro-color-preview');
+				if(preview) preview.style.setProperty('background-color', hex, 'important');
+				
+				const hexText = document.getElementById('iro-color-hex');
+				if(hexText) hexText.textContent = hex.toUpperCase();
+				
+				const applyBtn = document.getElementById('apply-color-btn') || document.querySelector('button[onclick="applyIroColor()"]');
+				if (applyBtn) {
+					applyBtn.classList.remove('bg-primary-600', 'hover:bg-primary-700'); 
+					applyBtn.style.setProperty('background-color', hex, 'important');
+					applyBtn.style.setProperty('border-color', hex, 'important');
+					applyBtn.style.setProperty('color', '#ffffff', 'important');
+				}
+			}
+
+			// ฟังก์ชันกด "ยืนยัน"
+			window.applyIroColor = function() {
+				if (window.themeColorPicker) {
+					const hexColor = window.themeColorPicker.color.hexString;
+					
+					// 🌟 2. บังคับเซฟลงความจำเครื่อง (LocalStorage) ด้วยตัวเองเพื่อความชัวร์ 100%
+					localStorage.setItem('custom_theme_color', hexColor);
+					
+					const oldInput = document.getElementById('custom-theme-picker');
+					if (oldInput) {
+						oldInput.value = hexColor;
+						oldInput.dispatchEvent(new Event('input', { bubbles: true }));
+						oldInput.dispatchEvent(new Event('change', { bubbles: true }));
+					}
+
+					const oldPreview = document.getElementById('custom-color-preview');
+					if (oldPreview) {
+						oldPreview.style.backgroundColor = hexColor;
+					}
+
+					const oldConfirmBtn = document.getElementById('btn-confirm-custom-color');
+					if (oldConfirmBtn) { 
+						oldConfirmBtn.click(); 
+					}
+
+					const customBtn = document.getElementById('custom-color-wrapper');
+					if (customBtn) { 
+						customBtn.style.setProperty('background', hexColor, 'important'); 
+						customBtn.setAttribute('data-color', hexColor);
+						setTimeout(() => { customBtn.click(); }, 50);
+					}
+
+					window.toggleIroColorPicker();
+				}
+			};
 
 			// ==========================================
 			// แก้ปุ่มกดย่อ/ขยายกราฟ หน้ารายการ
