@@ -21099,8 +21099,31 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			
 			// ==========================================
-			// ระบบ Wallpaper V.8 (ปรับความใสกระจกแยกโหมดได้อิสระ)
+			// ระบบ Wallpaper V.11 (ปรับความใสทะลุ 100% + จัดการโค้ดซ้ำซ้อน)
 			// ==========================================
+
+			// 1. ฟังก์ชันคุมความใส เบลอ และขอบ (ทำงานตามแถบเลื่อนแบบเรียลไทม์)
+			window.applyGlassVariables = function(val, isDark) {
+				// 🛑 กลับสมการ: เอา 100 ตั้งแล้วลบด้วยค่าแถบเลื่อน 
+				// ยิ่งเลื่อนขวาสุด (100) ค่า op จะกลายเป็น 0 (ใส 100%)
+				const op = (100 - val) / 100; 
+				
+				const blur = (op * 25) + 'px'; // ขวาสุด (100%) = เบลอ 0px
+				const border = op * 0.5;       // ขวาสุด (100%) = เส้นขอบหายไป
+				const input = op + 0.1;        // ดันช่องพิมพ์ให้ลอยขึ้นมานิดนึงเสมอ
+				
+				if (isDark) {
+					document.documentElement.style.setProperty('--glass-op-dark', op);
+					document.documentElement.style.setProperty('--glass-blur-dark', blur);
+					document.documentElement.style.setProperty('--glass-border-dark', border);
+					document.documentElement.style.setProperty('--glass-input-dark', input);
+				} else {
+					document.documentElement.style.setProperty('--glass-op-light', op);
+					document.documentElement.style.setProperty('--glass-blur-light', blur);
+					document.documentElement.style.setProperty('--glass-border-light', border);
+					document.documentElement.style.setProperty('--glass-input-light', input);
+				}
+			};
 
 			window.applyWallpaper = function() {
 				let wallDiv = document.getElementById('app-wallpaper');
@@ -21124,10 +21147,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				const wallpaperData = localStorage.getItem('local_wallpaper_data');
 				const brightness = localStorage.getItem('local_wallpaper_brightness') || '100';
 				
-				// ดึงค่าสวิตช์กระจกและความทึบ
 				const isGlassMode = localStorage.getItem('setting_glass_mode') === 'true';
-				const glassOpLight = localStorage.getItem('local_glass_op_light') || '25';
-				const glassOpDark = localStorage.getItem('local_glass_op_dark') || '65';
+				const glassOpLight = localStorage.getItem('local_glass_op_light') || '75';
+				const glassOpDark = localStorage.getItem('local_glass_op_dark') || '75';
 				const isDarkMode = document.body.classList.contains('dark');
 				const currentGlassOp = isDarkMode ? glassOpDark : glassOpLight;
 
@@ -21143,15 +21165,23 @@ document.addEventListener('DOMContentLoaded', () => {
 				const brVal = document.getElementById('wallpaper-brightness-value');
 				const glInput = document.getElementById('input-glass-opacity');
 				const glVal = document.getElementById('glass-opacity-value');
+				
+				const editBtn = document.querySelector('button[onclick="editCurrentWallpaper()"]');
+				if (editBtn) {
+					if (wallpaperData) {
+						editBtn.classList.remove('hidden');
+					} else {
+						editBtn.classList.add('hidden');
+					}
+				}
 
-				// เซ็ตตัวแปร CSS ให้แอปทันที
-				document.documentElement.style.setProperty('--glass-op-light', (glassOpLight / 100));
-				document.documentElement.style.setProperty('--glass-op-dark', (glassOpDark / 100));
+				// สั่งคำนวณและพ่นสี กระจก+เบลอ+ขอบ
+				window.applyGlassVariables(glassOpLight, false);
+				window.applyGlassVariables(glassOpDark, true);
 
 				if (glInput) glInput.value = currentGlassOp;
 				if (glVal) glVal.textContent = currentGlassOp + '%';
 
-				// 1. จัดการเรื่อง "รูปภาพ"
 				if (wallpaperData) {
 					wallDiv.style.display = 'block';
 					wallDiv.style.backgroundImage = `url(${wallpaperData})`;
@@ -21168,13 +21198,11 @@ document.addEventListener('DOMContentLoaded', () => {
 					if(removeBtn) removeBtn.classList.add('hidden');
 				}
 
-				// 2. จัดการเรื่อง "โหมดกระจก"
 				if (wallpaperData || isGlassMode) {
 					document.body.classList.add('use-glass');
 					if(settingsContainer) settingsContainer.classList.remove('hidden');
 					if(glassBox) glassBox.classList.remove('hidden');
 					
-					// ถ้ามีรูป โชว์แถบความสว่างด้วย
 					if (wallpaperData) {
 						if(brightBox) brightBox.classList.remove('hidden');
 					} else {
@@ -21186,12 +21214,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			};
 
-			if (document.readyState === 'loading') {
-				document.addEventListener('DOMContentLoaded', window.applyWallpaper);
-			} else {
-				window.applyWallpaper();
-			}
-
 			window.toggleGlassMode = function(isChecked) {
 				localStorage.setItem('setting_glass_mode', isChecked);
 				window.applyWallpaper(); 
@@ -21200,103 +21222,220 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			};
 
+			// ==========================================
+			// ระบบอัปโหลด + ซูม/เลื่อน รูปภาพ (Cropper.js) แบบจำตำแหน่งได้ 100%
+			// ==========================================
+			let cropperInstance = null;
+			window.tempOriginalWallpaper = null; 
+
 			window.handleWallpaper = function(event) {
 				const file = event.target.files[0];
 				if (!file) return;
-				
-				// เคลียร์ค่า input เพื่อให้สามารถเลือกไฟล์เดิมซ้ำได้หากต้องการแก้ไข
+
 				event.target.value = '';
 
-				// 1. แจ้งเตือนกำลังประมวลผล (ใช้ SweetAlert2 ให้เข้าธีมกระจก)
-				Swal.fire({
-					title: 'กำลังประมวลผล...',
-					text: 'กรุณารอสักครู่',
-					allowOutsideClick: false,
-					showConfirmButton: false,
-					didOpen: () => {
-						Swal.showLoading();
-					}
-				});
+				if (typeof Swal !== 'undefined') {
+					Swal.fire({
+						title: 'กำลังเตรียมรูปภาพ...',
+						allowOutsideClick: false,
+						showConfirmButton: false,
+						didOpen: () => Swal.showLoading()
+					});
+				}
 
 				const reader = new FileReader();
 				reader.onload = function(e) {
-					const img = new Image();
-					img.onload = function() {
-						try {
-							const canvas = document.createElement('canvas');
-							let width = img.width;
-							let height = img.height;
-							
-							// 2. ปรับขนาดรูปให้ไม่เกิน 1080px (เพื่อให้คมชัดบนจอมือถือ แต่ไฟล์ไม่หนัก)
-							const MAX_SIZE = 1080; 
+					const cropModal = document.getElementById('crop-modal');
+					const cropImage = document.getElementById('crop-image');
+					
+					window.tempOriginalWallpaper = e.target.result;
+					
+					// 🌟 เคลียร์พิกัดเก่าทิ้ง เพราะนี่คือการอัปโหลดรูป "ใหม่"
+					localStorage.removeItem('local_wallpaper_canvas_data');
+					localStorage.removeItem('local_wallpaper_cropbox_data');
+					
+					cropImage.src = e.target.result;
+					cropImage.style.opacity = '0'; 
+					cropModal.classList.remove('hidden');
+					cropModal.classList.add('flex');
 
-							if (width > MAX_SIZE || height > MAX_SIZE) {
-								if (width > height) {
-									height = Math.round((height * MAX_SIZE) / width);
-									width = MAX_SIZE;
-								} else {
-									width = Math.round((width * MAX_SIZE) / height);
-									height = MAX_SIZE;
-								}
-							}
-							
-							canvas.width = width;
-							canvas.height = height;
-							const ctx = canvas.getContext('2d');
-							ctx.drawImage(img, 0, 0, width, height);
-							
-							// บีบอัดเป็น JPEG คุณภาพ 70% (สมดุลระหว่างความชัดและขนาดไฟล์)
-							const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-							
-							// 3. บันทึกลง LocalStorage (ใช้ Key เดิมของคุณ)
-							localStorage.setItem('local_wallpaper_data', dataUrl);
-							
-							// บังคับเปิดสวิตช์โหมดกระจกอัตโนมัติเมื่อมีรูป
-							localStorage.setItem('setting_glass_mode', 'true');
-							if (!localStorage.getItem('local_wallpaper_brightness')) {
-								localStorage.setItem('local_wallpaper_brightness', '100');
-							}
-							
-							// อัปเดตพื้นหลังทันที
-							if (typeof window.applyWallpaper === 'function') {
-								window.applyWallpaper();
-							}
-							
-							// แจ้งเตือนสำเร็จ
-							Swal.fire({
-								icon: 'success',
-								title: 'สำเร็จ!',
-								text: 'ตั้งค่าภาพพื้นหลังเรียบร้อยแล้ว',
-								timer: 1500,
-								showConfirmButton: false
-							});
-							
-						} catch (err) {
-							console.error(err);
-							Swal.fire({
-								icon: 'error',
-								title: 'เกิดข้อผิดพลาด',
-								text: 'พื้นที่ความจำเต็ม หรือรูปภาพมีขนาดใหญ่เกินไปครับ'
-							});
-						}
-					};
-					img.onerror = function() { 
-						Swal.fire({
-							icon: 'error',
-							title: 'ข้อผิดพลาด',
-							text: 'ไม่สามารถอ่านไฟล์รูปภาพนี้ได้'
+					if (typeof Swal !== 'undefined') Swal.close();
+
+					if (cropperInstance) {
+						cropperInstance.destroy();
+					}
+
+					const screenRatio = window.innerWidth / window.innerHeight;
+
+					cropImage.onload = function() {
+						cropImage.style.opacity = '1';
+						
+						cropperInstance = new Cropper(cropImage, {
+							aspectRatio: screenRatio, 
+							viewMode: 3, 
+							dragMode: 'move', 
+							autoCropArea: 1, 
+							restore: false,
+							guides: true, 
+							center: true,
+							highlight: false,
+							cropBoxMovable: false, 
+							cropBoxResizable: false, 
+							toggleDragModeOnDblclick: false,
 						});
 					};
-					img.src = e.target.result;
 				};
 				reader.onerror = function() { 
-					Swal.fire({
-						icon: 'error',
-						title: 'ข้อผิดพลาด',
-						text: 'โทรศัพท์ไม่อนุญาตให้อ่านไฟล์'
-					});
+					if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'โทรศัพท์ไม่อนุญาตให้อ่านไฟล์' });
 				};
 				reader.readAsDataURL(file);
+			};
+
+			// ฟังก์ชันยกเลิกการ Crop
+			window.cancelCrop = function() {
+				const cropModal = document.getElementById('crop-modal');
+				cropModal.classList.add('hidden');
+				cropModal.classList.remove('flex');
+				
+				if (cropperInstance) {
+					cropperInstance.destroy();
+					cropperInstance = null;
+				}
+				const cropImage = document.getElementById('crop-image');
+				if(cropImage) cropImage.src = '';
+			};
+
+			// ฟังก์ชันยืนยันการ Crop และบันทึก
+			window.confirmCrop = function() {
+				if (!cropperInstance) return;
+
+				if (typeof Swal !== 'undefined') {
+					Swal.fire({
+						title: 'กำลังประมวลผล...',
+						allowOutsideClick: false,
+						showConfirmButton: false,
+						didOpen: () => Swal.showLoading()
+					});
+				}
+
+				// 🌟 ดึงข้อมูลพิกัดการซูมและเลื่อน (Canvas & CropBox)
+				const canvasData = cropperInstance.getCanvasData();
+				const cropBoxData = cropperInstance.getCropBoxData();
+				
+				// 🌟 บันทึกพิกัดไว้ใน LocalStorage เพื่อเอาไว้ใช้ตอนกด "แก้ไข"
+				localStorage.setItem('local_wallpaper_canvas_data', JSON.stringify(canvasData));
+				localStorage.setItem('local_wallpaper_cropbox_data', JSON.stringify(cropBoxData));
+
+				const canvas = cropperInstance.getCroppedCanvas({
+					maxWidth: 1080,
+					maxHeight: 1920,
+					imageSmoothingEnabled: true,
+					imageSmoothingQuality: 'high'
+				});
+
+				const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+				localStorage.setItem('local_wallpaper_data', dataUrl);
+				if (window.tempOriginalWallpaper) {
+					localStorage.setItem('local_wallpaper_original_data', window.tempOriginalWallpaper);
+				}
+				localStorage.setItem('setting_glass_mode', 'true');
+				
+				if (!localStorage.getItem('local_wallpaper_brightness')) {
+					localStorage.setItem('local_wallpaper_brightness', '100');
+				}
+				if (!localStorage.getItem('local_glass_op_light')) {
+					localStorage.setItem('local_glass_op_light', '75');
+				}
+				if (!localStorage.getItem('local_glass_op_dark')) {
+					localStorage.setItem('local_glass_op_dark', '75');
+				}
+
+				window.cancelCrop();
+				window.applyWallpaper();
+
+				if (typeof Swal !== 'undefined') {
+					Swal.fire({
+						icon: 'success',
+						title: 'สำเร็จ!',
+						text: 'ตั้งค่าภาพพื้นหลังเรียบร้อยแล้ว',
+						timer: 1500,
+						showConfirmButton: false
+					});
+				}
+			};
+
+			// ==========================================
+			// ฟังก์ชันดึงรูป Wallpaper เดิมมาจัดตำแหน่ง/ซูมใหม่
+			// ==========================================
+			window.editCurrentWallpaper = function() {
+				const originalImage = localStorage.getItem('local_wallpaper_original_data');
+				const savedImage = localStorage.getItem('local_wallpaper_data');
+				const imageToEdit = originalImage || savedImage;
+				
+				if (!imageToEdit) {
+					if (typeof Swal !== 'undefined') {
+						Swal.fire({
+							icon: 'warning', 
+							title: 'ไม่มีรูปภาพ', 
+							text: 'คุณยังไม่ได้ตั้งภาพพื้นหลังครับ', 
+							timer: 2000, 
+							showConfirmButton: false
+						});
+					}
+					return;
+				}
+
+				window.tempOriginalWallpaper = imageToEdit;
+
+				if (typeof Swal !== 'undefined') {
+					Swal.fire({ title: 'กำลังโหลดรูปภาพ...', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+				}
+
+				const cropModal = document.getElementById('crop-modal');
+				const cropImage = document.getElementById('crop-image');
+				
+				cropImage.src = imageToEdit;
+				cropImage.style.opacity = '0'; 
+				cropModal.classList.remove('hidden');
+				cropModal.classList.add('flex');
+
+				if (typeof Swal !== 'undefined') Swal.close();
+
+				if (cropperInstance) {
+					cropperInstance.destroy();
+				}
+
+				const screenRatio = window.innerWidth / window.innerHeight;
+
+				cropImage.onload = function() {
+					cropImage.style.opacity = '1';
+					
+					cropperInstance = new Cropper(cropImage, {
+						aspectRatio: screenRatio,
+						viewMode: 3,
+						dragMode: 'move',
+						autoCropArea: 1,
+						restore: false,
+						guides: true,
+						center: true,
+						highlight: false,
+						cropBoxMovable: false, 
+						cropBoxResizable: false, 
+						toggleDragModeOnDblclick: false,
+						// 🌟 ทันทีที่ Cropper โหลดเสร็จ ให้เรียกพิกัดเดิมมาใส่
+						ready: function () {
+							const savedCanvasData = localStorage.getItem('local_wallpaper_canvas_data');
+							const savedCropBoxData = localStorage.getItem('local_wallpaper_cropbox_data');
+							
+							if (savedCanvasData && savedCropBoxData) {
+								// ต้องเซ็ต CropBox ก่อน Canvas เสมอตามหลักของ Cropper.js
+								this.cropper.setCropBoxData(JSON.parse(savedCropBoxData));
+								this.cropper.setCanvasData(JSON.parse(savedCanvasData));
+							}
+						}
+					});
+				};
 			};
 
 			window.removeWallpaper = function() {
@@ -21321,7 +21460,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (confirm('คุณต้องการยกเลิกภาพพื้นหลังใช่หรือไม่?')) {
 						localStorage.removeItem('local_wallpaper_data');
 						window.applyWallpaper();
-						if(typeof showToast === 'function') showToast('ลบภาพพื้นหลังเรียบร้อย', 'success');
 					}
 				}
 			};
@@ -21330,13 +21468,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				const glVal = document.getElementById('glass-opacity-value');
 				if(glVal) glVal.textContent = val + '%';
 				
-				// ปรับแยกกันระหว่างโหมดมืดและสว่าง
 				const isDarkMode = document.body.classList.contains('dark');
-				if (isDarkMode) {
-					document.documentElement.style.setProperty('--glass-op-dark', val / 100);
-				} else {
-					document.documentElement.style.setProperty('--glass-op-light', val / 100);
-				}
+				window.applyGlassVariables(val, isDarkMode); // เรียกใช้ฟังก์ชันเบลอ/ใส
 			};
 
 			window.saveGlassOpacity = function(val) {
@@ -21354,128 +21487,83 @@ document.addEventListener('DOMContentLoaded', () => {
 				const wallDiv = document.getElementById('app-wallpaper');
 				if(wallDiv) wallDiv.style.filter = `brightness(${val}%)`;
 			};
+
 			window.saveWallpaperBrightness = function(val) {
 				localStorage.setItem('local_wallpaper_brightness', val);
 			};
 
-			// สั่งโหลดภาพพื้นหลังทันทีเมื่อเปิดแอป
 			if (document.readyState === 'loading') {
 				document.addEventListener('DOMContentLoaded', window.applyWallpaper);
 			} else {
 				window.applyWallpaper();
 			}
+			
+			// ==========================================
+			// ระบบ แก้ไข / บันทึก แถบเลื่อนปรับกระจก
+			// ==========================================
+			window.toggleEditSliders = function() {
+				const glassSlider = document.getElementById('input-glass-opacity');
+				const brightSlider = document.getElementById('input-wallpaper-brightness');
+				const icon = document.getElementById('icon-edit-sliders');
+				const text = document.getElementById('text-edit-sliders');
+				const btn = document.getElementById('btn-edit-sliders');
 
-			// ------------------------------------
-			// ระบบจัดการรูป (อัปโหลด/บีบอัด) เหมือนเดิม
-			// ------------------------------------
-			window.handleWallpaper = function(event) {
-				const file = event.target.files[0];
-				if (!file) return;
+				if (!glassSlider || !brightSlider) return;
 
-				event.target.value = '';
-
-				if(typeof showToast === 'function') {
-					showToast('กำลังประมวลผลรูปภาพ กรุณารอสักครู่...', 'info');
-				}
-
-				const reader = new FileReader();
-				reader.onload = function(e) {
-					const img = new Image();
-					img.onload = function() {
-						try {
-							const canvas = document.createElement('canvas');
-							let width = img.width;
-							let height = img.height;
-							const MAX_WIDTH = 720; 
-
-							if (width > MAX_WIDTH) {
-								height = Math.round((height * MAX_WIDTH) / width);
-								width = MAX_WIDTH;
-							}
-							
-							canvas.width = width;
-							canvas.height = height;
-							const ctx = canvas.getContext('2d');
-							ctx.drawImage(img, 0, 0, width, height);
-							
-							const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-							
-							localStorage.setItem('local_wallpaper_data', dataUrl);
-							if (!localStorage.getItem('local_wallpaper_opacity')) localStorage.setItem('local_wallpaper_opacity', '50');
-							if (!localStorage.getItem('local_wallpaper_brightness')) localStorage.setItem('local_wallpaper_brightness', '100');
-							
-							window.applyWallpaper();
-							if(typeof showToast === 'function') showToast('ตั้งค่าภาพพื้นหลังสำเร็จ!', 'success');
-							
-						} catch (err) {
-							console.error(err);
-							alert('เกิดข้อผิดพลาด: พื้นที่ความจำของเบราว์เซอร์เต็ม หรือรูปภาพใหญ่เกินไปครับ');
-						}
-					};
-					img.onerror = function() { alert('ข้อผิดพลาด: ไม่สามารถอ่านไฟล์รูปภาพนี้ได้'); };
-					img.src = e.target.result;
-				};
-				reader.onerror = function() { alert('ข้อผิดพลาด: โทรศัพท์ไม่อนุญาตให้อ่านไฟล์'); };
-				reader.readAsDataURL(file);
-			};
-
-			// ------------------------------------
-			// ระบบลบรูป (เพิ่มแจ้งเตือนยืนยัน)
-			// ------------------------------------
-			window.removeWallpaper = function() {
-				// ใช้ SweetAlert (ถ้าแอปมี) หรือใช้ confirm ปกติ
-				if (typeof Swal !== 'undefined') {
-					Swal.fire({
-						title: 'ยกเลิกภาพพื้นหลัง?',
-						text: "คุณต้องการลบภาพพื้นหลังนี้ออกใช่หรือไม่?",
-						icon: 'warning',
-						showCancelButton: true,
-						confirmButtonColor: '#ef4444', // สีแดง
-						cancelButtonColor: '#6b7280',  // สีเทา
-						confirmButtonText: 'ใช่, ลบเลย!',
-						cancelButtonText: 'ยกเลิก'
-					}).then((result) => {
-						if (result.isConfirmed) {
-							executeRemoveWallpaper();
-						}
-					});
+				if (glassSlider.disabled) {
+					// สถานะ: เข้าสู่โหมด "แก้ไข"
+					glassSlider.disabled = false;
+					brightSlider.disabled = false;
+					glassSlider.classList.remove('cursor-not-allowed', 'opacity-40');
+					brightSlider.classList.remove('cursor-not-allowed', 'opacity-40');
+					
+					// เปลี่ยนปุ่มเป็นสีเด่นๆ (สีหลักของแอป) และเปลี่ยนคำเป็น "บันทึก"
+					icon.classList.remove('fa-pen');
+					icon.classList.add('fa-save');
+					text.textContent = 'บันทึกการตั้งค่า';
+					
+					// ถอดสีเทาออก เติมสี Primary ให้ปุ่ม
+					btn.classList.remove('bg-gray-200', 'dark:bg-gray-600', 'text-gray-700', 'dark:text-gray-200');
+					btn.classList.add('bg-primary-600', 'text-white', 'hover:bg-primary-700');
+					
 				} else {
-					if (confirm('คุณต้องการยกเลิกภาพพื้นหลังใช่หรือไม่?')) {
-						executeRemoveWallpaper();
+					// สถานะ: กดปุ่ม "บันทึก" เพื่อยืนยันและแช่แข็งแถบเลื่อน
+					glassSlider.disabled = true;
+					brightSlider.disabled = true;
+					glassSlider.classList.add('cursor-not-allowed', 'opacity-40');
+					brightSlider.classList.add('cursor-not-allowed', 'opacity-40');
+					
+					// เปลี่ยนปุ่มกลับเป็นสีเทา และเปลี่ยนคำเป็น "แก้ไข"
+					icon.classList.remove('fa-save');
+					icon.classList.add('fa-pen');
+					text.textContent = 'แก้ไข';
+					
+					// ถอดสี Primary ออก เติมสีเทาให้ปุ่ม
+					btn.classList.remove('bg-primary-600', 'text-white', 'hover:bg-primary-700');
+					btn.classList.add('bg-gray-200', 'dark:bg-gray-600', 'text-gray-700', 'dark:text-gray-200');
+					
+					// แจ้งเตือนว่าบันทึกสำเร็จ
+					if (typeof showToast === 'function') {
+						showToast('บันทึกการตั้งค่าเรียบร้อย', 'success');
+					} else if (typeof Swal !== 'undefined') {
+						Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', showConfirmButton: false, timer: 1500 });
 					}
 				}
 			};
 
-			function executeRemoveWallpaper() {
-				localStorage.removeItem('local_wallpaper_data');
-				window.applyWallpaper();
-				if(typeof showToast === 'function') showToast('ลบภาพพื้นหลังเรียบร้อย', 'success');
-			}
-
-			// ------------------------------------
-			// ระบบแถบควบคุม (ความโปร่งใส)
-			// ------------------------------------
-			window.previewWallpaperOpacity = function(val) {
-				const opVal = document.getElementById('wallpaper-opacity-value');
-				if(opVal) opVal.textContent = val + '%';
-				const wallDiv = document.getElementById('app-wallpaper');
-				if(wallDiv) wallDiv.style.opacity = val / 100;
-			};
-			window.saveWallpaperOpacity = function(val) {
-				localStorage.setItem('local_wallpaper_opacity', val);
-			};
-
-			// ------------------------------------
-			// ระบบแถบควบคุมใหม่ (ความสว่าง/ความเข้ม)
-			// ------------------------------------
-			window.previewWallpaperBrightness = function(val) {
-				const brVal = document.getElementById('wallpaper-brightness-value');
-				if(brVal) brVal.textContent = val + '%';
-				const wallDiv = document.getElementById('app-wallpaper');
-				if(wallDiv) wallDiv.style.filter = `brightness(${val}%)`;
-			};
-			window.saveWallpaperBrightness = function(val) {
-				localStorage.setItem('local_wallpaper_brightness', val);
+			// ==========================================
+			// แก้ปุ่มกดย่อ/ขยายกราฟ หน้ารายการ
+			// ==========================================
+			window.toggleListCharts = function() {
+				let currentState = window.getInitialChartState ? window.getInitialChartState('list') : true;
+				currentState = !currentState;
+				
+				if (typeof window.applyListChartState === 'function') {
+					window.applyListChartState(currentState);
+				}
+				if (window.saveChartState) {
+					window.saveChartState('list', currentState);
+				}
 			};
 			
 			// ============================================

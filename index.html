@@ -33,7 +33,7 @@
         }
     </script>
 
-    <script src="./libs/sweetalert2.js"></script>
+	<script src="./libs/sweetalert2.js"></script>
     <script src="./libs/chart.js"></script>
     <script src="./libs/chartjs-plugin-datalabels.js"></script>
     <script src="./libs/crypto-js.min.js"></script>
@@ -41,11 +41,13 @@
     <script src="./libs/panzoom.min.js"></script>
     <script src="./libs/xlsx.full.min.js"></script>
     <script src="./libs/tesseract.min.js"></script>
-	<script src="./libs/ical.min.js"></script>
+    <script src="./libs/ical.min.js"></script>
     
+    <link rel="stylesheet" href="./libs/cropper.min.css" />
+    <script src="./libs/cropper.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-auth-compat.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore-compat.js"></script>
     
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
@@ -262,37 +264,37 @@
                     </div>
                     
                     <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm lg:order-2 flex flex-col h-full" id="home-charts-section">
-                        <div class="flex justify-between items-center mb-3 flex-shrink-0">
-                            <h2 class="text-base md:text-lg font-bold text-primary-600">สรุปภาพรวม</h2>
-                            <button id="toggle-charts-btn" onclick="toggleHomeCharts()" class="text-xs text-primary-600 hover:text-primary-800 font-bold bg-white dark:bg-gray-800 border border-primary-200 dark:border-primary-800 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
-                                ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
-                            </button>
-                        </div>
-                        
-                        <div id="home-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full flex-grow items-stretch transition-all duration-300">
-                            
-                            <div class="chart-card bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-all duration-300 w-full h-full">
-                                <h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
-                                    <i class="fa-solid fa-scale-balanced text-blue-500"></i> <span class="chart-title-text">สัดส่วนรายรับ / รายจ่าย</span>
-                                </h3>
-                                <div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
-                                    <canvas id="transaction-chart"></canvas>
-                                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-[10px] md:text-xs">ไม่มีข้อมูล</p>
-                                </div>
-                            </div>
+						<div class="flex justify-between items-center mb-3 flex-shrink-0">
+							<h2 class="text-base md:text-lg font-bold text-primary-600">สรุปภาพรวม</h2>
+							<button id="toggle-charts-btn" onclick="toggleHomeCharts()" class="text-xs text-primary-600 hover:text-primary-800 font-bold bg-white dark:bg-gray-800 border border-primary-200 dark:border-primary-800 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
+								ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
+							</button>
+						</div>
+						
+						<div id="home-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full flex-grow items-stretch transition-all duration-300">
+							
+							<div class="chart-card bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-all duration-300 w-full h-full">
+								<h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
+									<i class="fa-solid fa-scale-balanced text-blue-500"></i> <span class="chart-title-text">สัดส่วนรายรับ / รายจ่าย</span>
+								</h3>
+								<div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
+									<canvas id="transaction-chart"></canvas>
+									<p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-[10px] md:text-xs">ไม่มีข้อมูล</p>
+								</div>
+							</div>
 
-                            <div class="chart-card bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-all duration-300 w-full h-full">
-                                <h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
-                                    <i class="fa-solid fa-ranking-star text-orange-500"></i> <span class="chart-title-text">สรุปรายจ่าย (Top 10)</span>
-                                </h3>
-                                <div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
-                                    <canvas id="expense-category-chart"></canvas>
-                                    <p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-[10px] md:text-xs">ไม่มีข้อมูล</p>
-                                </div>
-                            </div>
-                            
-                        </div>
-                    </div>
+							<div class="chart-card bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-all duration-300 w-full h-full">
+								<h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
+									<i class="fa-solid fa-ranking-star text-orange-500"></i> <span class="chart-title-text">สรุปรายจ่าย (Top 10)</span>
+								</h3>
+								<div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
+									<canvas id="expense-category-chart"></canvas>
+									<p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-[10px] md:text-xs">ไม่มีข้อมูล</p>
+								</div>
+							</div>
+							
+						</div>
+					</div>
 
                    <script>
 						let isChartsExpanded = window.getInitialChartState ? window.getInitialChartState('home') : true;
@@ -457,23 +459,23 @@
 						</div>
 					</div>
 
-						<div class="theme-border-target bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 rounded-lg p-3 md:p-5 mt-4 transition-colors duration-200 w-full shadow-sm">
-							
+						<div class="theme-border-target bg-white dark:bg-gray-800 rounded-xl p-3 md:p-5 mt-4 transition-colors duration-200 w-full shadow-sm">
+    
 							<div class="flex justify-between items-center text-xs md:text-sm text-gray-500 mb-3">
 								<span><i class="fa-solid fa-chart-simple mr-1"></i>สรุปยอด (ตามรายการที่ค้นหา)</span>
-								<span id="dyn-count-display" class="theme-border-target bg-transparent border border-white/30 dark:border-gray-600/30 px-3 py-1 rounded-full shadow-sm font-medium text-gray-700 dark:text-gray-200">0 รายการ</span>
+								<span id="dyn-count-display" class="theme-border-target bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full shadow-sm font-medium text-gray-700 dark:text-gray-200">0 รายการ</span>
 							</div>
 
 							<div id="analytics-section" class="mt-4 mb-6 hidden w-full">
 								<div class="flex justify-between items-center mb-3">
 									<h3 class="text-sm md:text-base font-bold text-primary-600 dark:text-primary-400"><i class="fa-solid fa-chart-line mr-1"></i> กราฟวิเคราะห์</h3>
-									<button id="toggle-list-charts-btn" onclick="toggleListCharts()" class="theme-border-target text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 font-bold bg-transparent border border-white/30 dark:border-gray-600/30 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
+									<button id="toggle-list-charts-btn" onclick="toggleListCharts()" class="theme-border-target text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 font-bold bg-gray-100 dark:bg-gray-700 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
 										ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
 									</button>
 								</div>
 
 								<div id="list-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full h-full transition-all duration-300">
-									<div class="list-chart-card bg-transparent border border-white/20 dark:border-gray-700/30 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full hover:bg-white/5 dark:hover:bg-gray-800/10">
+									<div class="list-chart-card bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full">
 										<h3 class="list-chart-title text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-1.5 flex-shrink-0 justify-center">
 											<i class="fa-solid fa-chart-pie text-primary-500"></i> <span class="list-chart-title-text">สัดส่วนหมวดหมู่</span>
 										</h3>
@@ -482,7 +484,7 @@
 										</div>
 									</div>
 
-									<div class="list-chart-card bg-transparent border border-white/20 dark:border-gray-700/30 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full hover:bg-white/5 dark:hover:bg-gray-800/10">
+									<div class="list-chart-card bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[350px] lg:min-h-[420px] flex flex-col transition-all duration-300 w-full">
 										<h3 class="list-chart-title text-sm md:text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-1.5 flex-shrink-0 justify-center">
 											<i class="fa-solid fa-chart-column text-blue-500"></i> <span class="list-chart-title-text">แนวโน้มช่วงเวลา</span>
 										</h3>
@@ -493,7 +495,7 @@
 								</div>
 							</div>
 
-							<div class="grid grid-cols-3 gap-2 text-center divide-x divide-gray-300/30 dark:divide-gray-500/30 w-full bg-transparent border border-white/20 dark:border-gray-700/30 p-3 rounded-xl theme-border-target hover:bg-white/5 dark:hover:bg-gray-800/10 transition-colors">
+							<div class="grid grid-cols-3 gap-2 text-center divide-x divide-gray-200 dark:divide-gray-700 w-full bg-gray-50 dark:bg-gray-900 p-3 rounded-xl theme-border-target transition-colors">
 								<div>
 									<div class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-1">รวมรายรับ</div>
 									<div id="dyn-sum-income" class="text-sm md:text-lg font-bold text-green-600 dark:text-green-400">0</div>
@@ -1051,26 +1053,43 @@
 											<i class="fa-solid fa-upload"></i> เลือกรูปภาพ
 										</button>
 										
+										<button onclick="editCurrentWallpaper()" class="bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400 px-3 py-2 md:px-4 rounded-xl font-medium shadow-sm transition-colors flex items-center justify-center gap-2" title="จัดตำแหน่ง/ซูมภาพเดิมใหม่">
+											<i class="fa-solid fa-crop-simple"></i> <span class="hidden sm:inline">แก้ไข</span>
+										</button>
+										
 										<button type="button" id="btn-remove-wallpaper" onclick="window.removeWallpaper()" class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 py-2 px-3 rounded-lg text-sm shadow-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition hidden">
 											<i class="fa-solid fa-trash"></i>
 										</button>
 									</div>
 
-									<div id="wallpaper-settings-container" class="flex flex-col gap-3 mt-4 hidden">
-										<div id="setting-brightness-box" class="flex flex-col gap-1 hidden">
-											<div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-												<span>ความสว่างของภาพพื้นหลัง</span>
-												<span id="wallpaper-brightness-value">100%</span>
-											</div>
-											<input type="range" id="input-wallpaper-brightness" min="10" max="100" value="100" oninput="window.previewWallpaperBrightness(this.value)" onchange="window.saveWallpaperBrightness(this.value)" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary-500">
+									<div id="wallpaper-settings-container" class="hidden mt-4 space-y-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-700">
+										<div class="flex justify-between items-center mb-2 border-b border-gray-200 dark:border-gray-600 pb-3">
+											<span class="font-bold text-gray-700 dark:text-gray-300 text-sm md:text-base">
+												<i class="fa-solid fa-sliders text-primary-500 mr-2"></i>ปรับแต่งกระจกและภาพ
+											</span>
+											<button id="btn-edit-sliders" onclick="toggleEditSliders()" class="text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5 shadow-sm">
+												<i class="fa-solid fa-pen" id="icon-edit-sliders"></i> <span id="text-edit-sliders">แก้ไข</span>
+											</button>
 										</div>
-
-										<div id="setting-glass-box" class="flex flex-col gap-1 hidden">
-											<div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-												<span>ความทึบของการ์ดกระจก (Glass Opacity)</span>
-												<span id="glass-opacity-value">25%</span>
+										
+										<div id="setting-glass-box" class="hidden pt-1">
+											<div class="flex justify-between text-xs md:text-sm text-gray-600 dark:text-gray-300 mb-2">
+												<span>ระดับความโปร่งใส (Glass Transparency)</span>
+												<span id="glass-opacity-value" class="font-bold text-primary-600 dark:text-primary-400">75%</span>
 											</div>
-											<input type="range" id="input-glass-opacity" min="0" max="95" value="25" oninput="window.previewGlassOpacity(this.value)" onchange="window.saveGlassOpacity(this.value)" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary-500">
+											<input type="range" id="input-glass-opacity" min="0" max="100" value="75" disabled
+												class="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-not-allowed opacity-40 transition-all" 
+												oninput="previewGlassOpacity(this.value)" onchange="saveGlassOpacity(this.value)">
+										</div>
+										
+										<div id="setting-brightness-box" class="hidden pt-2">
+											<div class="flex justify-between text-xs md:text-sm text-gray-600 dark:text-gray-300 mb-2">
+												<span>ความสว่างภาพพื้นหลัง (Brightness)</span>
+												<span id="wallpaper-brightness-value" class="font-bold text-primary-600 dark:text-primary-400">100%</span>
+											</div>
+											<input type="range" id="input-wallpaper-brightness" min="10" max="100" value="100" disabled
+												class="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-not-allowed opacity-40 transition-all" 
+												oninput="previewWallpaperBrightness(this.value)" onchange="saveWallpaperBrightness(this.value)">
 										</div>
 									</div>
 									<p class="text-[11px] text-gray-500 mt-2">* รูปภาพบันทึกในเครื่องและไฟล์ Backup เท่านั้น</p>
@@ -2516,7 +2535,24 @@
             </div>
         </div>
     </div>
-	<div id="screen-dimmer" class="hidden fixed inset-0 bg-black z-[99999] cursor-pointer"></div>
+	
+	<div id="crop-modal" class="fixed inset-0 z-[9999] hidden bg-black flex-col">
+		<div class="flex-1 relative w-full h-full overflow-hidden flex items-center justify-center">
+			<img id="crop-image" src="" class="max-w-full block opacity-0 transition-opacity duration-300">
+		</div>
+		
+		<div class="h-24 bg-gray-900 border-t border-gray-800 flex justify-between items-center px-4 md:px-8 pb-4">
+			<button onclick="cancelCrop()" class="text-white bg-gray-700 hover:bg-gray-600 px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-lg">
+				<i class="fa-solid fa-xmark mr-1"></i> ยกเลิก
+			</button>
+			<div class="text-gray-400 text-xs text-center hidden sm:block">
+				<i class="fa-solid fa-hand-pointer mb-1 text-lg"></i><br>ใช้นิ้วเลื่อนและซูม
+			</div>
+			<button onclick="confirmCrop()" class="text-white bg-primary-600 hover:bg-primary-700 px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-lg flex items-center gap-2">
+				<i class="fa-solid fa-check"></i> ตั้งเป็นพื้นหลัง
+			</button>
+		</div>
+	</div>
 
 	<script>
 				if ('serviceWorker' in navigator) {

@@ -804,183 +804,390 @@ body.dark #unlock-password:focus {
 }
 
 /* =========================================
-   ระบบภาพพื้นหลังและเอฟเฟกต์กระจก (Glass Mode V.10 - ใสทะลุขีดสุด)
+   ✨ ระบบภาพพื้นหลังและกระจก (Glass Mode - ฉบับสมบูรณ์) ✨
    ========================================= */
+
+/* 1. ตัวแปรสำหรับกระจก (รับค่าจาก JavaScript) */
 :root {
-    --glass-op-light: 0.15;
-    --glass-op-dark: 0.40;
+    --glass-op-light: 0.15; --glass-blur-light: 8px; --glass-border-light: 0.25; --glass-input-light: 0.6;
+    --glass-op-dark: 0.40; --glass-blur-dark: 10px; --glass-border-dark: 0.1; --glass-input-dark: 0.4;
 }
 
+/* 2. จัดการรูปภาพพื้นหลังหลัก */
 #app-wallpaper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -999;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    pointer-events: none;
-    transition: opacity 0.3s ease, filter 0.3s ease;
-    background-color: #000; 
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -999;
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    pointer-events: none; transition: opacity 0.3s ease, filter 0.3s ease; background-color: #000; 
 }
+body.use-glass, body.use-glass .app-page { background-color: transparent !important; }
 
-body.use-glass,
-body.use-glass .app-page {
-    background-color: transparent !important;
-}
+/* พื้นหลังตอนเปิดกระจกแต่ไม่ได้ใส่รูป */
+body.use-glass:not(.has-wallpaper) { background: linear-gradient(135deg, rgb(var(--theme-50)) 0%, rgb(var(--theme-100)) 100%) !important; background-attachment: fixed !important; min-height: 100vh; }
+body.dark.use-glass:not(.has-wallpaper) { background: linear-gradient(135deg, #0f172a 0%, rgb(var(--theme-900)) 100%) !important; background-attachment: fixed !important; min-height: 100vh; }
 
-/* ========================================
-   0. พื้นหลังตอนเปิดกระจก (แต่ไม่มีรูป) 
-   ======================================== */
-body.use-glass:not(.has-wallpaper) {
-    background: linear-gradient(135deg, rgb(var(--theme-50)) 0%, rgb(var(--theme-100)) 100%) !important;
-    background-attachment: fixed !important;
-    min-height: 100vh;
-}
-body.dark.use-glass:not(.has-wallpaper) {
-    background: linear-gradient(135deg, #0f172a 0%, rgb(var(--theme-900)) 100%) !important;
-    background-attachment: fixed !important;
-    min-height: 100vh;
-}
-
-/* ========================================
-   1. โหมดสว่าง (Light Mode) 
-   ======================================== */
-body.use-glass .bg-white,
-body.use-glass .bg-gray-50,
-body.use-glass .bg-gray-100 {
+/* 3. กล่องการ์ดหลัก (Main Cards) ให้เป็นกระจกแค่ "ชั้นนอกสุดชั้นเดียว" */
+/* ใช้ :where() เพื่อไม่ให้ไปทำลายสีเส้นขอบ (Borders) ของหน้าตั้งค่า */
+body.use-glass :where(.bg-white, .bg-gray-50, .bg-gray-100) {
     background-color: rgba(255, 255, 255, var(--glass-op-light)) !important;
-    backdrop-filter: blur(8px) !important; /* ลดความขุ่นของกระจกให้เห็นภาพชัดขึ้น */
-    -webkit-backdrop-filter: blur(8px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(var(--glass-blur-light)) !important; 
+    -webkit-backdrop-filter: blur(var(--glass-blur-light)) !important;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
 }
-
-/* ========================================
-   1.1 โหมดมืด (Dark Mode)
-   ======================================== */
-body.dark.use-glass .bg-white,
-body.dark.use-glass .bg-gray-50,
-body.dark.use-glass .bg-gray-100,
-body.dark.use-glass .bg-gray-800,
-body.dark.use-glass .bg-gray-900 {
+body.dark.use-glass :where(.bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-800, .bg-gray-900) {
     background-color: rgba(15, 15, 15, var(--glass-op-dark)) !important;
-    backdrop-filter: blur(10px) !important; /* ลดความขุ่นโหมดมืดลง */
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(var(--glass-blur-dark)) !important; 
+    -webkit-backdrop-filter: blur(var(--glass-blur-dark)) !important;
     box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
 }
 
-/* ========================================
-   2. กล่องซ้อนด้านใน (โหมดสว่าง) - ดึงความใสให้เกือบ 100%
-   ======================================== */
-body.use-glass .bg-white .bg-white,
-body.use-glass .bg-white .bg-gray-50,
-body.use-glass .bg-white .bg-gray-100,
-body.use-glass .bg-gray-50 .bg-white,
-body.use-glass .bg-gray-50 .bg-gray-50 {
-    background-color: rgba(255, 255, 255, 0.02) !important; /* เหลือสีขาวแค่ 2% */
+/* 4. กล่องที่ซ้อนอยู่ด้านใน (Nested) ให้เป็น "อากาศธาตุ 100%" */
+/* แก้ปัญหากระจกซ้อนกันหลายชั้นจนหนาและทึบ */
+body.use-glass :where(.bg-white, .bg-gray-50, .bg-gray-800, .bg-gray-900) :where(.bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-800, .bg-gray-900):not(button):not(input):not(select):not(textarea):not(.swal2-popup) {
+    background-color: transparent !important; 
     backdrop-filter: none !important; 
     -webkit-backdrop-filter: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     box-shadow: none !important;
 }
 
-/* ========================================
-   2.1 กล่องซ้อนด้านใน (โหมดมืด) - ดึงความใสให้เกือบ 100%
-   ======================================== */
-body.dark.use-glass .bg-white .bg-white,
-body.dark.use-glass .bg-white .bg-gray-50,
-body.dark.use-glass .bg-gray-800 .bg-gray-800,
-body.dark.use-glass .bg-gray-800 .bg-gray-900,
-body.dark.use-glass .bg-gray-900 .bg-gray-800 {
-    background-color: rgba(0, 0, 0, 0.05) !important; /* เหลือสีดำแค่ 5% */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.02) !important;
-    box-shadow: none !important;
+/* เติมเส้นขอบกระจกบางๆ เฉพาะกล่องที่ไม่มีเส้นขอบสีอยู่แล้ว (รักษาขอบหน้าตั้งค่าไว้) */
+body.use-glass :where(.bg-white, .bg-gray-50, .bg-gray-100):not([class*="border-"]) {
+    border: 1px solid rgba(255, 255, 255, var(--glass-border-light)) !important;
+}
+body.dark.use-glass :where(.bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-800, .bg-gray-900):not([class*="border-"]) {
+    border: 1px solid rgba(255, 255, 255, var(--glass-border-dark)) !important;
 }
 
-/* ========================================
-   3. ช่อง Input และ Button
-   ======================================== */
-body.use-glass input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
-body.use-glass select,
-body.use-glass textarea {
-    background-color: rgba(255, 255, 255, 0.6) !important; /* โปร่งแสงมากขึ้น */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
+/* 5. ช่องกรอกข้อมูล / ปุ่มทั่วไป */
+body.use-glass input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(#unlock-password), body.use-glass select, body.use-glass textarea {
+    background-color: rgba(255, 255, 255, var(--glass-input-light)) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
 }
-body.dark.use-glass input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
-body.dark.use-glass select,
-body.dark.use-glass textarea {
-    background-color: rgba(0, 0, 0, 0.4) !important; /* โปร่งแสงมากขึ้น */
-    color: #ffffff !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+body.dark.use-glass input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(#unlock-password), body.dark.use-glass select, body.dark.use-glass textarea {
+    background-color: rgba(0, 0, 0, var(--glass-input-dark)) !important; color: #ffffff !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
 }
 
-/* ========================================
-   4. แถบเมนูด้านล่างสุด (Bottom Nav)
-   ======================================== */
+/* 6. หน้าล็อคจอ (รักษาสีให้สวยงาม ไม่ถูกกระจกกลืน) */
+body.use-glass #app-lock-screen > div {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+body.dark.use-glass #app-lock-screen > div { background-color: rgba(17, 24, 39, 0.5) !important; }
+
+/* 7. แถบเมนูด้านล่างสุด (Bottom Nav) */
 body.use-glass nav {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+    background-color: rgba(255, 255, 255, var(--glass-op-light)) !important;
+    backdrop-filter: blur(var(--glass-blur-light)) !important; -webkit-backdrop-filter: blur(var(--glass-blur-light)) !important;
 }
 body.dark.use-glass nav {
-    background-color: rgba(15, 15, 15, 0.4) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(15, 15, 15, var(--glass-op-dark)) !important;
+    backdrop-filter: blur(var(--glass-blur-dark)) !important; -webkit-backdrop-filter: blur(var(--glass-blur-dark)) !important;
 }
+
+/* 8. กราฟ (Charts) โปร่งใส 100% */
+body.use-glass canvas, body.use-glass div:has(> canvas), body.use-glass [id*="chart" i], body.use-glass [class*="chart" i] {
+    background: transparent !important; background-color: transparent !important; box-shadow: none !important;
+}
+
+/* 9. SweetAlert2 (Pop-up แจ้งเตือน) */
+body.use-glass div:where(.swal2-container) div:where(.swal2-popup) {
+    background-color: rgba(255, 255, 255, var(--glass-input-light)) !important;
+    backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important;
+}
+body.dark.use-glass div:where(.swal2-container) div:where(.swal2-popup) { background-color: rgba(0, 0, 0, 0.7) !important; }
+/* ลบพื้นหลังสีขาวของเครื่องหมายถูก */
+body.use-glass .swal2-icon.swal2-success .swal2-success-circular-line-left, body.use-glass .swal2-icon.swal2-success .swal2-success-circular-line-right, body.use-glass .swal2-icon.swal2-success .swal2-success-fix { background: transparent !important; }
+
+/* 10. แก้ภาพซ้อนตอนเปลี่ยนหน้า (เปลี่ยนจาก Slide เป็น Fade ลื่นๆ) */
+body.use-glass .page-transition-enter-active, body.use-glass .page-transition-exit-active { transition: opacity 0.15s ease-out !important; transform: none !important; }
+body.use-glass .page-transition-enter, body.use-glass .page-transition-exit-final { transform: none !important; opacity: 0; }
+
+/* 11. ดันสีตัวอักษรเมื่อมีรูปภาพ (ไม่ให้จมหายไปกับภาพ) */
+body.has-wallpaper:not(.dark) :where(.text-gray-400, .text-gray-500, .text-gray-600) { color: #1f2937 !important; text-shadow: 0px 1px 2px rgba(255,255,255,0.8); }
+body.dark.has-wallpaper :where(.text-gray-400, .text-gray-500, .text-gray-600) { color: #f9fafb !important; text-shadow: 0px 1px 3px rgba(0,0,0,0.8); }
+body.has-wallpaper input, body.has-wallpaper select, body.has-wallpaper textarea, body.has-wallpaper button { text-shadow: none !important; }
+
+/* 12. ล้างเอฟเฟกต์เบลอที่ค้างใน HTML เดิมเมื่อ ปิดสวิตช์กระจก */
+body:not(.use-glass) .backdrop-blur, body:not(.use-glass) [class*="backdrop-blur"] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+/* 13. แก้บั๊ก iOS (iPhone) กดตั้งค่าสี/เมนูไม่ได้ */
+[onclick], .cursor-pointer, [class*="theme-"], [id*="theme-"] { cursor: pointer !important; -webkit-tap-highlight-color: transparent !important; touch-action: manipulation !important; }
+input[type="color"] { -webkit-appearance: none !important; border: none !important; background: transparent !important; cursor: pointer !important; padding: 0 !important; width: 32px; height: 32px; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0 !important; }
+input[type="color"]::-webkit-color-swatch { border: none !important; border-radius: 50% !important; }
+
+/* =========================================
+   ✨ V.20 - ลีนสุดๆ (ถอดกล่องครอบนอกสุดทิ้ง) ✨
+   ทำให้ทุกหน้าใสทะลุ 100% (AIR) / เหลือแค่กล่องเนื้อหาที่ใส
+   ========================================= */
+
+/* 1. ตัวแปรสำหรับกระจก (รับค่าจาก JavaScript) */
+:root {
+    --glass-op-light: 0.15; --glass-blur-light: 8px; --glass-border-light: 0.25; --glass-input-light: 0.6;
+    --glass-op-dark: 0.40; --glass-blur-dark: 10px; --glass-border-dark: 0.1; --glass-input-dark: 0.4;
+}
+
+/* 2. จัดการรูปภาพพื้นหลังหลัก */
+#app-wallpaper {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -999;
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    pointer-events: none; transition: opacity 0.3s ease, filter 0.3s ease; background-color: #000; 
+}
+/* 🔥 หัวใจสำคัญ: ทำให้หน้า container ใส 100% (อากาศธาตุ) 🔥 */
+body.use-glass, body.use-glass .app-page { background-color: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+/* พื้นหลังตอนเปิดกระจกแต่ไม่ได้ใส่รูป (คงความสวยงามไว้) */
+body.use-glass:not(.has-wallpaper) { background: linear-gradient(135deg, rgb(var(--theme-50)) 0%, rgb(var(--theme-100)) 100%) !important; background-attachment: fixed !important; min-height: 100vh; }
+body.dark.use-glass:not(.has-wallpaper) { background: linear-gradient(135deg, #0f172a 0%, rgb(var(--theme-900)) 100%) !important; background-attachment: fixed !important; min-height: 100vh; }
+
+/* 3. ทำให้บรรดากล่องเนื้อหาต่างๆ (Nested Cards) กลายเป็นกระจกแทน */
+/* ป้องกันการซ้อนกันหนาเตอะ แต่ยังคงความใสและเบลอตามแถบเลื่อน */
+body.use-glass :where(.bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-800, .bg-gray-900) {
+    background-color: rgba(255, 255, 255, var(--glass-op-light)) !important;
+    backdrop-filter: blur(var(--glass-blur-light)) !important; 
+    -webkit-backdrop-filter: blur(var(--glass-blur-light)) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+}
+body.dark.use-glass :where(.bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-800, .bg-gray-900) {
+    background-color: rgba(15, 15, 15, var(--glass-op-dark)) !important;
+    backdrop-filter: blur(var(--glass-blur-dark)) !important; 
+    -webkit-backdrop-filter: blur(var(--glass-blur-dark)) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
+}
+
+/* 4. ช่องกรอกข้อมูล / ปุ่มทั่วไป */
+body.use-glass input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(#unlock-password), body.use-glass select, body.use-glass textarea {
+    background-color: rgba(255, 255, 255, var(--glass-input-light)) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+body.dark.use-glass input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(#unlock-password), body.dark.use-glass select, body.dark.use-glass textarea {
+    background-color: rgba(0, 0, 0, var(--glass-input-dark)) !important; color: #ffffff !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+
+/* 5. หน้าล็อคจอ (รักษาสีให้สวยงาม ไม่ถูกกระจกกลืน) */
+body.use-glass #app-lock-screen > div {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+body.dark.use-glass #app-lock-screen > div { background-color: rgba(17, 24, 39, 0.5) !important; }
+
+/* 6. แถบเมนูด้านล่างสุด (Bottom Nav) */
+body.use-glass nav {
+    background-color: rgba(255, 255, 255, var(--glass-op-light)) !important;
+    backdrop-filter: blur(var(--glass-blur-light)) !important; -webkit-backdrop-filter: blur(var(--glass-blur-light)) !important;
+}
+body.dark.use-glass nav {
+    background-color: rgba(15, 15, 15, var(--glass-op-dark)) !important;
+    backdrop-filter: blur(var(--glass-blur-dark)) !important; -webkit-backdrop-filter: blur(var(--glass-blur-dark)) !important;
+}
+
+/* 7. กราฟ (Charts) ให้โปร่งใสเฉพาะตัวกราฟเท่านั้น (เพื่อโชว์สีกระจกของการ์ดด้านหลัง) */
+body.use-glass canvas {
+    background: transparent !important; 
+    background-color: transparent !important; 
+    box-shadow: none !important;
+}
+
+/* 8. SweetAlert2 (Pop-up แจ้งเตือน) */
+body.use-glass div:where(.swal2-container) div:where(.swal2-popup) {
+    background-color: rgba(255, 255, 255, var(--glass-input-light)) !important;
+    backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important;
+}
+body.dark.use-glass div:where(.swal2-container) div:where(.swal2-popup) { background-color: rgba(0, 0, 0, 0.7) !important; }
+/* ลบพื้นหลังสีขาวของเครื่องหมายถูก */
+body.use-glass .swal2-icon.swal2-success .swal2-success-circular-line-left, body.use-glass .swal2-icon.swal2-success .swal2-success-circular-line-right, body.use-glass .swal2-icon.swal2-success .swal2-success-fix { background: transparent !important; }
+
+/* 9. แก้ภาพซ้อนตอนเปลี่ยนหน้า (เปลี่ยนจาก Slide เป็น Fade ลื่นๆ) */
+body.use-glass .page-transition-enter-active, body.use-glass .page-transition-exit-active { transition: opacity 0.15s ease-out !important; transform: none !important; }
+body.use-glass .page-transition-enter, body.use-glass .page-transition-exit-final { transform: none !important; opacity: 0; }
+
+/* 10. ดันสีตัวอักษรเมื่อมีรูปภาพ (ไม่ให้จมหายไปกับภาพ) */
+body.has-wallpaper:not(.dark) :where(.text-gray-400, .text-gray-500, .text-gray-600) { color: #1f2937 !important; text-shadow: 0px 1px 2px rgba(255,255,255,0.8); }
+body.dark.has-wallpaper :where(.text-gray-400, .text-gray-500, .text-gray-600) { color: #f9fafb !important; text-shadow: 0px 1px 3px rgba(0,0,0,0.8); }
+body.has-wallpaper input, body.has-wallpaper select, body.has-wallpaper textarea, body.has-wallpaper button { text-shadow: none !important; }
+
+/* 11. ล้างเอฟเฟกต์เบลอที่ค้างใน HTML เดิมเมื่อ ปิดสวิตช์กระจก */
+body:not(.use-glass) .backdrop-blur, body:not(.use-glass) [class*="backdrop-blur"] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+/* 12. แก้บั๊ก iOS (iPhone) กดตั้งค่าสี/เมนูไม่ได้ */
+[onclick], .cursor-pointer, [class*="theme-"], [id*="theme-"] { cursor: pointer !important; -webkit-tap-highlight-color: transparent !important; touch-action: manipulation !important; }
+input[type="color"] { -webkit-appearance: none !important; border: none !important; background: transparent !important; cursor: pointer !important; padding: 0 !important; width: 32px; height: 32px; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0 !important; }
+input[type="color"]::-webkit-color-swatch { border: none !important; border-radius: 50% !important; }
 
 /* ========================================
-   5. ทะลวงกราฟให้ใสปิ๊ง (ขั้นเด็ดขาด)
+   แก้ไขหน้ารายการ: เอากล่องครอบนอกสุดออก แล้วคืนกระจกให้การ์ดย่อย (ความใสจะพอดีเป๊ะ)
    ======================================== */
-/* ทะลวงตัวกราฟ Canvas โดยตรง */
-body.use-glass canvas {
+/* 1. ลบกล่องครอบนอกสุดให้เป็นอากาศธาตุแบบสมบูรณ์ */
+body.use-glass #transaction-list-container {
     background: transparent !important;
     background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important; /* ลบระยะห่างขอบนอกออก จะได้ไม่เกะกะ */
 }
 
-/* ทะลวงกล่องที่ครอบกราฟอยู่ (ดักจับทุกชื่อที่น่าจะเป็นกราฟ) */
-body.use-glass div:has(> canvas),
-body.use-glass [id*="chart" i],
-body.use-glass [class*="chart" i],
-body.use-glass .chart-container {
-    background: transparent !important;
-    background-color: transparent !important;
-    box-shadow: none !important; /* เอาเงาทึบๆ ออกด้วย */
+/* 2. คืนความหนากระจกและเบลอ ให้กับการ์ดย่อยด้านใน (ความใสจะเท่ากับหน้าอื่นๆ ทันที) */
+body.use-glass #transaction-list-container > .theme-border-target,
+body.use-glass #list-table-placeholder {
+    background-color: rgba(255, 255, 255, var(--glass-op-light)) !important;
+    backdrop-filter: blur(var(--glass-blur-light)) !important; 
+    -webkit-backdrop-filter: blur(var(--glass-blur-light)) !important;
+    border: 1px solid rgba(255, 255, 255, var(--glass-border-light)) !important;
+    border-radius: 0.75rem !important; /* โค้งมนสวยงาม */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+    margin-bottom: 1rem !important; /* เว้นระยะห่างให้แต่ละการ์ด */
 }
 
-/* บังคับให้ SweetAlert2 (Pop-up แจ้งเตือน) เป็นกระจกใสทั้งระบบ */
-div:where(.swal2-container) div:where(.swal2-popup) {
-    background-color: rgba(255, 255, 255, 0.4) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+/* สำหรับโหมดมืด */
+body.dark.use-glass #transaction-list-container > .theme-border-target,
+body.dark.use-glass #list-table-placeholder {
+    background-color: rgba(15, 15, 15, var(--glass-op-dark)) !important;
+    backdrop-filter: blur(var(--glass-blur-dark)) !important; 
+    -webkit-backdrop-filter: blur(var(--glass-blur-dark)) !important;
+    border: 1px solid rgba(255, 255, 255, var(--glass-border-dark)) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
 }
 
-/* สำหรับโหมดกลางคืน (Dark Mode) */
-.dark div:where(.swal2-container) div:where(.swal2-popup) {
-    background-color: rgba(17, 24, 39, 0.4) !important; /* สีเทาเข้มโปร่งแสง */
-    border: 1px solid rgba(75, 85, 99, 0.5) !important;
+/* จัดทรงตารางให้สวยงามเมื่อกลายเป็นกระจก */
+body.use-glass #list-table-placeholder {
+    padding: 1rem !important;
 }
 
-/* ปรับสีตัวอักษรและไอคอนให้ชัดเจนขึ้นบนกระจก */
-div:where(.swal2-container) .swal2-title, 
-div:where(.swal2-container) .swal2-html-container {
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+/* บังคับให้กราฟใช้ค่าความโปร่งใสตาม slider ในโหมดกระจก */
+body.use-glass #home-charts-section .chart-card,
+body.use-glass #home-charts-wrapper .chart-card,
+body.use-glass .list-chart-card {
+    background-color: rgba(255, 255, 255, var(--glass-op-light)) !important;
+    backdrop-filter: blur(var(--glass-blur-light)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur-light)) !important;
 }
 
-.dark div:where(.swal2-container) .swal2-title, 
-.dark div:where(.swal2-container) .swal2-html-container {
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+body.dark.use-glass #home-charts-section .chart-card,
+body.dark.use-glass #home-charts-wrapper .chart-card,
+body.dark.use-glass .list-chart-card {
+    background-color: rgba(15, 15, 15, var(--glass-op-dark)) !important;
+    backdrop-filter: blur(var(--glass-blur-dark)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur-dark)) !important;
+}
+
+/* แก้ไข footer ลอยเมื่อเปิดหน้าล็อค */
+body:has(#app-lock-screen:not(.hidden)) footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1; /* ให้ต่ำกว่า lock screen (z-index 9999) */
+    background-color: inherit; /* ป้องกันพื้นหลังผิดเพี้ยน */
+    text-align: center;
+    padding: 1.5rem 0; /* คง padding เดิม */
+}
+
+/* =========================================
+   แก้ไข: popup แจ้งอัปเดตและแจ้งอัปเดตสำเร็จ โปร่งใสเฉพาะเมื่อเปิดโหมดกระจก
+   ========================================= */
+
+/* ---- ป๊อปอัปแจ้งอัปเดต (Modal) ---- */
+/* ปิดโหมดกระจก -> พื้นทึบ */
+body:not(.use-glass) #update-alert-modal > div {
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ปิดโหมดกระจก + Dark Mode -> พื้นทึบสีเข้ม */
+body.dark:not(.use-glass) #update-alert-modal > div {
+    background-color: #1a1a1a !important;
+}
+
+/* ---- SweetAlert2 (แจ้งอัปเดตสำเร็จ และอื่น ๆ) ---- */
+/* ปิดโหมดกระจก -> พื้นทึบ */
+body:not(.use-glass) .swal2-popup {
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ปิดโหมดกระจก + Dark Mode -> พื้นทึบสีเข้ม */
+body.dark:not(.use-glass) .swal2-popup {
+    background-color: #1a1a1a !important;
+}
+
+/* ---- เมื่อเปิดโหมดกระจก ปล่อยให้กฎเดิมทำงาน (ไม่ต้องเพิ่มอะไร เพราะมีอยู่แล้ว) ---- */
+/* กฎเดิมที่ทำให้โปร่งใสในโหมดกระจก (จากไฟล์ styles.css) จะยังคงมีผล */
+
+/* =========================================
+   แก้ไข: Lock Screen โปร่งใสเฉพาะเมื่อเปิดโหมดกระจก
+   ========================================= */
+
+/* ปิดโหมดกระจก -> พื้นทึบ ไม่เบลอ */
+body:not(.use-glass) #app-lock-screen {
+    background-color: rgba(0, 0, 0, 0.5) !important; /* สีดำโปร่งแสงนิดหน่อย? หรือทึบ? */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ปิดโหมดกระจก -> กล่องเนื้อหาทึบตามธีม */
+body:not(.use-glass) #app-lock-screen > div {
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important; /* ลบเส้นขอบโปร่งใส */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important; /* เพิ่มเงาให้ดูมีมิติ */
+}
+
+/* ปิดโหมดกระจก + Dark Mode */
+body.dark:not(.use-glass) #app-lock-screen > div {
+    background-color: #1a1a1a !important;
+    color: #e5e7eb !important;
+}
+
+/* ขอบสำหรับการ์ดสรุปยอด (สามช่องรายรับ-จ่าย-คงเหลือ) */
+body.use-glass .grid.grid-cols-3.gap-2.text-center,
+body.has-wallpaper .grid.grid-cols-3.gap-2.text-center {
+    border: 2px solid rgb(var(--theme-300)) !important;
+    border-radius: 0.75rem;
+    padding: 0.75rem; /* เพิ่ม padding ให้เนื้อหาไม่ชิดขอบ */
+}
+
+/* ขอบสำหรับตารางผลลัพธ์การค้นหา */
+body.use-glass #list-table-placeholder,
+body.has-wallpaper #list-table-placeholder {
+    border: 2px solid rgb(var(--theme-300)) !important;
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+}
+
+body.dark.use-glass #list-table-placeholder,
+body.dark.has-wallpaper #list-table-placeholder {
+    border: 2px solid rgb(var(--theme-700)) !important;
+}
+
+/* =========================================
+   เพิ่มขอบให้กราฟในหน้ารายการและหน้าแรก เมื่อเปิดโหมดกระจกหรือมี wallpaper
+   ========================================= */
+
+/* กราฟในหน้ารายการ */
+body.use-glass .list-chart-card,
+body.has-wallpaper .list-chart-card {
+    border: 2px solid rgb(var(--theme-300)) !important;
+    border-radius: 0.75rem; /* ให้โค้งมนเหมือนเดิม */
+}
+
+body.dark.use-glass .list-chart-card,
+body.dark.has-wallpaper .list-chart-card {
+    border: 2px solid rgb(var(--theme-700)) !important;
+}
+
+/* กราฟในหน้าแรก (chart-card) */
+body.use-glass .chart-card,
+body.has-wallpaper .chart-card {
+    border: 2px solid rgb(var(--theme-300)) !important;
+    border-radius: 0.75rem;
+}
+
+body.dark.use-glass .chart-card,
+body.dark.has-wallpaper .chart-card {
+    border: 2px solid rgb(var(--theme-700)) !important;
 }

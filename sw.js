@@ -28,6 +28,10 @@ const ASSETS_TO_CACHE = [
   `./libs/xlsx.full.min.js?v=${APP_VERSION}`,
   `./libs/tesseract.min.js?v=${APP_VERSION}`,
   `./libs/ical.min.js?v=${APP_VERSION}`,
+  
+  // เพิ่ม 2 บรรทัดนี้สำหรับระบบ Crop รูปภาพออฟไลน์ 👇
+  `./libs/cropper.min.css?v=${APP_VERSION}`,
+  `./libs/cropper.min.js?v=${APP_VERSION}`,
 ];
 
 // 2. Event Install: ติดตั้งและรอให้ผู้ใช้กดปุ่ม (ไม่บังคับอัปเดตอัตโนมัติ)

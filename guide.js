@@ -1,6 +1,5 @@
 window.guideHTML = `
 	<div id="page-guide" class="app-page pb-20">
-		<!-- ปกคู่มือ -->
 		<div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-primary-600 to-pink-500 text-white p-10 mb-12 shadow-2xl">
 			<div class="absolute inset-0 bg-black opacity-10"></div>
 			<div class="absolute -top-24 -right-24 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
@@ -8,7 +7,7 @@ window.guideHTML = `
 			
 			<div class="relative z-10 flex flex-col items-center text-center">
 				<button class="speak-btn absolute top-0 right-0 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-colors" 
-					data-speak="ยินดีต้อนรับสู่คู่มือการใช้งาน Finance Manager Pro อัปเดตล่าสุด ${APP_LAST_UPDATED_TH} คู่มือนี้จะแนะนำคุณเกี่ยวกับระบบจัดการรายรับรายจ่ายอย่างละเอียด ประกอบด้วย 8 หัวข้อหลัก ได้แก่ เริ่มต้นใช้งาน, หน้าแรกศูนย์ควบคุม, รายการและวิเคราะห์เชิงลึก, ปฏิทินการเงิน, จัดการบัญชีและหมวดหมู่, ตั้งค่าและจัดการข้อมูล, ฟีเจอร์อัจฉริยะพิเศษ และการแก้ไขปัญหาเบื้องต้น คุณสามารถกดปุ่มลำโพงตามหัวข้อต่างๆ เพื่อฟังคำอธิบายเพิ่มเติมได้">
+					data-speak="ยินดีต้อนรับสู่คู่มือการใช้งาน Finance Manager Pro อัปเดตล่าสุด \${APP_LAST_UPDATED_TH} คู่มือนี้จะแนะนำคุณเกี่ยวกับระบบจัดการรายรับรายจ่ายอย่างละเอียด ประกอบด้วย 8 หัวข้อหลัก ได้แก่ เริ่มต้นใช้งาน, หน้าแรกศูนย์ควบคุม, รายการและวิเคราะห์เชิงลึก, ปฏิทินการเงิน, จัดการบัญชีและหมวดหมู่, ตั้งค่าและจัดการข้อมูล, ฟีเจอร์อัจฉริยะพิเศษ และการแก้ไขปัญหาเบื้องต้น คุณสามารถกดปุ่มลำโพงตามหัวข้อต่างๆ เพื่อฟังคำอธิบายเพิ่มเติมได้">
 					<i class="fa-solid fa-volume-high text-xl"></i>
 				</button>
 				<div class="w-28 h-28 bg-white/20 backdrop-blur-xl rounded-3xl flex items-center justify-center mb-6 shadow-2xl border border-white/30">
@@ -21,8 +20,8 @@ window.guideHTML = `
 					ฉบับสมบูรณ์
 				</p>
 				<p class="mt-6 text-lg opacity-80 flex items-center">
-				<i class="fa-regular fa-circle-check mr-2"></i> เวอร์ชัน ${APP_VERSION}
-				<i class="fa-regular fa-calendar ml-4 mr-2"></i>  อัปเดตล่าสุด ${APP_LAST_UPDATED_TH}</span>
+				<i class="fa-regular fa-circle-check mr-2"></i> เวอร์ชัน \${APP_VERSION}
+				<i class="fa-regular fa-calendar ml-4 mr-2"></i>  อัปเดตล่าสุด \${APP_LAST_UPDATED_TH}
 				</p>
 			</div>
 		</div>
@@ -198,7 +197,7 @@ window.guideHTML = `
 							</button>
 						</div>
 					</div>
-					<div class="bg-yellow-50 dark:bg-yellow-900/20 p-5 rounded-xl border-l-8 border-yellow-400 dark:border-yellow-600">
+					<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border-l-8 border-yellow-400 dark:border-yellow-600">
 						<p class="text-yellow-800 dark:text-yellow-200 text-lg flex items-start gap-3">
 							<i class="fa-solid fa-lightbulb text-2xl flex-shrink-0"></i>
 							<span><b class="font-bold">เคล็ดลับ :</b> ใช้ Biometric ร่วมกับ Auto‑lock (ตั้งค่าเวลา) เพื่อความปลอดภัยและสะดวกในการเข้าใช้งาน</span>
@@ -224,7 +223,7 @@ window.guideHTML = `
 				</div>
 				<div class="p-8 space-y-6">
 					<div class="grid md:grid-cols-3 gap-4">
-						<div onclick="handleSummaryCardClick('income')" class="bg-green-50 dark:bg-green-900/20 p-5 rounded-xl border border-green-200 dark:border-green-800 cursor-pointer hover:shadow-lg transition relative">
+						<div onclick="handleSummaryCardClick('income')" class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-green-200 dark:border-green-800 cursor-pointer hover:shadow-lg transition relative">
 							<div class="flex items-center gap-3 mb-2">
 								<i class="fa-solid fa-arrow-down text-2xl text-green-600"></i>
 								<span class="font-bold text-green-800 dark:text-green-400 text-xl">รายรับ</span>
@@ -237,7 +236,7 @@ window.guideHTML = `
 								<i class="fa-solid fa-volume-high"></i>
 							</button>
 						</div>
-						<div onclick="handleSummaryCardClick('expense')" class="bg-red-50 dark:bg-red-900/20 p-5 rounded-xl border border-red-200 dark:border-red-800 cursor-pointer hover:shadow-lg transition relative">
+						<div onclick="handleSummaryCardClick('expense')" class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-red-200 dark:border-red-800 cursor-pointer hover:shadow-lg transition relative">
 							<div class="flex items-center gap-3 mb-2">
 								<i class="fa-solid fa-arrow-up text-2xl text-red-600"></i>
 								<span class="font-bold text-red-800 dark:text-red-400 text-xl">รายจ่าย</span>
@@ -250,7 +249,7 @@ window.guideHTML = `
 								<i class="fa-solid fa-volume-high"></i>
 							</button>
 						</div>
-						<div onclick="handleSummaryCardClick('all')" class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-xl border border-blue-200 dark:border-blue-800 cursor-pointer hover:shadow-lg transition relative">
+						<div onclick="handleSummaryCardClick('all')" class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-blue-200 dark:border-blue-800 cursor-pointer hover:shadow-lg transition relative">
 							<div class="flex items-center gap-3 mb-2">
 								<i class="fa-solid fa-wallet text-2xl text-blue-600"></i>
 								<span class="font-bold text-blue-800 dark:text-blue-400 text-xl">คงเหลือ</span>
@@ -265,7 +264,7 @@ window.guideHTML = `
 						</div>
 					</div>
 
-					<div class="bg-orange-50 dark:bg-orange-900/20 p-5 rounded-xl border border-orange-200 dark:border-orange-800 cursor-pointer hover:shadow-lg transition relative">
+					<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-orange-200 dark:border-orange-800 cursor-pointer hover:shadow-lg transition relative">
 						<h3 class="text-xl font-bold text-orange-800 dark:text-orange-400 mb-3 flex items-center gap-2">
 							<i class="fa-solid fa-bullseye"></i> งบประมาณรายจ่าย (เดือนนี้)
 							<button class="speak-btn ml-2 text-orange-600 hover:text-orange-800 dark:text-orange-400" 
@@ -280,7 +279,7 @@ window.guideHTML = `
 					</div>
 
 					<div class="grid md:grid-cols-2 gap-6">
-						<div class="cursor-pointer hover:shadow-lg transition relative">
+						<div class="cursor-pointer hover:shadow-lg transition relative bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-primary-200 dark:border-primary-800">
 							<h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
 								<i class="fa-solid fa-layer-group text-primary-600"></i> บัญชีทั้งหมด (ภาพรวม)
 								<button class="speak-btn ml-2 text-primary-600 hover:text-primary-800 dark:text-primary-400" 
@@ -293,7 +292,7 @@ window.guideHTML = `
 								<i class="fa-regular fa-eye mr-1"></i> ดูตัวอย่าง
 							</button>
 						</div>
-						<div class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-xl">
+						<div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex items-center">
 							<p class="text-sm text-primary-700 dark:text-primary-300"><i class="fa-regular fa-clock mr-1"></i> การกดค้าง (Long press) 0.8 วินาที</p>
 						</div>
 					</div>
@@ -355,7 +354,7 @@ window.guideHTML = `
 							</button>
 						</div>
 					</div>
-					<div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+					<div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
 						<p class="flex items-center gap-2 text-blue-800 dark:text-blue-300">
 							<i class="fa-solid fa-list-check"></i> รายการธุรกรรมล่าสุด พร้อมฟิลเตอร์ (ทั้งหมด/รายรับ/รายจ่าย/โอนย้าย)
 							<button class="speak-btn ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400" 
@@ -410,7 +409,7 @@ window.guideHTML = `
 					</div>
 					<div class="grid md:grid-cols-2 gap-6">
 						<div>
-							<div class="bg-gradient-to-br from-pink-100 to-primary-100 dark:from-pink-900/30 dark:to-primary-900/30 p-4 rounded-xl relative">
+							<div class="bg-gray-50 dark:bg-gray-700/50 border border-pink-200 dark:border-pink-800 p-4 rounded-xl relative">
 								<p class="font-bold mb-2"><i class="fa-solid fa-chart-pie text-primary-600"></i> หมวดหมู่ (โดนัท)
 									<button class="speak-btn ml-2 text-primary-600 hover:text-primary-800 dark:text-primary-400" 
 										data-speak="กราฟโดนัทแสดงสัดส่วนของรายจ่ายตามหมวดหมู่ โดยจะแสดงเฉพาะ 5 หมวดหมู่ที่มียอดสูงสุด ที่เหลือจะรวมเป็น 'อื่นๆ' เพื่อให้เห็นภาพรวมง่ายขึ้น เมื่อวางเมาส์บนกราฟจะเห็นจำนวนเงิน">
@@ -424,7 +423,7 @@ window.guideHTML = `
 							</div>
 						</div>
 						<div>
-							<div class="bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 p-4 rounded-xl relative">
+							<div class="bg-gray-50 dark:bg-gray-700/50 border border-blue-200 dark:border-blue-800 p-4 rounded-xl relative">
 								<p class="font-bold mb-2"><i class="fa-solid fa-chart-column text-blue-600"></i> แนวโน้มตามวัน
 									<button class="speak-btn ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400" 
 										data-speak="กราฟแท่งแนวโน้มรายวันแสดงยอดเงินในแต่ละวันสำหรับ 7 วันล่าสุด โดยกราฟนี้จะใช้ข้อมูลจากรายการที่คุณกรองอยู่ (ช่วงวันที่, ประเภท, คำค้นหา) เพื่อให้คุณเห็นการเปลี่ยนแปลงของยอดเงินรายวันได้">
@@ -438,7 +437,7 @@ window.guideHTML = `
 							</div>
 						</div>
 					</div>
-					<div class="bg-amber-50 dark:bg-amber-900/20 p-5 rounded-xl border border-amber-200 dark:border-amber-800">
+					<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-amber-200 dark:border-amber-800">
 						<h3 class="font-bold text-lg text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2">
 							<i class="fa-solid fa-pen-to-square"></i> การจัดการรายการ
 							<button class="speak-btn ml-2 text-amber-600 hover:text-amber-800 dark:text-amber-400" 
@@ -577,7 +576,7 @@ window.guideHTML = `
 						</div>
 					</div>
 
-					<div class="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-xl border border-indigo-200 dark:border-indigo-800">
+					<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-indigo-200 dark:border-indigo-800">
 						<p class="flex items-start gap-3 text-indigo-800 dark:text-indigo-300">
 							<i class="fa-regular fa-hand-point-up text-2xl"></i>
 							<span>ในหน้าต่างสรุปวันที่ มีปุ่ม “เพิ่มรายรับ-รายจ่าย” และ “เพิ่มแจ้งเตือน” เพื่อความสะดวกในการบันทึกข้อมูลย้อนหลังหรือวางแผนล่วงหน้า</span>
@@ -631,7 +630,7 @@ window.guideHTML = `
 						</div>
 					</div>
 					<div class="grid md:grid-cols-3 gap-4">
-						<div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl text-center cursor-pointer hover:shadow-lg transition relative">
+						<div class="bg-gray-50 dark:bg-gray-700/50 border border-indigo-200 dark:border-indigo-800 p-4 rounded-xl text-center cursor-pointer hover:shadow-lg transition relative">
 							<i class="fa-solid fa-paintbrush text-3xl text-indigo-600 mb-2"></i>
 							<p>เปลี่ยนไอคอนบัญชี</p>
 							<button class="speak-btn absolute top-2 right-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 w-6 h-6 rounded-full text-xs shadow border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-gray-600 transition flex items-center justify-center" 
@@ -639,7 +638,7 @@ window.guideHTML = `
 								 <i class="fa-solid fa-volume-high"></i>
 							</button>
 						</div>
-						<div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl text-center cursor-pointer hover:shadow-lg transition relative">
+						<div class="bg-gray-50 dark:bg-gray-700/50 border border-indigo-200 dark:border-indigo-800 p-4 rounded-xl text-center cursor-pointer hover:shadow-lg transition relative">
 							<i class="fa-solid fa-eye-slash text-3xl text-indigo-600 mb-2"></i>
 							<p>ซ่อน/แสดงบัญชี</p>
 							<button class="speak-btn absolute top-2 right-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 w-6 h-6 rounded-full text-xs shadow border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-gray-600 transition flex items-center justify-center" 
@@ -647,7 +646,7 @@ window.guideHTML = `
 								 <i class="fa-solid fa-volume-high"></i>
 							</button>
 						</div>
-						<div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl text-center cursor-pointer hover:shadow-lg transition relative">
+						<div class="bg-gray-50 dark:bg-gray-700/50 border border-indigo-200 dark:border-indigo-800 p-4 rounded-xl text-center cursor-pointer hover:shadow-lg transition relative">
 							<i class="fa-solid fa-pencil text-3xl text-indigo-600 mb-2"></i>
 							<p>ปรับปรุงยอด (ดอกเบี้ย/ค่าธรรมเนียม)</p>
 							<button class="speak-btn absolute top-2 right-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 w-6 h-6 rounded-full text-xs shadow border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-gray-600 transition flex items-center justify-center" 
@@ -682,7 +681,7 @@ window.guideHTML = `
 							</button>
 						</div>
 					</div>
-					<div class="bg-primary-50 dark:bg-primary-900/20 p-5 rounded-xl flex flex-col md:flex-row gap-4 items-start cursor-pointer hover:shadow-lg transition relative">
+					<div class="bg-gray-50 dark:bg-gray-700/50 border border-primary-200 dark:border-primary-800 p-5 rounded-xl flex flex-col md:flex-row gap-4 items-start cursor-pointer hover:shadow-lg transition relative">
 						<div class="w-16 h-16 bg-primary-200 dark:bg-primary-800 rounded-2xl flex items-center justify-center text-3xl text-primary-700 dark:text-primary-300">
 							<i class="fa-solid fa-clock-rotate-left"></i>
 						</div>
@@ -699,7 +698,7 @@ window.guideHTML = `
 							<i class="fa-regular fa-eye mr-1"></i> ดูตัวอย่าง
 						</button>
 					</div>
-					<div class="bg-orange-50 dark:bg-orange-900/20 p-5 rounded-xl flex flex-col md:flex-row gap-4 items-start cursor-pointer hover:shadow-lg transition relative">
+					<div class="bg-gray-50 dark:bg-gray-700/50 border border-orange-200 dark:border-orange-800 p-5 rounded-xl flex flex-col md:flex-row gap-4 items-start cursor-pointer hover:shadow-lg transition relative">
 						<div class="w-16 h-16 bg-orange-200 dark:bg-orange-800 rounded-2xl flex items-center justify-center text-3xl text-orange-700 dark:text-orange-300">
 							<i class="fa-solid fa-sack-dollar"></i>
 						</div>
@@ -772,7 +771,7 @@ window.guideHTML = `
 							</button>
 						</div>
 					</div>
-					<div class="bg-red-50 dark:bg-red-900/20 p-5 rounded-xl cursor-pointer hover:shadow-lg transition relative">
+					<div class="bg-gray-50 dark:bg-gray-700/50 border border-red-200 dark:border-red-800 p-5 rounded-xl cursor-pointer hover:shadow-lg transition relative">
 						<h3 class="font-bold text-xl text-red-800 dark:text-red-400 mb-3 flex items-center gap-2">
 							<i class="fa-solid fa-shield-halved"></i> ความปลอดภัย
 							<button class="speak-btn ml-2 text-red-600 hover:text-red-800 dark:text-red-400" 
@@ -790,7 +789,7 @@ window.guideHTML = `
 							<i class="fa-regular fa-eye mr-1"></i> ดูตัวอย่าง
 						</button>
 					</div>
-					<div class="bg-green-50 dark:bg-green-900/20 p-5 rounded-xl cursor-pointer hover:shadow-lg transition relative">
+					<div class="bg-gray-50 dark:bg-gray-700/50 border border-green-200 dark:border-green-800 p-5 rounded-xl cursor-pointer hover:shadow-lg transition relative">
 						<h3 class="font-bold text-xl text-green-800 dark:text-green-400 mb-3 flex items-center gap-2">
 							<i class="fa-brands fa-line"></i> การแจ้งเตือน LINE
 							<button class="speak-btn ml-2 text-green-600 hover:text-green-800 dark:text-green-400" 
@@ -803,7 +802,7 @@ window.guideHTML = `
 							<i class="fa-regular fa-eye mr-1"></i> ดูตัวอย่าง
 						</button>
 					</div>
-					<div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-xl cursor-pointer hover:shadow-lg transition relative">
+					<div class="bg-gray-50 dark:bg-gray-700/50 border border-blue-200 dark:border-blue-800 p-5 rounded-xl cursor-pointer hover:shadow-lg transition relative">
 						<h3 class="font-bold text-xl text-blue-800 dark:text-blue-400 mb-3">💾 จัดการข้อมูล
 							<button class="speak-btn ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400" 
 								data-speak="ส่วนนี้รวมเครื่องมือจัดการข้อมูลสำคัญ: สำรองข้อมูลเป็นไฟล์ JSON หรือ Excel, อัปโหลดขึ้น Cloud ด้วยตนเอง (Manual Sync), นำเข้าไฟล์ JSON, ใช้ Undo/Redo สำหรับย้อนกลับหรือทำซ้ำการกระทำล่าสุด, ตรวจสอบและอัปเดตเวอร์ชันเพื่อล้างแคช, และรีเซ็ตข้อมูล (เลือกเฉพาะเครื่อง, คลาวด์, หรือทั้งสอง)">
@@ -887,77 +886,76 @@ window.guideHTML = `
 							</button>
 						</div>
 					</div>
-					<div class="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800 relative">
-
+					<div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-2xl border border-blue-200 dark:border-blue-800 relative">
 						<div class="mb-8">
-					<div class="flex items-center mb-6">
-						<div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mr-4 text-blue-600 dark:text-blue-400">
-							<i class="fa-solid fa-microphone-lines text-2xl"></i>
+							<div class="flex items-center mb-6">
+								<div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mr-4 text-blue-600 dark:text-blue-400">
+									<i class="fa-solid fa-microphone-lines text-2xl"></i>
+								</div>
+								<h3 class="text-2xl font-bold text-gray-800 dark:text-white">ผู้ช่วยเสียงอัจฉริยะ (AI Voice Command)</h3>
+							</div>
+							<p class="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+								สั่งการระบบ จัดการข้อมูล และนำทางไปยังหน้าต่างๆ ได้อย่างรวดเร็วเพียงแค่ใช้เสียงของคุณ พร้อมระบบตอบรับด้วยเสียง (Voice Feedback) ที่สามารถเปิด-ปิดได้ตามต้องการ
+							</p>
+		
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+								<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
+									<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-bolt mr-2"></i> สั่งการระบบและนำทาง</h4>
+									<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>เปิดหน้าต่างๆ:</b> พูด "ไปหน้าแรก", "เปิดบัญชี", "ตั้งค่า", "ปฏิทิน"</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>ตั้งค่าด่วน:</b> พูด "โหมดมืด", "โหมดสว่าง", "ซ่อนยอดเงิน", "ล็อกแอป"</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>จัดการข้อมูล:</b> พูด "สำรองข้อมูล", "ส่งออกเอกสาร", "นำเข้าข้อมูล"</li>
+									</ul>
+								</div>
+								
+								<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
+									<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-magnifying-glass-chart mr-2"></i> ค้นหาและคัดกรองอัจฉริยะ (Smart Filter)</h4>
+									<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>รายจ่ายวันนี้ / เดือนนี้ / ปีนี้:</b> พูด "รายจ่ายวันนี้", "รายจ่ายเดือนนี้", "รายจ่ายปีนี้"</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>รายรับตามช่วงเวลา:</b> พูด "รายรับเดือนนี้", "รายรับปีนี้"</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>โอนย้าย:</b> พูด "โอนย้ายเดือนนี้", "โอนย้ายปีนี้"</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>ค้นหาคำ + ช่วงเวลา:</b> พูด "ค่าน้ำเดือนนี้", "ค่ากาแฟสัปดาห์นี้"</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>ระบบจะคำนวนยอดรวมของรายการที่ค้นหาและแจ้งด้วยเสียง</b></li>
+									</ul>
+								</div>
+		
+								<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
+									<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-plus-circle mr-2"></i> เพิ่มรายการและจดด่วน</h4>
+									<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>เพิ่มธุรกรรม:</b> ในหน้าเพิ่มรายการ กดไอคอนไมค์แล้วพูด เช่น "เติมน้ำมัน 500 บาท"</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>จดด่วน (Draft):</b> พูด "จดด่วน" เพื่อให้เปิดหน้าต่างบันทึกยอดเงินไว้จัดการทีหลัง</li>
+									</ul>
+								</div>
+		
+								<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
+									<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-graduation-cap mr-2"></i> สอนคำสั่งใหม่ (Auto-Learn)</h4>
+									<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i>ไปที่ <b>ตั้งค่า > คำสั่งเสียงที่เรียนรู้</b></li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i>กดปุ่ม "+ เพิ่มคำสั่งใหม่" พิมพ์หรือพูดคำที่คุณถนัด และเลือก Action ที่จะให้แอปทำงาน</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i>ตัวอย่าง: สอนคำว่า "เก็บตังค์" ให้เชื่อมกับการ "เพิ่มรายการ"</li>
+									</ul>
+								</div>
+		
+								<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
+									<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-volume-high mr-2"></i> ระบบเสียงตอบรับ</h4>
+									<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i>ระบบจะพูดทวนคำสั่ง หรือแจ้งผลลัพธ์ให้คุณทราบเมื่อทำงานสำเร็จ</li>
+										<li><i class="fa-solid fa-check text-green-500 mr-2"></i>สามารถเปิด-ปิดเสียงได้ที่ <b>ตั้งค่า > ตั้งค่าทั่วไป > สวิตช์เสียงตอบรับ (Smart Voice)</b></li>
+									</ul>
+								</div>
+							</div>
+		
+							<div class="bg-gray-50 dark:bg-gray-700/50 border-l-4 border-blue-500 p-4 rounded-r-xl transition-colors mb-6">
+								<p class="text-sm text-blue-800 dark:text-blue-300"><b>💡 ทริค:</b> คุณสามารถกด <b>"ปุ่มไมโครโฟนลอย"</b> ที่มุมขวาล่างของหน้าจอ เพื่อเริ่มสั่งการด้วยเสียงได้ทันทีจากทุกหน้า โดยไม่ต้องกดเข้าเมนู!</p>
+							</div>
+							
+							<div class="flex justify-center relative mb-6">
+								<button class="speak-btn relative z-10 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-4 rounded-full font-bold shadow-lg transition-transform transform hover:scale-105 active:scale-95 flex items-center gap-3"
+										data-speak="ฟีเจอร์ผู้ช่วยเสียงอัจฉริยะ หรือ สมาร์ท วอยซ์ คอมมานด์ จะช่วยให้คุณใช้งานแอปได้สะดวกรวดเร็วขึ้นมากเลยครับ คุณสามารถกดปุ่มไมโครโฟนสีฟ้าที่ลอยอยู่มุมขวาล่างของหน้าจอได้ตลอดเวลา เพื่อเริ่มสั่งการ ตัวอย่างเช่น พูดว่า ไปหน้าบัญชี เพื่อเปิดหน้าบัญชีทันที พูดว่า โหมดมืด เพื่อเปลี่ยนสีแอปเป็นสีดำ หรือพูดว่า สำรองข้อมูล เพื่อแบคอัพข้อมูลครับ นอกจากการนำทางไปยังส่วนต่างๆ แล้ว คุณยังสั่ง เพิ่มรายการ หรือ จดด่วน เพื่อบันทึกรายรับรายจ่ายได้ด้วยนะครับ ที่เจ๋งที่สุดคือ หากระบบไม่รู้จักคำสั่งของคุณ คุณสามารถเข้าไปที่หน้าตั้งค่า ในหมวด คำสั่งเสียงที่เรียนรู้ เพื่อสอนให้ระบบเข้าใจคำพูดเฉพาะตัวของคุณเองได้เลยครับ และถ้าหากคุณไม่ต้องการให้ระบบพูดตอบกลับ ก็สามารถเข้าไปปิดสวิตช์ เสียงตอบรับ ในหน้าตั้งค่าได้ทุกเมื่อครับผม ลองกดปุ่มไมค์ลอยแล้วสั่งการดูสิครับ!">
+									<i class="fa-solid fa-volume-high text-xl animate-pulse"></i> ฟังคำอธิบายระบบเสียงแบบละเอียด
+								</button>
+							</div>
 						</div>
-						<h3 class="text-2xl font-bold text-gray-800 dark:text-white">ผู้ช่วยเสียงอัจฉริยะ (AI Voice Command)</h3>
-					</div>
-					<p class="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-						สั่งการระบบ จัดการข้อมูล และนำทางไปยังหน้าต่างๆ ได้อย่างรวดเร็วเพียงแค่ใช้เสียงของคุณ พร้อมระบบตอบรับด้วยเสียง (Voice Feedback) ที่สามารถเปิด-ปิดได้ตามต้องการ
-					</p>
-
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-						<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
-							<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-bolt mr-2"></i> สั่งการระบบและนำทาง</h4>
-							<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>เปิดหน้าต่างๆ:</b> พูด "ไปหน้าแรก", "เปิดบัญชี", "ตั้งค่า", "ปฏิทิน"</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>ตั้งค่าด่วน:</b> พูด "โหมดมืด", "โหมดสว่าง", "ซ่อนยอดเงิน", "ล็อกแอป"</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>จัดการข้อมูล:</b> พูด "สำรองข้อมูล", "ส่งออกเอกสาร", "นำเข้าข้อมูล"</li>
-							</ul>
-						</div>
-						
-						<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
-							<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-magnifying-glass-chart mr-2"></i> ค้นหาและคัดกรองอัจฉริยะ (Smart Filter)</h4>
-							<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>รายจ่ายวันนี้ / เดือนนี้ / ปีนี้:</b> พูด "รายจ่ายวันนี้", "รายจ่ายเดือนนี้", "รายจ่ายปีนี้"</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>รายรับตามช่วงเวลา:</b> พูด "รายรับเดือนนี้", "รายรับปีนี้"</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>โอนย้าย:</b> พูด "โอนย้ายเดือนนี้", "โอนย้ายปีนี้"</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>ค้นหาคำ + ช่วงเวลา:</b> พูด "ค่าน้ำเดือนนี้", "ค่ากาแฟสัปดาห์นี้"</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>ระบบจะคำนวนยอดรวมของรายการที่ค้นหาและแจ้งด้วยเสียง</b></li>
-							</ul>
-						</div>
-
-						<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
-							<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-plus-circle mr-2"></i> เพิ่มรายการและจดด่วน</h4>
-							<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>เพิ่มธุรกรรม:</b> ในหน้าเพิ่มรายการ กดไอคอนไมค์แล้วพูด เช่น "เติมน้ำมัน 500 บาท"</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i><b>จดด่วน (Draft):</b> พูด "จดด่วน" เพื่อให้เปิดหน้าต่างบันทึกยอดเงินไว้จัดการทีหลัง</li>
-							</ul>
-						</div>
-
-						<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
-							<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-graduation-cap mr-2"></i> สอนคำสั่งใหม่ (Auto-Learn)</h4>
-							<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i>ไปที่ <b>ตั้งค่า > คำสั่งเสียงที่เรียนรู้</b></li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i>กดปุ่ม "+ เพิ่มคำสั่งใหม่" พิมพ์หรือพูดคำที่คุณถนัด และเลือก Action ที่จะให้แอปทำงาน</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i>ตัวอย่าง: สอนคำว่า "เก็บตังค์" ให้เชื่อมกับการ "เพิ่มรายการ"</li>
-							</ul>
-						</div>
-
-						<div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 transition-colors">
-							<h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center"><i class="fa-solid fa-volume-high mr-2"></i> ระบบเสียงตอบรับ</h4>
-							<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i>ระบบจะพูดทวนคำสั่ง หรือแจ้งผลลัพธ์ให้คุณทราบเมื่อทำงานสำเร็จ</li>
-								<li><i class="fa-solid fa-check text-green-500 mr-2"></i>สามารถเปิด-ปิดเสียงได้ที่ <b>ตั้งค่า > ตั้งค่าทั่วไป > สวิตช์เสียงตอบรับ (Smart Voice)</b></li>
-							</ul>
-						</div>
-					</div>
-
-					<div class="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 rounded-r-xl transition-colors mb-6">
-						<p class="text-sm text-blue-800 dark:text-blue-300"><b>💡 ทริค:</b> คุณสามารถกด <b>"ปุ่มไมโครโฟนลอย"</b> ที่มุมขวาล่างของหน้าจอ เพื่อเริ่มสั่งการด้วยเสียงได้ทันทีจากทุกหน้า โดยไม่ต้องกดเข้าเมนู!</p>
-					</div>
-					
-					<div class="flex justify-center relative mb-6">
-						<button class="speak-btn relative z-10 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-4 rounded-full font-bold shadow-lg transition-transform transform hover:scale-105 active:scale-95 flex items-center gap-3"
-								data-speak="ฟีเจอร์ผู้ช่วยเสียงอัจฉริยะ หรือ สมาร์ท วอยซ์ คอมมานด์ จะช่วยให้คุณใช้งานแอปได้สะดวกรวดเร็วขึ้นมากเลยครับ คุณสามารถกดปุ่มไมโครโฟนสีฟ้าที่ลอยอยู่มุมขวาล่างของหน้าจอได้ตลอดเวลา เพื่อเริ่มสั่งการ ตัวอย่างเช่น พูดว่า ไปหน้าบัญชี เพื่อเปิดหน้าบัญชีทันที พูดว่า โหมดมืด เพื่อเปลี่ยนสีแอปเป็นสีดำ หรือพูดว่า สำรองข้อมูล เพื่อแบคอัพข้อมูลครับ นอกจากการนำทางไปยังส่วนต่างๆ แล้ว คุณยังสั่ง เพิ่มรายการ หรือ จดด่วน เพื่อบันทึกรายรับรายจ่ายได้ด้วยนะครับ ที่เจ๋งที่สุดคือ หากระบบไม่รู้จักคำสั่งของคุณ คุณสามารถเข้าไปที่หน้าตั้งค่า ในหมวด คำสั่งเสียงที่เรียนรู้ เพื่อสอนให้ระบบเข้าใจคำพูดเฉพาะตัวของคุณเองได้เลยครับ และถ้าหากคุณไม่ต้องการให้ระบบพูดตอบกลับ ก็สามารถเข้าไปปิดสวิตช์ เสียงตอบรับ ในหน้าตั้งค่าได้ทุกเมื่อครับผม ลองกดปุ่มไมค์ลอยแล้วสั่งการดูสิครับ!">
-							<i class="fa-solid fa-volume-high text-xl animate-pulse"></i> ฟังคำอธิบายระบบเสียงแบบละเอียด
-						</button>
-					</div>
-				</div>
 
 						<button data-demo="smartVoice" class="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md transition">
 							<i class="fa-regular fa-eye mr-1"></i> ดูตัวอย่าง
