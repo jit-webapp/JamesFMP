@@ -193,7 +193,7 @@
         </header>
         
         <div id="page-wrapper" class="page-container">
-            <div id="page-home" class="app-page">
+			<template id="tpl-home-classic">
                 <div id="summary-cards-container" class="grid grid-cols-3 gap-2 md:gap-4 mb-4">
                     <div id="summary-income-card" class="bg-green-100 p-2.5 md:p-4 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition duration-200">
                         <h2 class="text-xs md:text-sm font-semibold text-green-800 mb-0.5">รายรับ</h2>
@@ -208,144 +208,297 @@
                         <p id="total-balance" class="text-sm md:text-lg font-bold text-blue-800 truncate">฿0.00</p>
                     </div>
                 </div>
-                
-                <div id="home-budget-widget" class="bg-white p-3 md:p-4 rounded-xl shadow-sm mb-4 hidden">
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-                            <i class="fa-solid fa-bullseye text-red-500"></i> งบประมาณ
-                        </h2>
-                        <button id="btn-go-budget-settings" class="text-[10px] bg-primary-50 hover:bg-primary-100 text-primary-600 px-2 py-1 rounded font-medium transition">จัดการงบ</button>
-                    </div>
-                    <div id="budget-list-container" class="space-y-1.5">
-                        </div>
-                </div>
-
-                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-4">
+				
+				<div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
                     <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="home-accounts-content">
-                        <h2 class="text-base md:text-lg font-bold text-primary-600">สรุปบัญชีทั้งหมด</h2>
+                        <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">สรุปบัญชีทั้งหมด</h2>
                         <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
                     </div>
-
                     <div id="home-accounts-content" class="mt-3 transition-all">
                         <div id="all-accounts-summary" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
                             <p class="text-gray-500 text-sm">กำลังโหลดบัญชี...</p>
                         </div>
                     </div>
                 </div>
+                
+                <div id="home-budget-widget" class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-xl shadow-sm mb-4 hidden border border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-bullseye text-red-500"></i> งบประมาณ
+                        </h2>
+                        <button id="btn-go-budget-settings" class="text-[10px] bg-primary-50 hover:bg-primary-100 text-primary-600 px-2 py-1 rounded font-medium transition">จัดการงบ</button>
+                    </div>
+                    <div id="budget-list-container" class="space-y-1.5"></div>
+                </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4"> 
-
-                    <div class="lg:col-span-1 bg-white p-4 md:p-6 rounded-xl shadow-sm flex flex-col lg:order-1 h-full">
+                    <div class="lg:col-span-1 bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm flex flex-col lg:order-1 h-full border border-gray-100 dark:border-gray-700">
                         <div class="flex justify-between items-end mb-3 md:mb-4">
-                            <h2 class="text-base md:text-lg font-bold text-primary-600">เมนูจัดการ</h2>
+                            <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">เมนูจัดการ</h2>
                             <p class="text-[10px] md:text-sm text-gray-500">ระบบจำหมวดหมู่อัตโนมัติ</p>
                         </div>
                         <div class="grid grid-cols-2 gap-2 md:gap-3 flex-grow">
                             <button id="add-tx-btn" class="bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
-                                <i class="fa-solid fa-plus text-lg md:text-2xl"></i>
-                                <span class="text-xs md:text-sm">เพิ่มธุรกรรม</span>
+                                <i class="fa-solid fa-plus text-lg md:text-2xl"></i><span class="text-xs md:text-sm">เพิ่มธุรกรรม</span>
                             </button>
-
-                            <button id="add-img-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
-                                <i class="fa-solid fa-image text-lg md:text-2xl"></i>
-                                <span class="text-xs md:text-sm">รูปภาพ/สลิป</span>
-                            </button>
-                            <input type="file" id="home-receipt-input" accept="image/*" class="hidden">
-
+                            <div class="relative w-full h-full">
+                                <button id="add-img-btn" class="w-full h-full bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
+                                    <i class="fa-solid fa-image text-lg md:text-2xl"></i><span class="text-xs md:text-sm">รูปภาพ/สลิป</span>
+                                </button>
+                                <input type="file" id="home-receipt-input" accept="image/*" class="hidden">
+                            </div>
                             <button id="voice-add-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
-                                <i class="fa-solid fa-microphone text-lg md:text-2xl"></i>
-                                <span class="text-xs md:text-sm">สั่งด้วยเสียง</span>
+                                <i class="fa-solid fa-microphone text-lg md:text-2xl"></i><span class="text-xs md:text-sm">สั่งด้วยเสียง</span>
                             </button>
-                            
                             <button onclick="openQuickDraftModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-xl shadow-sm transition duration-300 flex flex-col items-center justify-center gap-1.5 py-3 md:py-4">
-                                <i class="fa-solid fa-bolt text-lg md:text-2xl"></i>
-                                <span class="text-xs md:text-sm">จดด่วน (Draft)</span>
+                                <i class="fa-solid fa-bolt text-lg md:text-2xl"></i><span class="text-xs md:text-sm">จดด่วน (Draft)</span>
                             </button>
                         </div>
                     </div>
                     
-                    <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm lg:order-2 flex flex-col h-full" id="home-charts-section">
-						<div class="flex justify-between items-center mb-3 flex-shrink-0">
-							<h2 class="text-base md:text-lg font-bold text-primary-600">สรุปภาพรวม</h2>
-							<button id="toggle-charts-btn" onclick="toggleHomeCharts()" class="text-xs text-primary-600 hover:text-primary-800 font-bold bg-white dark:bg-gray-800 border border-primary-200 dark:border-primary-800 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
-								ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
-							</button>
-						</div>
-						
-						<div id="home-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full flex-grow items-stretch transition-all duration-300">
-							
-							<div class="chart-card bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-all duration-300 w-full h-full">
-								<h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
-									<i class="fa-solid fa-scale-balanced text-blue-500"></i> <span class="chart-title-text">สัดส่วนรายรับ / รายจ่าย</span>
-								</h3>
-								<div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
-									<canvas id="transaction-chart"></canvas>
-									<p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-[10px] md:text-xs">ไม่มีข้อมูล</p>
-								</div>
-							</div>
-
-							<div class="chart-card bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col transition-all duration-300 w-full h-full">
-								<h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 flex-shrink-0 justify-center">
-									<i class="fa-solid fa-ranking-star text-orange-500"></i> <span class="chart-title-text">สรุปรายจ่าย (Top 10)</span>
-								</h3>
-								<div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
-									<canvas id="expense-category-chart"></canvas>
-									<p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden font-medium text-[10px] md:text-xs">ไม่มีข้อมูล</p>
-								</div>
-							</div>
-							
-						</div>
-					</div>
-
-                   <script>
-						let isChartsExpanded = window.getInitialChartState ? window.getInitialChartState('home') : true;
-
-						function toggleHomeCharts() {
-							isChartsExpanded = !isChartsExpanded;
-							window.applyHomeChartState(isChartsExpanded);
-							if (window.saveChartState) window.saveChartState('home', isChartsExpanded);
-						}
-					</script>
+                    <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm lg:order-2 flex flex-col h-full border border-gray-100 dark:border-gray-700" id="home-charts-section">
+                        <div class="flex justify-between items-center mb-3 flex-shrink-0">
+                            <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">สรุปภาพรวม</h2>
+                            <button id="toggle-charts-btn" onclick="toggleHomeCharts()" class="text-xs text-primary-600 hover:text-primary-800 font-bold bg-white dark:bg-gray-800 border border-primary-200 px-2.5 py-1.5 rounded-lg shadow-sm">
+                                ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
+                            </button>
+                        </div>
+                        <div id="home-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full flex-grow items-stretch">
+                            
+                            <div class="chart-card bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] flex flex-col w-full h-full shadow-sm">
+                                <h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 justify-center">
+                                    <i class="fa-solid fa-scale-balanced text-blue-500"></i> <span class="chart-title-text">สัดส่วนรายรับ / รายจ่าย</span>
+                                </h3>
+                                <div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
+                                    <canvas id="transaction-chart"></canvas>
+                                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden text-xs">ไม่มีข้อมูล</p>
+                                </div>
+                            </div>
+                            
+                            <div class="chart-card bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] flex flex-col w-full h-full shadow-sm">
+                                <h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 justify-center">
+                                    <i class="fa-solid fa-ranking-star text-orange-500"></i> <span class="chart-title-text">สรุปรายจ่าย (Top 10)</span>
+                                </h3>
+                                <div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
+                                    <canvas id="expense-category-chart"></canvas>
+                                    <p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden text-xs">ไม่มีข้อมูล</p>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
                 </div> 
                 
-                <div id="home-drafts-container" class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 hidden border-l-4 md:border-l-8 border-yellow-400 dark:border-yellow-500 transition-colors duration-300">
+                <div id="home-drafts-container" class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 hidden border-l-4 md:border-l-8 border-yellow-400">
                     <h2 class="text-base md:text-lg font-bold text-yellow-700 dark:text-yellow-400 mb-2 flex items-center">
                         <i class="fa-solid fa-clipboard-list mr-2"></i> รายการที่รอจัดการ (Drafts)
                     </h2>
                     <div id="drafts-list" class="space-y-1.5"></div>
                 </div>
                 
-                <div id="home-transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-sm mt-4"> 
+                <div id="home-transaction-list-container" class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700"> 
                     <div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="home-transactions-content">
-                        <h2 class="text-base md:text-lg font-bold text-primary-600">รายการธุรกรรมล่าสุด</h2>
-                        <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 text-lg md:text-lg"></i>
+                        <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">รายการธุรกรรมล่าสุด</h2>
+                        <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 text-lg"></i>
                     </div>
-
                     <div id="home-transactions-content" class="mt-3 transition-all">
                         <div class="flex flex-col sm:flex-row gap-2.5 mb-3 items-start sm:items-center justify-between">
-							<div class="flex-shrink-0 w-full sm:w-auto">
-								<select id="home-items-per-page-select" class="theme-border-target form-select text-xs md:text-sm text-gray-700 bg-gray-50 border-0 rounded-lg focus:ring-primary-500 focus:border-primary-500 py-1.5 px-2 w-full sm:w-auto h-[32px]">
-									<option value="10">แสดง 10</option>
-									<option value="20">แสดง 20</option>
-									<option value="50">แสดง 50</option>
-								</select>
-							</div>
-							
-							<div class="flex flex-wrap gap-2 w-full sm:w-auto justify-start sm:justify-end" id="home-filter-buttons">
-								<button class="theme-border-target home-filter-btn bg-primary-500 text-white px-3 py-1 text-xs font-medium rounded-lg shadow-sm transition-colors flex-1 sm:flex-none border-0" data-filter="all">ทั้งหมด</button>
-								
-								<button class="theme-border-target home-filter-btn bg-white text-gray-600 hover:bg-gray-50 px-3 py-1 text-xs font-medium rounded-lg transition-colors flex-1 sm:flex-none border-0" data-filter="income">รายรับ</button>
-								
-								<button class="theme-border-target home-filter-btn bg-white text-gray-600 hover:bg-gray-50 px-3 py-1 text-xs font-medium rounded-lg transition-colors flex-1 sm:flex-none border-0" data-filter="expense">รายจ่าย</button>
-								
-								<button class="theme-border-target home-filter-btn bg-white text-gray-600 hover:bg-gray-50 px-3 py-1 text-xs font-medium rounded-lg transition-colors flex-1 sm:flex-none border-0" data-filter="transfer">โอนย้าย</button>
-							</div>
-						</div>
+                            <select id="home-items-per-page-select" class="theme-border-target form-select text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-700 rounded-lg py-1.5 px-2">
+                                <option value="10">แสดง 10</option>
+                                <option value="20">แสดง 20</option>
+                                <option value="50">แสดง 50</option>
+                            </select>
+                            <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-start sm:justify-end" id="home-filter-buttons">
+                                <button class="theme-border-target home-filter-btn bg-primary-500 text-white px-3 py-1 text-xs rounded-lg" data-filter="all">ทั้งหมด</button>
+                                <button class="theme-border-target home-filter-btn bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 px-3 py-1 text-xs rounded-lg" data-filter="income">รายรับ</button>
+                                <button class="theme-border-target home-filter-btn bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 px-3 py-1 text-xs rounded-lg" data-filter="expense">รายจ่าย</button>
+                                <button class="theme-border-target home-filter-btn bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 px-3 py-1 text-xs rounded-lg" data-filter="transfer">โอนย้าย</button>
+                            </div>
+                        </div>
                         <div id="home-table-placeholder" class="overflow-x-auto"></div>
-                        <div id="home-pagination-controls" class="flex justify-center items-center gap-1.5 mt-3"></div>
+                        <div id="home-pagination-controls" class="flex justify-center items-center gap-1.5 mt-3 pb-2"></div>
                     </div>
                 </div>
-            </div>
+            </template>
+
+            <template id="tpl-home-icon">
+                <div class="mb-4 pt-2">
+                    <div class="flex justify-between items-end mb-4 px-2">
+                        <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400 drop-shadow-sm">สรุปยอดเงิน</h2>
+                        <p class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium drop-shadow-sm">อัปเดต: <span class="current-date">--/--/----</span></p>
+                    </div>
+                    <div class="flex justify-around items-start w-full text-center px-1">
+                        <div id="summary-balance-card" class="flex flex-col items-center gap-2 cursor-pointer active:scale-95 hover:opacity-80 transition-all w-1/3">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300 flex items-center justify-center border border-primary-200 dark:border-primary-700/50 shadow-md">
+                                <i class="fa-solid fa-wallet text-3xl md:text-4xl"></i>
+                            </div>
+                            <span class="text-xs md:text-sm font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap drop-shadow-sm">ยอดคงเหลือรวม</span>
+                            <span id="total-balance" class="text-xl md:text-2xl font-bold text-primary-600 dark:text-primary-400 whitespace-nowrap tracking-tight drop-shadow-sm">฿0.00</span>
+                        </div>
+                        <div id="summary-income-card" class="flex flex-col items-center gap-2 cursor-pointer active:scale-95 hover:opacity-80 transition-all w-1/3">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 flex items-center justify-center border border-emerald-200 dark:border-emerald-700/50 shadow-md">
+                                <i class="fa-solid fa-arrow-down text-3xl md:text-4xl"></i>
+                            </div>
+                            <span class="text-xs md:text-sm font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap drop-shadow-sm">รายรับเดือนนี้</span>
+                            <span id="total-income" class="text-xl md:text-2xl font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap tracking-tight drop-shadow-sm">฿0.00</span>
+                        </div>
+                        <div id="summary-expense-card" class="flex flex-col items-center gap-2 cursor-pointer active:scale-95 hover:opacity-80 transition-all w-1/3">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 flex items-center justify-center border border-red-200 dark:border-red-700/50 shadow-md">
+                                <i class="fa-solid fa-arrow-up text-3xl md:text-4xl"></i>
+                            </div>
+                            <span class="text-xs md:text-sm font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap drop-shadow-sm">รายจ่ายเดือนนี้</span>
+                            <span id="total-expense" class="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400 whitespace-nowrap tracking-tight drop-shadow-sm">฿0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between items-end mb-4 px-2">
+                        <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400 drop-shadow-sm">เมนูด่วน</h2>
+                        <p class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium drop-shadow-sm">จัดการข้อมูล</p>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 flex-grow items-start justify-items-center">
+                        <button id="add-tx-btn" class="flex flex-col items-center gap-2 group w-full outline-none focus:outline-none">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-md flex items-center justify-center transform transition-all group-active:scale-90 border-2 border-transparent">
+                                <i class="fa-solid fa-plus text-2xl md:text-3xl drop-shadow-sm"></i>
+                            </div>
+                            <span class="text-[11px] md:text-sm font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap drop-shadow-sm">เพิ่มรายการ</span>
+                        </button>
+                        <div class="relative w-full flex flex-col items-center">
+                            <button id="add-img-btn" class="flex flex-col items-center gap-2 group w-full outline-none focus:outline-none">
+                                <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 text-white shadow-md flex items-center justify-center transform transition-all group-active:scale-90 border-2 border-transparent">
+                                    <i class="fa-solid fa-receipt text-2xl md:text-3xl drop-shadow-sm"></i>
+                                </div>
+                                <span class="text-[11px] md:text-sm font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap drop-shadow-sm">สแกนสลิป</span>
+                            </button>
+                            <input type="file" id="home-receipt-input" accept="image/*" class="hidden">
+                        </div>
+                        <button id="voice-add-btn" class="flex flex-col items-center gap-2 group w-full outline-none focus:outline-none">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-md flex items-center justify-center transform transition-all group-active:scale-90 border-2 border-transparent">
+                                <i class="fa-solid fa-microphone text-2xl md:text-3xl drop-shadow-sm"></i>
+                            </div>
+                            <span class="text-[11px] md:text-sm font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap drop-shadow-sm">สั่งเสียง</span>
+                        </button>
+                        <button onclick="openQuickDraftModal()" class="flex flex-col items-center gap-2 group w-full outline-none focus:outline-none">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-md flex items-center justify-center transform transition-all group-active:scale-90 border-2 border-transparent">
+                                <i class="fa-solid fa-bolt text-2xl md:text-3xl drop-shadow-sm"></i>
+                            </div>
+                            <span class="text-[11px] md:text-sm font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap drop-shadow-sm">จดด่วน</span>
+                        </button>
+                    </div>
+                </div>
+				
+				<div id="home-accounts-widget" class="mb-4">
+                    <div class="flex justify-between items-end mb-4 px-2 cursor-pointer settings-toggle-header" data-target="home-accounts-content">
+                        <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400 drop-shadow-sm">สรุปบัญชีทั้งหมด</h2>
+                        <i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
+                    </div>
+                    <div id="home-accounts-content" class="mt-2 transition-all px-1">
+                        <div id="all-accounts-summary" class="grid grid-cols-4 sm:grid-cols-5 gap-y-4 gap-x-2 justify-items-center">
+                            <p class="text-gray-500 text-sm col-span-full">กำลังโหลดบัญชี...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="home-budget-widget" class="mb-4 hidden pt-2">
+                    <div class="flex justify-between items-end mb-4 px-2">
+                        <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400 drop-shadow-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-bullseye text-red-500"></i> งบประมาณ
+                        </h2>
+                        <button id="btn-go-budget-settings" class="text-[10px] md:text-xs text-primary-600 dark:text-primary-400 font-medium bg-primary-50 dark:bg-primary-900/30 px-2.5 py-1 rounded-full shadow-sm transition-colors">จัดการงบ</button>
+                    </div>
+                    <style>.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }</style>
+                    <div id="budget-list-container" class="flex gap-4 overflow-x-auto pb-3 px-2 snap-x hide-scrollbar"></div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 flex flex-col border border-gray-100 dark:border-gray-700" id="home-charts-section">
+                    <div class="flex justify-between items-center mb-3 flex-shrink-0">
+                        <h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">สรุปภาพรวม</h2>
+                        <button id="toggle-charts-btn" onclick="toggleHomeCharts()" class="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 font-bold bg-white dark:bg-gray-800 border border-primary-200 dark:border-primary-800 px-2.5 py-1.5 rounded-lg shadow-sm">
+                            ย่อกราฟ <i class="fa-solid fa-compress ml-1.5"></i>
+                        </button>
+                    </div>
+                    <div id="home-charts-wrapper" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full flex-grow items-stretch transition-all duration-300">
+                        
+                        <div class="chart-card bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col w-full h-full shadow-sm">
+                            <h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 justify-center">
+                                <i class="fa-solid fa-scale-balanced text-blue-500"></i> <span class="chart-title-text">สัดส่วนรายรับ / รายจ่าย</span>
+                            </h3>
+                            <div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
+                                <canvas id="transaction-chart"></canvas>
+                                <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden text-xs">ไม่มีข้อมูล</p>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 md:p-4 min-h-[220px] md:min-h-[300px] flex flex-col w-full h-full shadow-sm">
+                            <h3 class="chart-title text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5 justify-center">
+                                <i class="fa-solid fa-ranking-star text-orange-500"></i> <span class="chart-title-text">สรุปรายจ่าย (Top 10)</span>
+                            </h3>
+                            <div class="relative w-full flex-grow min-h-[160px] chart-canvas-container">
+                                <canvas id="expense-category-chart"></canvas>
+                                <p id="expense-chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 hidden text-xs">ไม่มีข้อมูล</p>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <div id="home-drafts-container" class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 hidden border-l-4 md:border-l-8 border-yellow-400 dark:border-yellow-500">
+                    <h2 class="text-base md:text-lg font-bold text-yellow-700 dark:text-yellow-400 mb-2 flex items-center">
+                        <i class="fa-solid fa-clipboard-list mr-2"></i> รายการที่รอจัดการ (Drafts)
+                    </h2>
+                    <div id="drafts-list" class="space-y-1.5"></div>
+                </div>
+                
+                <div id="home-transaction-list-container" class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700"> 
+					<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="home-transactions-content">
+						<h2 class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">รายการธุรกรรมล่าสุด</h2>
+						<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 text-lg"></i>
+					</div>
+
+					<div id="home-transactions-content" class="mt-3 transition-all">
+						<div class="flex flex-row items-center justify-between w-full mb-4 gap-2">
+							
+							<div class="flex flex-row gap-2 overflow-x-auto hide-scrollbar shrink" id="home-filter-buttons">
+								<button class="home-filter-btn bg-primary-500 text-white px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap" data-filter="all">ทั้งหมด</button>
+								<button class="home-filter-btn bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 whitespace-nowrap" data-filter="income">รายรับ</button>
+								<button class="home-filter-btn bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 whitespace-nowrap" data-filter="expense">รายจ่าย</button>
+								<button class="home-filter-btn bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 whitespace-nowrap" data-filter="transfer">โอน</button>
+							</div>
+
+							<div class="flex shrink-0 ml-auto">
+								<select id="home-items-per-page-select" class="theme-border-target form-select text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-primary-500 py-1.5 px-2 outline-none cursor-pointer">
+									<option value="10">10</option>
+									<option value="20">20</option>
+									<option value="50">50</option>
+								</select>
+							</div>
+						</div>
+
+						<div id="home-table-placeholder" class="overflow-x-auto"></div>
+						<div id="home-pagination-controls" class="flex justify-center items-center gap-1.5 mt-3 pb-2"></div>
+					</div>
+				</div>
+            </template>
+
+            <div id="page-home" class="app-page"></div>
+
+            <script>
+                (function() {
+                    const uiStyle = localStorage.getItem('fmpro_home_ui') || 'icon';
+                    const tpl = document.getElementById(uiStyle === 'classic' ? 'tpl-home-classic' : 'tpl-home-icon');
+                    const pageHome = document.getElementById('page-home');
+                    if (tpl && pageHome) pageHome.innerHTML = tpl.innerHTML;
+                })();
+                
+                // ฟังก์ชันกราฟที่ต้องใช้ร่วมกัน
+                let isChartsExpanded = window.getInitialChartState ? window.getInitialChartState('home') : true;
+                function toggleHomeCharts() {
+                    isChartsExpanded = !isChartsExpanded;
+                    window.applyHomeChartState(isChartsExpanded);
+                    if (window.saveChartState) window.saveChartState('home', isChartsExpanded);
+                }
+            </script>
         
 			<div id="page-list" class="app-page hidden">
 				<div id="transaction-list-container" class="bg-white p-4 md:p-6 rounded-xl shadow-lg pb-24">
@@ -1139,14 +1292,14 @@
 											<div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 shrink-0">
 												<i class="fa-solid fa-volume-high"></i>
 											</div>
-											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">เสียงตอบรับ (Smart Voice)</span>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">ปิดเสียงในแอป</span>
 										</div>
 										<label class="relative inline-flex items-center cursor-pointer shrink-0">
 											<input type="checkbox" id="toggle-smart-voice" class="sr-only peer" checked>
 											<div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-600"></div>
 										</label>
 									</div>
-									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">เปิด/ปิด เสียงโต้ตอบจากระบบอัจฉริยะ</p>
+									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">เปิด/ปิด เสียงตอบรับและเสียงเอฟเฟกต์ทั้งหมด</p>
 								</div>
 								
 								<div class="pt-4">
@@ -1179,6 +1332,27 @@
 										</label>
 									</div>
 									<p class="text-sm text-gray-500 dark:text-gray-400 ml-14">แตะพื้นที่ว่างบนหน้าจอติดกัน 2 ครั้ง เพื่อล็อคแอปทันที</p>
+								</div>
+								
+								<div class="pt-4 border-t border-gray-100 dark:border-gray-700 mt-4">
+									<div class="flex items-center justify-between mb-2">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
+												<i class="fa-solid fa-layer-group"></i>
+											</div>
+											<span class="text-base text-gray-700 dark:text-gray-200 font-medium">รูปแบบหน้าแรก (Home UI)</span>
+										</div>
+									</div>
+									<div class="ml-14 space-y-3 mt-1">
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input type="radio" name="home-ui-style" value="classic" class="form-radio text-primary-600 w-4 h-4" onchange="changeHomeUI(this.value)">
+											<span class="text-sm text-gray-500 dark:text-gray-400">แบบดั้งเดิม (เหมาะสำหรับคอมพิวเตอร์)</span>
+										</label>
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input type="radio" name="home-ui-style" value="icon" class="form-radio text-primary-600 w-4 h-4" onchange="changeHomeUI(this.value)">
+											<span class="text-sm text-gray-500 dark:text-gray-400">แบบไอคอน (เหมาะสำหรับมือถือ)</span>
+										</label>
+									</div>
 								</div>
 
 								<div class="pt-4">

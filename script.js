@@ -1,5 +1,33 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+	// ==========================================
+	// [Global Function] ระบบสลับ UI หน้าแรก (Home UI Style)
+	// ==========================================
+	window.changeHomeUI = function(selectedStyle) {
+		localStorage.setItem('fmpro_home_ui', selectedStyle);
+		if (typeof showToast === 'function') {
+			showToast('กำลังสลับรูปแบบหน้าจอ...', 'success');
+		}
+		// รีโหลดเพื่อให้ระบบดึง UI ใหม่มาใช้
+		setTimeout(() => {
+			window.location.reload();
+		}, 500);
+	};
+
+	// 🌟 ฟังก์ชันอัปเดตสถานะปุ่ม Radio ให้ตรงกับที่บันทึกไว้
+	window.updateHomeUIStatus = function() {
+		const currentUi = localStorage.getItem('fmpro_home_ui') || 'icon';
+		const uiRadios = document.querySelectorAll('input[name="home-ui-style"]');
+		uiRadios.forEach(radio => {
+			if (radio.value === currentUi) {
+				radio.checked = true;
+			}
+		});
+	};
+
+	// เรียกใช้งานอัตโนมัติ 2 จังหวะเพื่อความชัวร์ (ตอนโหลดเสร็จ และ ตอนสลับหน้า)
+	document.addEventListener('DOMContentLoaded', window.updateHomeUIStatus);
+	
 	// 2. เพิ่มโค้ดนี้เพื่อนำเลขเวอร์ชันไปแสดงที่ Footer
     const versionEl = document.getElementById('version-display');
     if (versionEl) {
@@ -2302,8 +2330,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				applyThemeColor();        // [NEW] ประยุกต์สี Theme ตอนเปิดแอป
 				setupThemeListener();     // [NEW] เตรียมตัวดักจับการตั้งค่าสีใหม่
 				
-
-				setupSwipeNavigation(); 
 				setupAutoLockListener(); 
 				// +++ เพิ่ม event listener สำหรับปุ่ม back เพื่อยกเลิก biometric และให้ไปที่รหัสผ่าน +++
 				window.addEventListener('popstate', () => {
@@ -5645,57 +5671,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 	}
-	
-    function setupSwipeNavigation() {
-        const mainContent = document.getElementById('page-wrapper');
-        let startX = 0;
-        let startY = 0;
-        const threshold = 75; 
-        const timeThreshold = 500;
-
-        let startTime;
-        mainContent.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                startTime = Date.now();
-            }
-        }, { passive: true });
-        mainContent.addEventListener('touchend', (e) => {
-            if (e.changedTouches.length === 1 && !isTransitioning) {
-                const endX = e.changedTouches[0].clientX;
-                const endY = e.changedTouches[0].clientY;
-                const endTime = Date.now();
-
-                const diffX = endX - startX;
-                const diffY = endY - startY;
-                const deltaTime = endTime - startTime;
-
-                if (deltaTime < timeThreshold && Math.abs(diffX) > threshold && Math.abs(diffX) > Math.abs(diffY)) {
-                    
-                    const currentPageId = 'page-' + currentPage;
-                    const currentPageIndex = PAGE_IDS.findIndex(id => id === currentPageId);
-                    let nextPageId = null;
-
-                    if (diffX < 0) { // Swipe Left (Next Page)
-                        const nextIndex = currentPageIndex + 1;
-                        if (nextIndex < PAGE_IDS.length) {
-                            nextPageId = PAGE_IDS[nextIndex];
-                        }
-                    } else { // Swipe Right (Previous Page)
-                        const prevIndex = currentPageIndex - 1;
-                        if (prevIndex >= 0) {
-                            nextPageId = PAGE_IDS[prevIndex];
-                        }
-                    }
-
-                    if (nextPageId) {
-                        showPage(nextPageId);
-                    }
-                }
-            }
-        });
-    }
 
 	function loadGuideContentIfNeeded() {
 		const guideContainer = document.getElementById('page-guide');
@@ -5899,7 +5874,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (pageId === 'page-settings') {
                 getEl('shared-controls-header').style.display = 'none';
                 renderSettings();
-				if (typeof renderCustomNotifyList === 'function') {
+
+                // 🌟 เพิ่มบรรทัดนี้: เพื่อให้ปุ่ม Radio จำสถานะตอนเปิดหน้าตั้งค่า
+                if (typeof window.updateHomeUIStatus === 'function') {
+                    window.updateHomeUIStatus();
+                }
+
+                if (typeof renderCustomNotifyList === 'function') {
                     renderCustomNotifyList();
                 }
             } else if (pageId === 'page-guide') {
@@ -5973,6 +5954,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			window.applyHomeChartState(state.homeChartsExpanded);
 		}
 		renderBudgetWidget();
+		
+		// 🌟 [เพิ่มใหม่] อัปเดตข้อความวันที่/เวลาล่าสุด ในหน้า Home
+		document.querySelectorAll('.current-date').forEach(el => {
+			const now = new Date();
+			const dateStr = now.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+			const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+			el.textContent = `${dateStr} ${timeStr} น.`;
+		});
     }
 	
 	// ฟังก์ชันสำหรับสร้างตัวเลือก Auto Complete (ย้ายออกมาเพื่อให้เรียกใช้ได้ตลอด)
@@ -6106,151 +6095,156 @@ document.addEventListener('DOMContentLoaded', () => {
 			totalBalanceEl.textContent = formatCurrency(totalCashBalance);
 		}
 
-    function renderAllAccountSummary(balances) {
-		const container = document.getElementById('all-accounts-summary');
-		const parentContent = document.getElementById('home-accounts-content');
-		
-		// เช็คสถานะว่ากำลัง "กางทั้งหมด" หรือ "ย่อ 6 บัญชี" (ค่าเริ่มต้นคือ false = ย่อ)
-		const isExpanded = parentContent.dataset.expanded === 'true';
-		
-		// ตั้งค่า Container คลาสตามโหมดที่เลือก
-		if (isExpanded) {
-			// โหมดกางทั้งหมด: เป็น Grid 3 คอลัมน์ยาวลงมาเลย
-			container.className = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 w-full';
-			container.style.scrollbarWidth = '';
-			container.style.msOverflowStyle = '';
-		} else {
-			// โหมดย่อ (ค่าเริ่มต้น): เป็น Flex เลื่อนซ้ายขวาแบบ Snap
-			container.className = 'flex overflow-x-auto snap-x snap-mandatory pb-1 md:pb-0 md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 md:gap-4 md:overflow-visible w-full';
-			container.style.scrollbarWidth = 'none'; 
-			container.style.msOverflowStyle = 'none'; 
-			if (!document.getElementById('hide-scroll-style-acc')) {
-				document.head.insertAdjacentHTML('beforeend', '<style id="hide-scroll-style-acc">#all-accounts-summary::-webkit-scrollbar { display: none; }</style>');
+		// ==========================================
+		// 1. ฟังก์ชันวาด "สรุปบัญชีทั้งหมด" (ลบกรอบสี่เหลี่ยมผีสิงแบบเด็ดขาด 100%)
+		// ==========================================
+		function renderAllAccountSummary(balances) {
+			const container = document.getElementById('all-accounts-summary');
+			const parentContent = document.getElementById('home-accounts-content');
+			if (!container) return;
+			
+			// บังคับให้กล่องแม่เป็น relative
+			parentContent.classList.add('relative');
+			
+			const isExpanded = parentContent.dataset.expanded === 'true';
+			const uiStyle = localStorage.getItem('fmpro_home_ui') || 'icon';
+			const sortedAccounts = getSortedAccounts().filter(acc => acc.isVisible !== false);
+
+			container.innerHTML = ''; 
+
+			if (sortedAccounts.length === 0) { 
+				container.className = 'w-full';
+				container.innerHTML = `<div class="w-full text-center py-4"><p class="text-gray-500 text-sm">ยังไม่มีบัญชี <button id="nav-settings-shortcut" class="text-primary-600 hover:underline mt-1 block w-full">สร้างบัญชีใหม่</button></p></div>`;
+				setTimeout(() => { const btn = document.getElementById('nav-settings-shortcut'); if(btn) btn.addEventListener('click', () => showPage('page-accounts')); }, 0);
+				return;
 			}
 
-			// ป้องกันการ Swipe เปลี่ยนหน้าจอหลัก เมื่อใช้นิ้วเลื่อนดูบัญชี
-			if (!container.dataset.touchFixed) {
-				container.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
-				container.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
-				container.addEventListener('touchend', (e) => e.stopPropagation(), { passive: true });
-				container.dataset.touchFixed = 'true';
+			let fullHtml = '';
+
+			// ===================================
+			// โหมด CLASSIC (แบบดั้งเดิม PC)
+			// ===================================
+			if (uiStyle === 'classic') {
+				if (isExpanded) {
+					container.className = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 w-full';
+					sortedAccounts.forEach(acc => {
+						const balance = balances[acc.id] || 0;
+						let bClass = balance > 0 ? 'balance-positive' : (balance < 0 ? 'balance-negative' : 'balance-zero');
+						fullHtml += `<div class="bg-gradient-to-br from-white to-purple-50/40 dark:from-gray-800 dark:to-gray-800/80 py-2 px-1.5 md:p-3 rounded-xl border border-gray-100 dark:border-gray-700 border-t-2 border-t-purple-400 shadow-sm hover:shadow-md compact-account-card cursor-pointer flex flex-col justify-center items-center w-full" data-id="${acc.id}"><i class="fa-solid ${acc.iconName || acc.icon || 'fa-wallet'} text-purple-600 text-sm md:text-base mb-1"></i><h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-center">${escapeHTML(acc.name)}</h3><p class="text-base md:text-lg font-bold ${bClass} truncate w-full text-center mt-0.5">${formatCurrency(balance)}</p></div>`;
+					});
+				} else {
+					container.className = 'flex overflow-x-auto snap-x snap-mandatory pb-2 w-full hide-scrollbar';
+					let chunkSize = 3; 
+					if (window.innerWidth >= 1280) chunkSize = 6; 
+					else if (window.innerWidth >= 1024) chunkSize = 5;
+					else if (window.innerWidth >= 768) chunkSize = 4;
+
+					const chunks = [];
+					for (let i = 0; i < sortedAccounts.length; i += chunkSize) chunks.push(sortedAccounts.slice(i, i + chunkSize));
+					chunks.forEach(chunk => {
+						fullHtml += `<div class="min-w-full flex-shrink-0 snap-center grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">`;
+						chunk.forEach(acc => {
+							const balance = balances[acc.id] || 0;
+							let bClass = balance > 0 ? 'balance-positive' : (balance < 0 ? 'balance-negative' : 'balance-zero');
+							fullHtml += `<div class="bg-gradient-to-br from-white to-purple-50/40 dark:from-gray-800 dark:to-gray-800/80 py-2 px-1.5 md:p-3 rounded-xl border border-gray-100 dark:border-gray-700 border-t-2 border-t-purple-400 shadow-sm hover:shadow-md compact-account-card cursor-pointer flex flex-col justify-center items-center w-full" data-id="${acc.id}"><i class="fa-solid ${acc.iconName || acc.icon || 'fa-wallet'} text-purple-600 text-sm md:text-base mb-1"></i><h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-center">${escapeHTML(acc.name)}</h3><p class="text-base md:text-lg font-bold ${bClass} truncate w-full text-center mt-0.5">${formatCurrency(balance)}</p></div>`;
+						});
+						fullHtml += `</div>`;
+					});
+				}
+			} 
+			// ===================================
+			// โหมด ICON (แบบวงกลม Mobile)
+			// ===================================
+			else {
+				if (isExpanded) {
+					container.className = 'grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-y-6 gap-x-2 justify-items-center w-full';
+					sortedAccounts.forEach((acc) => {
+						const balance = balances[acc.id] || 0;
+						let bClass = balance > 0 ? 'text-emerald-500' : (balance < 0 ? 'text-red-500' : 'text-gray-500');
+						fullHtml += `<div class="compact-account-card flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-all w-full" data-id="${acc.id}">
+							<div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-200 shadow-md relative">
+								<i class="fa-solid ${acc.iconName || acc.icon || 'fa-wallet'} text-3xl md:text-4xl relative z-10"></i>
+							</div>
+							<h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-center mt-1 leading-tight">${escapeHTML(acc.name)}</h3>
+							<p class="text-[13px] md:text-sm font-bold ${bClass} truncate w-full text-center">${formatCurrency(balance)}</p>
+						</div>`;
+					});
+				} else {
+					container.className = 'flex overflow-x-auto snap-x snap-mandatory pb-2 w-full hide-scrollbar';
+					let chunkSize = 3; 
+					if (window.innerWidth >= 1024) chunkSize = 5; 
+					else if (window.innerWidth >= 640) chunkSize = 4; 
+					
+					const chunks = [];
+					for (let i = 0; i < sortedAccounts.length; i += chunkSize) {
+						chunks.push(sortedAccounts.slice(i, i + chunkSize));
+					}
+					
+					chunks.forEach(chunk => {
+						fullHtml += `<div class="min-w-full flex-shrink-0 snap-center grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-y-6 gap-x-2 justify-items-center">`;
+						chunk.forEach(acc => {
+							const balance = balances[acc.id] || 0;
+							let bClass = balance > 0 ? 'text-emerald-500' : (balance < 0 ? 'text-red-500' : 'text-gray-500');
+							fullHtml += `<div class="compact-account-card flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-all w-full" data-id="${acc.id}">
+								<div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-200 shadow-md relative">
+									<i class="fa-solid ${acc.iconName || acc.icon || 'fa-wallet'} text-3xl md:text-4xl relative z-10"></i>
+								</div>
+								<h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-center mt-1 leading-tight">${escapeHTML(acc.name)}</h3>
+								<p class="text-[13px] md:text-sm font-bold ${bClass} truncate w-full text-center">${formatCurrency(balance)}</p>
+							</div>`;
+						});
+						fullHtml += `</div>`;
+					});
+				}
 			}
-		}
 
-		container.innerHTML = ''; 
-		
-		// ดึงบัญชีที่เปิดแสดงผลอยู่
-		const sortedAccounts = getSortedAccounts().filter(acc => acc.isVisible !== false);
+			container.innerHTML = fullHtml;
 
-		if (sortedAccounts.length === 0) { 
-			container.innerHTML = `<div class="w-full text-center py-2 col-span-full"><p class="text-gray-500 text-sm">ยังไม่มีบัญชี
-			<button id="nav-settings-shortcut" class="text-purple-600 hover:underline">สร้างบัญชีใหม่ในหน้าตั้งค่า</button>
-			</p></div>`;
-			setTimeout(() => {
-				const btn = document.getElementById('nav-settings-shortcut');
-				if(btn) btn.addEventListener('click', () => showPage('page-accounts'));
-			}, 0);
-			return;
-		}
-
-		let fullHtml = '';
-
-		if (isExpanded) {
-			// --- กรณี: กางดูทั้งหมด (เรียง Grid ลงมาเรื่อยๆ) ---
-			sortedAccounts.forEach(acc => {
-				const balance = balances[acc.id] || 0;
-				let balanceClass = 'balance-zero';
-				if (balance > 0) balanceClass = 'balance-positive';
-				if (balance < 0) balanceClass = 'balance-negative';
-				const currentIcon = acc.iconName || acc.icon || 'fa-wallet';
-
-				fullHtml += `
-					<div class="bg-gradient-to-br from-white to-purple-50/40 dark:from-gray-800 dark:to-gray-800/80 py-2 px-1.5 md:p-3 rounded-xl border border-gray-100 dark:border-gray-700 border-t-2 border-t-purple-400 shadow-sm hover:shadow-md compact-account-card cursor-pointer flex flex-col justify-center items-center transition-all w-full relative overflow-hidden group" data-id="${acc.id}">
-						<div class="absolute -right-3 -top-3 w-10 h-10 bg-purple-500/5 dark:bg-purple-500/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-						<i class="fa-solid ${currentIcon} text-purple-600 text-sm md:text-base mb-1 relative z-10 drop-shadow-sm"></i>
-						<h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-center leading-tight relative z-10">${escapeHTML(acc.name)}</h3>
-						<p class="text-sm md:text-base font-bold ${balanceClass} truncate w-full text-center leading-tight mt-0.5 relative z-10">${formatCurrency(balance)}</p>
-					</div>
-				`;
-			});
-		} else {
-			// --- กรณี: ย่อส่วน (จับมัดกลุ่มละ 6 บัญชี) ---
-			const chunkSize = 6;
-			const chunks = [];
-			for (let i = 0; i < sortedAccounts.length; i += chunkSize) {
-				chunks.push(sortedAccounts.slice(i, i + chunkSize));
+			// ===================================
+			// 🌟 ลูกศรสีฟ้า (ใช้ Inline Style ฆ่ากรอบทิ้ง)
+			// ===================================
+			let accountControls = document.getElementById('account-toggle-controls');
+			if (!accountControls) {
+				accountControls = document.createElement('div');
+				accountControls.id = 'account-toggle-controls';
+				parentContent.appendChild(accountControls);
 			}
 
-			chunks.forEach(chunk => {
-				fullHtml += `<div class="min-w-full flex-shrink-0 snap-center grid grid-cols-3 gap-2 md:contents">`;
+			let limit = 3;
+			if (uiStyle === 'classic') {
+				if (window.innerWidth >= 1280) limit = 6;
+				else if (window.innerWidth >= 1024) limit = 5;
+				else if (window.innerWidth >= 768) limit = 4;
+			} else {
+				if (window.innerWidth >= 1024) limit = 5;
+				else if (window.innerWidth >= 640) limit = 4;
+			}
+
+			if (sortedAccounts.length > limit || isExpanded) {
 				
-				chunk.forEach(acc => {
-					const balance = balances[acc.id] || 0;
-					let balanceClass = 'balance-zero';
-					if (balance > 0) balanceClass = 'balance-positive';
-					if (balance < 0) balanceClass = 'balance-negative';
-					const currentIcon = acc.iconName || acc.icon || 'fa-wallet';
-
-					// ดีไซน์การ์ดพรีเมียม: ขอบมน โทนสีละมุน มีเส้นขีดบนสีม่วง
-					fullHtml += `
-						<div class="bg-gradient-to-br from-white to-purple-50/40 dark:from-gray-800 dark:to-gray-800/80 py-2 px-1.5 md:p-3 rounded-xl border border-gray-100 dark:border-gray-700 border-t-2 border-t-purple-400 shadow-sm hover:shadow-md compact-account-card cursor-pointer flex flex-col justify-center items-center transition-all w-full relative overflow-hidden group" data-id="${acc.id}">
-							<div class="absolute -right-3 -top-3 w-10 h-10 bg-purple-500/5 dark:bg-purple-500/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-							<i class="fa-solid ${currentIcon} text-purple-600 text-sm md:text-base mb-1 relative z-10 drop-shadow-sm"></i>
-							<h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-center leading-tight relative z-10">${escapeHTML(acc.name)}</h3>
-							<p class="text-sm md:text-base font-bold ${balanceClass} truncate w-full text-center leading-tight mt-0.5 relative z-10">${formatCurrency(balance)}</p>
-						</div>
-					`;
-				});
-
-				fullHtml += `</div>`;
-			});
+				// 🌟 บังคับใส่ style="..." ล้างพื้นหลัง/ขอบ ให้กล่องแม่
+				accountControls.className = `absolute right-1 bottom-3 z-10 pointer-events-none flex items-center justify-center`;
+				accountControls.style.cssText = `background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important;`;
+				
+				const iconClass = isExpanded ? 'fa-chevron-up' : 'fa-chevron-down';
+				
+				// 🌟 บังคับใส่ style="..." ล้างพื้นหลัง/ขอบ ให้ปุ่มด้วย (กันเหนียว)
+				accountControls.innerHTML = `
+					<button id="toggle-account-view-btn" class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-lg transition-transform active:scale-90 cursor-pointer pointer-events-auto flex items-center justify-center w-8 h-8" style="background: transparent !important; border: none !important; box-shadow: none !important; outline: none !important;">
+						<i class="fa-solid ${iconClass}"></i>
+					</button>
+				`;
+				document.getElementById('toggle-account-view-btn').onclick = (e) => { 
+					e.stopPropagation(); 
+					parentContent.dataset.expanded = isExpanded ? 'false' : 'true'; 
+					renderAllAccountSummary(balances); 
+				};
+			} else {
+				accountControls.innerHTML = '';
+				accountControls.style.cssText = '';
+			}
 		}
 
-		container.innerHTML = fullHtml;
-
-		// --- ส่วนควบคุม: สร้างสัญลักษณ์เลื่อน และปุ่มกดดูทั้งหมด ---
-		let accountControls = document.getElementById('account-toggle-controls');
-		if (!accountControls) {
-			accountControls = document.createElement('div');
-			accountControls.id = 'account-toggle-controls';
-			accountControls.className = 'mt-3 flex justify-between items-center w-full px-1';
-			parentContent.appendChild(accountControls);
-		}
-
-		let controlsHtml = '';
-		
-		// ฝั่งซ้าย: สัญลักษณ์แจ้งให้รู้ว่าเลื่อนซ้าย-ขวาได้ (แสดงเฉพาะเมื่อมีบัญชี > 6 และอยู่ในโหมดย่อ)
-		if (!isExpanded && sortedAccounts.length > 6) {
-			controlsHtml += `
-				<div class="text-[10px] md:hidden text-purple-500 flex items-center gap-1.5 animate-pulse bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-full font-medium">
-					<i class="fa-solid fa-angles-left"></i> เลื่อนดูบัญชี <i class="fa-solid fa-angles-right"></i>
-				</div>
-			`;
-		} else {
-			controlsHtml += `<div></div>`; // กล่องเปล่าเพื่อดึงให้ปุ่มด้านขวาอยู่ชิดขวา
-		}
-
-		// ฝั่งขวา: ปุ่มกดย่อ/ขยาย (แสดงเฉพาะเมื่อมีบัญชี > 6)
-		if (sortedAccounts.length > 6) {
-			const btnText = isExpanded ? 'ย่อบัญชี <i class="fa-solid fa-chevron-up ml-1"></i>' : 'ดูทั้งหมด <i class="fa-solid fa-chevron-down ml-1"></i>';
-			controlsHtml += `
-				<button id="toggle-account-view-btn" class="text-xs text-purple-600 hover:text-purple-800 font-bold bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-800 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex items-center">
-					${btnText}
-				</button>
-			`;
-		}
-
-		accountControls.innerHTML = controlsHtml;
-
-		// ฝัง Event ให้ปุ่มกดย่อ/ขยาย
-		const toggleBtn = document.getElementById('toggle-account-view-btn');
-		if (toggleBtn) {
-			toggleBtn.addEventListener('click', () => {
-				parentContent.dataset.expanded = isExpanded ? 'false' : 'true';
-				renderAllAccountSummary(balances); // สั่งเรนเดอร์ใหม่ตามโหมด
-			});
-		}
-	}
 	// ============================================
     // [NEW] ฟังก์ชันดึงรายชื่อบัญชีมาใส่ Dropdown ในหน้าค้นหา
     // ============================================
@@ -13872,93 +13866,114 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            function startVoiceRecognition() {
-                if (!recognition) {
-                    Swal.fire('ไม่รองรับ', 'เบราว์เซอร์นี้ไม่รองรับการจดจำเสียง', 'error');
-                    return;
-                }
+            // ==========================================
+			// ฟังก์ชันสั่งงานด้วยเสียง (รองรับ 2 โหมด UI)
+			// ==========================================
+			function startVoiceRecognition() {
+				if (!recognition) {
+					Swal.fire('ไม่รองรับ', 'เบราว์เซอร์นี้ไม่รองรับการจดจำเสียง', 'error');
+					return;
+				}
 
-                const voiceBtn = document.getElementById('voice-add-btn');
-                voiceBtn.innerHTML = '<i class="fa-solid fa-microphone-slash mr-2 fa-beat"></i> กำลังฟัง...';
-                voiceBtn.disabled = true;
+				const voiceBtn = document.getElementById('voice-add-btn');
+				const uiStyle = localStorage.getItem('fmpro_home_ui') || 'icon';
+				
+				// 🌟 ดึงโครงสร้างเดิมเก็บไว้ก่อน (เพื่อเอาไว้คืนร่าง)
+				const originalBtnHtml = voiceBtn.innerHTML;
 
-                recognition.start();
+				// 🌟 เปลี่ยนปุ่มเป็นสถานะ "กำลังฟัง" ตามโหมด UI
+				if (uiStyle === 'classic') {
+					// โหมดดั้งเดิม (ปุ่มสี่เหลี่ยมแนวนอน)
+					voiceBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังฟัง...';
+				} else {
+					// โหมดไอคอนวงกลม (เปลี่ยนแค่ไอคอนและข้อความข้างใน)
+					voiceBtn.innerHTML = `
+						<div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-md flex items-center justify-center transform transition-all border-2 border-transparent">
+							<i class="fa-solid fa-spinner fa-spin text-2xl md:text-3xl drop-shadow-sm"></i>
+						</div>
+						<span class="text-[11px] md:text-sm font-bold text-blue-500 whitespace-nowrap drop-shadow-sm">กำลังฟัง...</span>
+					`;
+				}
+				
+				voiceBtn.disabled = true;
+				recognition.start();
 
-                recognition.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript;
-                    console.log('Voice transcript:', transcript);
+				// 🌟 ฟังก์ชันแยกเพื่อ "คืนร่าง" กลับสู่หน้าตาดั้งเดิม
+				function resetVoiceButton() {
+					voiceBtn.innerHTML = originalBtnHtml;
+					voiceBtn.disabled = false;
+				}
 
-                    const parsed = parseVoiceInput(transcript);
-                    if (!parsed) {
-                        Swal.fire('ไม่เข้าใจ', 'กรุณาพูดใหม่ เช่น "จ่ายค่าข้าว 50 บาท" หรือ "ได้เงินเดือน 15000 บาท"', 'error');
-                        resetVoiceButton();
-                        return;
-                    }
+				recognition.onresult = (event) => {
+					const transcript = event.results[0][0].transcript;
+					console.log('Voice transcript:', transcript);
 
-                    const { type, name, amount, description } = parsed;
-                    
-                    const category = autoSelectCategory(name, type);
-                    
-                    openModal();
-                    
-                    setTimeout(() => {
-                        document.querySelector(`input[name="tx-type"][value="${type}"]`).checked = true;
-                        document.getElementById('tx-name').value = name;
-                        document.getElementById('tx-amount').value = amount;
-                        if (description) {
-                            document.getElementById('tx-desc').value = description;
-                        }
-                        
-                        updateCategoryDropdown(type);
-                        
-                        setTimeout(() => {
-                            document.getElementById('tx-category').value = category;
-                        }, 100);
-                        
-                        updateFormVisibility();
-                        
-                        Swal.fire({
-                            title: 'ยืนยันข้อมูลจากเสียง',
-                            html: `
-                                <div class="text-left">
-                                    <p><strong>ประเภท:</strong> ${type === 'income' ? 'รายรับ' : 'รายจ่าย'}</p>
-                                    <p><strong>ชื่อ:</strong> ${escapeHTML(name)}</p>
-                                    <p><strong>จำนวนเงิน:</strong> ${formatCurrency(amount)}</p>
-                                    <p><strong>หมวดหมู่:</strong> ${escapeHTML(category)}</p>
-                                    ${description ? `<p><strong>คำอธิบาย:</strong> ${escapeHTML(description)}</p>` : ''}
-                                </div>
-                            `,
-                            icon: 'info',
-                            showCancelButton: true,
-                            confirmButtonText: 'บันทึก',
-                            cancelButtonText: 'แก้ไข'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                document.getElementById('transaction-form').dispatchEvent(new Event('submit'));
-                            }
-                        });
-                    }, 300);
-                };
+					const parsed = parseVoiceInput(transcript);
+					if (!parsed) {
+						Swal.fire('ไม่เข้าใจ', 'กรุณาพูดใหม่ เช่น "จ่ายค่าข้าว 50 บาท" หรือ "ได้เงินเดือน 15000 บาท"', 'error');
+						resetVoiceButton();
+						return;
+					}
 
-                recognition.onerror = (event) => {
-                    console.error('Speech recognition error', event.error);
-                    if (event.error === 'no-speech') {
-                        Swal.fire('ไม่พบเสียง', 'กรุณาพูดให้ชัดเจนขึ้น', 'warning');
-                    } else {
-                        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการจดจำเสียง: ' + event.error, 'error');
-                    }
-                    resetVoiceButton();
-                };
+					const { type, name, amount, description } = parsed;
+					const category = autoSelectCategory(name, type);
+					
+					openModal();
+					
+					setTimeout(() => {
+						document.querySelector(`input[name="tx-type"][value="${type}"]`).checked = true;
+						document.getElementById('tx-name').value = name;
+						document.getElementById('tx-amount').value = amount;
+						if (description) {
+							document.getElementById('tx-desc').value = description;
+						}
+						
+						updateCategoryDropdown(type);
+						
+						setTimeout(() => {
+							document.getElementById('tx-category').value = category;
+						}, 100);
+						
+						updateFormVisibility();
+						
+						Swal.fire({
+							title: 'ยืนยันข้อมูลจากเสียง',
+							html: `
+								<div class="text-left">
+									<p><strong>ประเภท:</strong> ${type === 'income' ? 'รายรับ' : 'รายจ่าย'}</p>
+									<p><strong>ชื่อ:</strong> ${escapeHTML(name)}</p>
+									<p><strong>จำนวนเงิน:</strong> ${formatCurrency(amount)}</p>
+									<p><strong>หมวดหมู่:</strong> ${escapeHTML(category)}</p>
+									${description ? `<p><strong>คำอธิบาย:</strong> ${escapeHTML(description)}</p>` : ''}
+								</div>
+							`,
+							icon: 'info',
+							showCancelButton: true,
+							confirmButtonText: 'บันทึก',
+							cancelButtonText: 'แก้ไข'
+						}).then((result) => {
+							if (result.isConfirmed) {
+								document.getElementById('transaction-form').dispatchEvent(new Event('submit'));
+							}
+						});
+					}, 300);
+				};
 
-                recognition.onend = () => {
-                    resetVoiceButton();
-                };
+				recognition.onerror = (event) => {
+					console.error('Speech recognition error', event.error);
+					if (event.error === 'no-speech') {
+						Swal.fire('ไม่พบเสียง', 'กรุณาพูดให้ชัดเจนขึ้น', 'warning');
+					} else {
+						Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการจดจำเสียง: ' + event.error, 'error');
+					}
+					resetVoiceButton();
+				};
 
-                function resetVoiceButton() {
-                    voiceBtn.innerHTML = '<i class="fa-solid fa-microphone mr-2"></i> เพิ่มด้วยเสียง';
-                    voiceBtn.disabled = false;
-                }
-            }
+				recognition.onend = () => {
+					resetVoiceButton();
+				};
+			}
+
 			// [script.js] แก้ไขฟังก์ชัน startModalVoiceRecognition ให้ทำงานเสถียรขึ้น
 				function startModalVoiceRecognition() {
 					if (!recognition) {
@@ -14258,13 +14273,15 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				};
 
-				// 5. ฟังก์ชันคำนวณและแสดงผล Widget หน้าแรก (รองรับการดูย้อนหลัง)
+				// ==========================================
+				// 5. ฟังก์ชันวาด "งบประมาณ" (ย่อแล้วแยกหลอด + แสดงชื่อจิ๋วบนหลอด)
+				// ==========================================
 				function renderBudgetWidget() {
 					const container = document.getElementById('budget-list-container');
 					const widget = document.getElementById('home-budget-widget');
 					if (!container || !widget) return;
 
-					if (state.budgets.length === 0) {
+					if (!state.budgets || state.budgets.length === 0) {
 						widget.classList.add('hidden');
 						return;
 					}
@@ -14275,136 +14292,125 @@ document.addEventListener('DOMContentLoaded', () => {
 					const selectedDate = new Date(state.homeCurrentDate);
 					const selectedMonth = selectedDate.getMonth();
 					const selectedYear = selectedDate.getFullYear();
-					const now = new Date();
-					const currentRealMonth = now.getMonth();
-					const currentRealYear = now.getFullYear();
-
-					const isCurrentMonth = (selectedMonth === currentRealMonth && selectedYear === currentRealYear);
-					const isPastMonth = (selectedYear < currentRealYear) || (selectedYear === currentRealYear && selectedMonth < currentRealMonth);
-
 					const monthName = selectedDate.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' });
 					const headerTitle = widget.querySelector('h2');
-					if (headerTitle) {
-						headerTitle.innerHTML = `<i class="fa-solid fa-bullseye text-red-500 mr-1.5"></i> งบประมาณ (${monthName})`;
-					}
+					if (headerTitle) headerTitle.innerHTML = `<i class="fa-solid fa-bullseye text-red-500 mr-1.5"></i> งบประมาณ (${monthName})`;
 
-					const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-					let daysRemaining = 0;
-					if (isCurrentMonth) {
-						daysRemaining = daysInMonth - now.getDate();
-					} else if (!isPastMonth) {
-						daysRemaining = daysInMonth;
-					}
+					const expenses = state.transactions.filter(tx => new Date(tx.date).getMonth() === selectedMonth && new Date(tx.date).getFullYear() === selectedYear && tx.type === 'expense');
+					const uiStyle = localStorage.getItem('fmpro_home_ui') || 'icon';
+					const isDark = document.body.classList.contains('dark');
+					const isMobile = window.innerWidth < 768;
 
-					const expensesInSelectedMonth = state.transactions.filter(tx => {
-						const d = new Date(tx.date);
-						return tx.type === 'expense' && d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-					});
-
-					state.budgets.forEach(budget => {
-						const spent = expensesInSelectedMonth
-							.filter(tx => tx.category === budget.category)
-							.reduce((sum, tx) => sum + tx.amount, 0);
+					// ===================================
+					// 🌟 1. ส่วนควบคุมปุ่ม (มัดรวมชิดขวา)
+					// ===================================
+					const headerDiv = headerTitle ? headerTitle.parentElement : null;
+					if (headerDiv) {
+						let controlsWrapper = document.getElementById('budget-controls-wrapper');
+						let toggleBtn = document.getElementById('budget-toggle-btn');
 						
+						if (!controlsWrapper) {
+							const manageBtn = headerTitle.nextElementSibling;
+							controlsWrapper = document.createElement('div');
+							controlsWrapper.id = 'budget-controls-wrapper';
+							controlsWrapper.className = 'flex items-center gap-1.5 ml-auto'; 
+							if (manageBtn && manageBtn.id !== 'budget-toggle-btn') {
+								headerDiv.insertBefore(controlsWrapper, manageBtn);
+								controlsWrapper.appendChild(manageBtn);
+							} else {
+								headerDiv.appendChild(controlsWrapper);
+							}
+						}
+						
+						if (uiStyle !== 'classic' && isMobile) {
+							if (!toggleBtn) {
+								toggleBtn = document.createElement('button');
+								toggleBtn.id = 'budget-toggle-btn';
+								toggleBtn.className = 'text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-lg active:scale-90 transition-transform bg-transparent border-0 flex items-center justify-center outline-none cursor-pointer w-8 h-8';
+								controlsWrapper.appendChild(toggleBtn); 
+							}
+							const isExpanded = widget.dataset.expanded !== 'false';
+							toggleBtn.innerHTML = `<i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>`;
+							toggleBtn.onclick = (e) => {
+								e.stopPropagation();
+								widget.dataset.expanded = isExpanded ? 'false' : 'true';
+								renderBudgetWidget();
+							};
+						} else {
+							if (toggleBtn) toggleBtn.remove();
+							widget.dataset.expanded = 'true';
+						}
+					}
+
+					const isExpanded = widget.dataset.expanded !== 'false';
+
+					// ===================================
+					// 🌟 2. สถานะ "ย่อ" (แยกหลอด + ชื่อจิ๋ว)
+					// ===================================
+					if (!isExpanded && uiStyle !== 'classic' && isMobile) {
+						let miniBarsHtml = '<div class="w-full flex gap-1.5 cursor-pointer hover:opacity-90 transition-opacity pt-1 pb-1" id="budget-mini-bar">';
+						
+						state.budgets.forEach(budget => {
+							const spent = expenses.filter(tx => tx.category === budget.category).reduce((s, tx) => s + tx.amount, 0);
+							const percent = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0;
+							let bClass = percent >= 100 ? 'bg-red-600' : (percent >= 80 ? 'bg-orange-600' : (percent >= 50 ? 'bg-amber-500' : 'bg-emerald-600'));
+							
+							miniBarsHtml += `
+								<div class="flex-1 flex flex-col gap-1">
+									<span class="text-[9px] font-medium text-gray-500 dark:text-gray-400 truncate leading-none px-0.5">
+										${escapeHTML(budget.category)}
+									</span>
+									<div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+										<div class="${bClass} h-full rounded-full transition-all duration-500 ease-out" style="width: ${percent}%;"></div>
+									</div>
+								</div>
+							`;
+						});
+						
+						miniBarsHtml += '</div>';
+						container.innerHTML = miniBarsHtml;
+						
+						const miniBar = document.getElementById('budget-mini-bar');
+						if (miniBar) {
+							miniBar.onclick = () => {
+								widget.dataset.expanded = 'true';
+								renderBudgetWidget();
+							};
+						}
+						return; 
+					}
+
+					// ===================================
+					// 🌟 3. สถานะ "กาง" (แสดงวงกลมปกติ)
+					// ===================================
+					state.budgets.forEach(budget => {
+						const spent = expenses.filter(tx => tx.category === budget.category).reduce((s, tx) => s + tx.amount, 0);
 						const percent = Math.min((spent / budget.amount) * 100, 100);
 						const remaining = budget.amount - spent;
 						
-						let barColor = 'bg-green-500';
-						let statusText = 'ปกติ';
-						let statusClass = 'text-green-600';
-						
-						if (percent >= 100) {
-							barColor = 'bg-red-600';
-							statusText = 'เกินงบ!';
-							statusClass = 'text-red-600 font-bold';
-							if (isCurrentMonth) statusClass += ' animate-pulse';
-						} else if (percent >= 80) {
-							barColor = 'bg-red-500';
-							statusText = 'วิกฤต';
-							statusClass = 'text-red-500 font-bold';
-						} else if (percent >= 50) {
-							barColor = 'bg-yellow-400';
-							statusText = 'ระวัง';
-							statusClass = 'text-yellow-600';
-						}
+						let rColor = percent >= 100 ? '#dc2626' : (percent >= 80 ? '#ea580c' : (percent >= 50 ? '#f59e0b' : '#059669'));
+						let tClass = percent >= 100 ? 'text-red-600 dark:text-red-500' : (percent >= 80 ? 'text-orange-600 dark:text-orange-500' : (percent >= 50 ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-500'));
 
-						let adviceHtml = '';
-						if (isCurrentMonth) {
-							if (remaining > 0 && daysRemaining > 0) {
-								const dailySafe = remaining / daysRemaining;
-								adviceHtml = `<div class="text-[0.6rem] md:text-[0.65rem] text-gray-500 mt-0.5 flex items-center gap-1 leading-none">
-									<i class="fa-solid fa-calendar-day text-blue-400"></i> วันละ <span class="font-bold text-blue-600">${formatCurrency(dailySafe)}</span> (เหลือ ${daysRemaining} วัน)
-								</div>`;
-							} else if (remaining <= 0) {
-								adviceHtml = `<div class="text-[9px] md:text-[10px] text-red-500 mt-0.5 font-bold leading-none">งบหมดแล้ว!</div>`;
-							}
-						} else if (isPastMonth) {
-							if (remaining >= 0) {
-								adviceHtml = `<div class="text-[9px] md:text-[10px] text-green-600 mt-0.5 flex items-center gap-1 leading-none">
-									<i class="fa-solid fa-check-circle"></i> ปิดงบ: <span class="font-bold">เหลือ ${formatCurrency(remaining)}</span>
-								</div>`;
-							} else {
-								adviceHtml = `<div class="text-[9px] md:text-[10px] text-red-500 mt-0.5 flex items-center gap-1 leading-none">
-									<i class="fa-solid fa-circle-exclamation"></i> ปิดงบ: <span class="font-bold">เกิน ${formatCurrency(Math.abs(remaining))}</span>
-								</div>`;
-							}
+						let html = '';
+						if (uiStyle === 'classic') {
+							let bClass = percent >= 100 ? 'bg-red-600' : (percent >= 80 ? 'bg-orange-600' : (percent >= 50 ? 'bg-amber-500' : 'bg-emerald-600'));
+							html = `<div class="budget-item-click cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-1.5 rounded-lg border border-transparent" data-category="${escapeHTML(budget.category)}"><div class="flex justify-between items-end mb-1"><span class="font-bold text-gray-700 dark:text-gray-200 text-xs">${escapeHTML(budget.category)}</span><span class="text-[0.65rem] ${tClass} font-bold">${Math.round(percent)}%</span></div><div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mb-1"><div class="${bClass} h-full rounded-full" style="width: ${percent}%"></div></div><div class="flex justify-between items-center"><span class="text-[0.65rem] text-gray-500">${formatCurrency(spent)} / ${formatCurrency(budget.amount)}</span><span class="text-[0.65rem] font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'}">${remaining >= 0 ? 'เหลือ ' + formatCurrency(remaining) : 'เกิน ' + formatCurrency(Math.abs(remaining))}</span></div></div>`;
+						} else {
+							const catObj = state.categories && state.categories.expense ? state.categories.expense.find(c => c.name === budget.category) : null;
+							const iconName = catObj && catObj.icon ? catObj.icon : 'fa-tag';
+							html = `<div class="budget-item-click flex-shrink-0 flex flex-col items-center gap-3 cursor-pointer snap-center w-[96px] md:w-32" data-category="${escapeHTML(budget.category)}"><div class="relative w-24 h-24 md:w-28 md:h-28 rounded-full shadow-md" style="background: conic-gradient(${rColor} ${percent}%, ${isDark ? '#374151' : '#e5e7eb'} 0);"><div class="absolute inset-[7px] ${isDark ? 'bg-gray-900' : 'bg-[#f3f4f6]'} rounded-full flex flex-col items-center justify-center"><i class="fa-solid ${iconName} text-gray-400 text-base mb-1"></i><span class="text-xs font-bold ${tClass}">${Math.round(percent)}%</span></div></div><div class="text-center w-full px-1"><h3 class="text-xs font-bold text-gray-700 dark:text-gray-200 truncate w-full">${escapeHTML(budget.category)}</h3><p class="text-[11px] font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'} truncate mt-1">${formatCurrency(Math.abs(remaining))}</p></div></div>`;
 						}
-
-						const html = `
-						<div class="budget-item-click cursor-pointer hover:bg-gray-50 p-1.5 md:p-2 rounded-lg transition-colors border border-transparent hover:border-gray-200" data-category="${escapeHTML(budget.category)}">
-							<div class="flex justify-between items-end mb-1 leading-none">
-								<span class="font-bold text-gray-700 text-xs flex items-center">${escapeHTML(budget.category)} <i class="fa-solid fa-chevron-right text-gray-300 text-[9px] ml-1"></i></span>
-								<span class="text-[0.65rem] ${statusClass}">${statusText} (${Math.round(percent)}%)</span>
-							</div>
-							<div class="w-full bg-gray-200 rounded-full h-1.5 relative overflow-hidden dark:bg-gray-700 mb-1">
-								<div class="${barColor} h-full rounded-full transition-all duration-1000 ease-out" style="width: ${percent}%"></div>
-							</div>
-							<div class="flex justify-between items-center leading-none">
-								<span class="text-[0.65rem] text-gray-500">${formatCurrency(spent)} / ${formatCurrency(budget.amount)}</span>
-								<span class="text-[0.65rem] font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'}">
-									${remaining >= 0 ? 'เหลือ ' + formatCurrency(remaining) : 'เกิน ' + formatCurrency(Math.abs(remaining))}
-								</span>
-							</div>
-							${adviceHtml}
-						</div>
-						`;
 						container.insertAdjacentHTML('beforeend', html);
 					});
 
-					// Event เด้งไปหน้ารายการ
 					container.querySelectorAll('.budget-item-click').forEach(item => {
 						item.addEventListener('click', () => {
 							const category = item.dataset.category;
-							state.advFilterType = 'expense';
-							state.advFilterSearch = category;
-							
-							const d = new Date(state.homeCurrentDate);
-							const y = d.getFullYear();
-							const m = d.getMonth();
-							
-							// ฟังก์ชันแปลวันที่ Local
-							const formatDate = (date) => {
-								let month = '' + (date.getMonth() + 1), day = '' + date.getDate(), year = date.getFullYear();
-								if (month.length < 2) month = '0' + month;
-								if (day.length < 2) day = '0' + day;
-								return [year, month, day].join('-');
-							};
-							
-							state.advFilterStart = formatDate(new Date(y, m, 1));
-							state.advFilterEnd = formatDate(new Date(y, m + 1, 0));
-							
-							const typeSelect = document.getElementById('adv-filter-type');
-							const searchInput = document.getElementById('adv-filter-search');
-							const startInput = document.getElementById('adv-filter-start');
-							const endInput = document.getElementById('adv-filter-end');
-							
-							if (typeSelect) typeSelect.value = 'expense';
-							if (searchInput) searchInput.value = category;
-							if (startInput) startInput.value = state.advFilterStart;
-							if (endInput) endInput.value = state.advFilterEnd;
-
-							showPage('page-list');
-							renderListPage();
+							state.advFilterType = 'expense'; state.advFilterSearch = category;
+							const d = new Date(state.homeCurrentDate); const formatDate = (date) => [date.getFullYear(), ('0'+(date.getMonth()+1)).slice(-2), ('0'+date.getDate()).slice(-2)].join('-');
+							state.advFilterStart = formatDate(new Date(d.getFullYear(), d.getMonth(), 1));
+							state.advFilterEnd = formatDate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+							showPage('page-list'); if (typeof renderListPage === 'function') renderListPage();
 						});
 					});
 				}
@@ -21864,6 +21870,47 @@ document.addEventListener('DOMContentLoaded', () => {
 					window.saveChartState('list', currentState);
 				}
 			};
+			
+			// ==========================================
+			// ระบบสลับ UI หน้าแรกแบบชัวร์ 100%
+			// ==========================================
+
+			// 1. ฟังก์ชันสลับหน้าจอ (ทำงานทันทีที่กดปุ่ม)
+			function changeHomeUI(selectedStyle) {
+				localStorage.setItem('fmpro_home_ui', selectedStyle);
+				if (typeof showToast === 'function') {
+					showToast('กำลังสลับรูปแบบหน้าจอ...', 'success');
+				}
+				// รีโหลดหน้าเพื่อให้ระบบดึง UI ใหม่มาใช้
+				setTimeout(() => {
+					window.location.reload();
+				}, 600);
+			}
+			
+			// ฟังก์ชันเช็คปุ่ม Radio ตอนโหลดหน้าตั้งค่า
+			function updateHomeUISettingsUI() {
+				const currentUi = localStorage.getItem('fmpro_home_ui') || 'icon';
+				const uiRadios = document.querySelectorAll('input[name="home-ui-style"]');
+				uiRadios.forEach(radio => {
+					if (radio.value === currentUi) {
+						radio.checked = true;
+					}
+				});
+			}
+
+			// เรียกใช้งานเมื่อโหลดหน้าเว็บ
+			document.addEventListener('DOMContentLoaded', updateHomeUISettingsUI);
+
+			// 2. ตั้งค่าให้ปุ่มติ๊กถูก (Checked) ตรงกับค่าที่บันทึกไว้ตอนเปิดแอป
+			document.addEventListener('DOMContentLoaded', () => {
+				const currentUi = localStorage.getItem('fmpro_home_ui') || 'icon';
+				const uiRadios = document.querySelectorAll('input[name="home-ui-style"]');
+				uiRadios.forEach(radio => {
+					if (radio.value === currentUi) {
+						radio.checked = true;
+					}
+				});
+			});
 			
 			// ============================================
 			// DUMMY FUNCTIONS สำหรับ legacy calls (ป้องกัน error)
