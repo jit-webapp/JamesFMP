@@ -1151,11 +1151,11 @@ body.dark:not(.use-glass) .swal2-popup {
    แก้ไข: Lock Screen โปร่งใสเฉพาะเมื่อเปิดโหมดกระจก
    ========================================= */
 
-/* ปิดโหมดกระจก -> พื้นทึบ ไม่เบลอ */
+/* ปิดโหมดกระจก -> พื้นทึบขึ้น พร้อมเบลอ */
 body:not(.use-glass) #app-lock-screen {
-    background-color: rgba(0, 0, 0, 0.5) !important; /* สีดำโปร่งแสงนิดหน่อย? หรือทึบ? */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    background-color: rgba(0, 0, 0, 0.85) !important; /* เพิ่มความทึบเป็น 85% */
+    backdrop-filter: blur(12px) !important;           /* เบลอให้พื้นหลังด้านหลังมัว */
+    -webkit-backdrop-filter: blur(12px) !important;
 }
 
 /* ปิดโหมดกระจก -> กล่องเนื้อหาทึบตามธีม */
@@ -1300,8 +1300,7 @@ body.dark.has-wallpaper #home-accounts-widget {
 #nav-user-avatar {
   transition: all 0.2s ease;
 }
-#nav-user-avatar img {
-  object-fit: cover;
-  width: 100%;
-  height: 100%;
+#nav-user-avatar {
+    width: 3.5rem;
+    height: 3.5rem;
 }

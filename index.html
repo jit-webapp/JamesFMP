@@ -71,7 +71,7 @@
 </head>
 <body class="bg-gray-100 text-gray-700">
 
-		<div id="app-lock-screen" class="fixed top-0 left-0 w-full h-[100dvh] bg-slate-900/20 dark:bg-black/60 backdrop-blur-md z-[9999] flex flex-col items-center justify-center p-4 hidden">
+		<div id="app-lock-screen" class="fixed top-0 left-0 w-full h-[100dvh] bg-slate-900/80 dark:bg-black/90 backdrop-blur-md z-[9999] flex flex-col items-center justify-center p-4 hidden">
             
             <div class="bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-md text-center transform transition-all scale-100">
                 <div class="mb-6">
@@ -104,8 +104,8 @@
 		<div class="container mx-auto px-4 py-2 md:py-3 flex justify-between items-center">
 			
 			<!-- ส่วนแสดง Avatar และชื่อผู้ใช้ (ใหญ่ขึ้น) -->
-			<div class="flex items-center gap-3 mr-3 pr-3">
-				<div id="nav-user-avatar" class="w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shadow-md">
+			<div class="flex items-center gap-4 mr-4 pr-4">
+				<div id="nav-user-avatar" class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shadow-md">
 					<i class="fas fa-user text-gray-500 dark:text-gray-400 text-xl"></i>
 				</div>
 				<div class="flex flex-col leading-tight">
@@ -2837,6 +2837,24 @@
 			</div>
 			<button onclick="confirmCrop()" class="text-white bg-primary-600 hover:bg-primary-700 px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-lg flex items-center gap-2">
 				<i class="fa-solid fa-check"></i> ตั้งเป็นพื้นหลัง
+			</button>
+		</div>
+	</div>
+	
+	<!-- Modal สำหรับ Crop รูปโปรไฟล์ -->
+	<div id="avatar-crop-modal" class="fixed inset-0 z-[9999] hidden bg-black flex-col">
+		<div class="flex-1 relative w-full h-full overflow-hidden flex items-center justify-center">
+			<img id="avatar-crop-image" src="" class="max-w-full block opacity-0 transition-opacity duration-300">
+		</div>
+		<div class="h-24 bg-gray-900 border-t border-gray-800 flex justify-between items-center px-4 md:px-8 pb-4">
+			<button onclick="cancelAvatarCrop()" class="text-white bg-gray-700 hover:bg-gray-600 px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-lg">
+				<i class="fa-solid fa-xmark mr-1"></i> ยกเลิก
+			</button>
+			<div class="text-gray-400 text-xs text-center hidden sm:block">
+				<i class="fa-solid fa-hand-pointer mb-1 text-lg"></i><br>ใช้นิ้วเลื่อนและซูม
+			</div>
+			<button onclick="confirmAvatarCrop()" class="text-white bg-primary-600 hover:bg-primary-700 px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-lg flex items-center gap-2">
+				<i class="fa-solid fa-check"></i> ใช้รูปนี้
 			</button>
 		</div>
 	</div>

@@ -2680,44 +2680,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// [เพิ่มใหม่] ฟังก์ชันสำหรับปลดล็อคเมื่อสำเร็จ (Refactor แยกออกมาเพื่อให้เรียกใช้จากการสแกนนิ้วได้)
 		async function unlockAppSuccess() {
+			// ยกเลิกการสแกนที่ค้างอยู่
+			if (window.bioAbortController) {
+				window.bioAbortController.abort();
+				window.bioAbortController = null;
+			}
+
 			const unlockBtn = document.querySelector('#unlock-form button[type="submit"]');
-			if(unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
-			
+			if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
+
 			setTimeout(async () => {
-				document.getElementById('app-lock-screen').classList.add('hidden'); 
+				// 1. ซ่อน lock screen และล้าง aria-hidden/ inert
+				const lockScreen = document.getElementById('app-lock-screen');
+				if (lockScreen) {
+					lockScreen.classList.add('hidden');
+					lockScreen.removeAttribute('aria-hidden');
+				}
+
+				// 2. เปิดใช้งาน main content อีกครั้ง (เอา inert ออก)
+				const mainContent = document.getElementById('main-content');
+				if (mainContent) mainContent.removeAttribute('inert');
+
+				// 3. แสดงปุ่ม Smart Voice (ถ้ามี)
 				document.getElementById('smart-voice-btn')?.classList.remove('hidden');
-				
+
+				// 4. ถ้าแอปยังไม่เคยเริ่มต้น (หน้าแรกยังไม่ถูกโหลด)
 				if (!window.hasAppStartedFlag) {
 					window.hasAppStartedFlag = true;
 					document.getElementById('page-home').style.display = 'block';
 					currentPage = 'home';
-					await onAppStart();
+					await onAppStart();                        // รอให้แอปเริ่มต้นเสร็จ
 					history.replaceState({ pageId: 'page-home' }, null, '#home');
 				} else {
+					// กลับไปหน้าปัจจุบันที่ค้างไว้
 					document.getElementById('page-' + currentPage).style.display = 'block';
-					if (typeof updateBottomNavActive === 'function') updateBottomNavActive('page-' + currentPage);
+					if (typeof updateBottomNavActive === 'function') {
+						updateBottomNavActive('page-' + currentPage);
+					}
+
+					// อัปเดตสีของปุ่มเมนูหลัก (Desktop)
 					const getEl = (id) => document.getElementById(id);
 					const navButtons = [
 						getEl('nav-home'), getEl('nav-list'), getEl('nav-calendar'),
 						getEl('nav-accounts'), getEl('nav-settings'), getEl('nav-guide')
 					];
 					navButtons.forEach(btn => {
-						if(btn) {
+						if (btn) {
 							btn.classList.remove('text-purple-600', 'text-primary-600');
 							btn.classList.add('text-gray-600');
 						}
 					});
+
+					// อัปเดตสีของปุ่มเมนูมือถือ (Mobile)
 					const mobileNavButtons = {
-						'page-home': getEl('nav-home-mobile'), 'page-list': getEl('nav-list-mobile'),
-						'page-calendar': getEl('nav-calendar-mobile'), 'page-accounts': getEl('nav-accounts-mobile'),
-						'page-settings': getEl('nav-settings-mobile'), 'page-guide': getEl('nav-guide-mobile')
+						'page-home': getEl('nav-home-mobile'),
+						'page-list': getEl('nav-list-mobile'),
+						'page-calendar': getEl('nav-calendar-mobile'),
+						'page-accounts': getEl('nav-accounts-mobile'),
+						'page-settings': getEl('nav-settings-mobile'),
+						'page-guide': getEl('nav-guide-mobile')
 					};
 					Object.values(mobileNavButtons).forEach(btn => {
-						if(btn) {
+						if (btn) {
 							btn.classList.remove('text-purple-600', 'text-primary-600');
 							btn.classList.add('text-gray-600');
 						}
 					});
+
+					// ตั้งค่าปุ่มเมนูที่ตรงกับหน้าปัจจุบัน
 					const currentNavEl = getEl('nav-' + currentPage);
 					if (currentNavEl) {
 						currentNavEl.classList.add('text-primary-600');
@@ -2729,18 +2759,26 @@ document.addEventListener('DOMContentLoaded', () => {
 						currentMobileNavEl.classList.remove('text-gray-600', 'text-purple-600');
 					}
 				}
-				
-				document.getElementById('unlock-password').value = '';
-				if(unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-door-open"></i> เข้าสู่ระบบ';
+
+				// 5. เคลียร์รหัสผ่านที่ค้างในช่อง input
+				const passInput = document.getElementById('unlock-password');
+				if (passInput) passInput.value = '';
+
+				// 6. คืนค่าปุ่ม submit
+				if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-door-open"></i> เข้าสู่ระบบ';
+
+				// 7. อัปเดต UI เพิ่มเติม
 				renderDropdownList();
 				if (typeof updateCloudStatusIcon === 'function') updateCloudStatusIcon();
 				showToast("ปลดล็อคสำเร็จ", "success");
 				window.appVibrate([50, 50, 50]);
 
+				// 8. เช็คการแจ้งเตือนและอัปเดต (หน่วงเวลาเล็กน้อย)
 				setTimeout(() => {
-					if(typeof checkNotifications === 'function') checkNotifications();
+					if (typeof checkNotifications === 'function') checkNotifications();
 					if (typeof checkForUpdates === 'function') checkForUpdates();
 				}, 2000);
+
 			}, 100);
 		}
 
@@ -2775,17 +2813,18 @@ document.addEventListener('DOMContentLoaded', () => {
 			const lockScreen = document.getElementById('app-lock-screen');
 			const isLocked = !lockScreen.classList.contains('hidden');
 			
-			// ถ้าไม่มีรหัสผ่าน หรือล็อคอยู่แล้ว ไม่ต้องทำอะไร
-			if (state.password === null || isLocked) {
-				return;
+			if (state.password === null || isLocked) return;
+			
+			// ยกเลิกการสแกนค้าง
+			if (window.bioAbortController) {
+				window.bioAbortController.abort();
+				window.bioAbortController = null;
 			}
 			
-			// ปิด Modal ต่างๆ ที่เปิดค้างไว้
+			// ปิด Modal และ Popover ทั้งหมด (คงเดิม)
 			closeModal(); 
 			closeAccountDetailModal();
 			openAccountModal(null, true);
-			
-			// ปิด modal และ popover อื่นๆ
 			closeQuickDraftModal();
 			closeVoiceCommandModal();
 			closeImportedEventsModal();
@@ -2806,22 +2845,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			state.activeModalId = null;
 
-			// ซ่อนหน้าจอหลักทั้งหมด
-			PAGE_IDS.forEach(id => {
-				const el = document.getElementById(id);
-				if (el) el.style.display = 'none';
-			});
-
-			// 🌟 1. แสดงหน้าจอล็อค และล้างค่า aria-hidden ทิ้งเพื่อแก้ Error F12
-			lockScreen.classList.remove('hidden');
-			lockScreen.removeAttribute('aria-hidden'); // ลบออกเพื่อให้ Focus ทำงานได้ถูกต้องตามมาตรฐาน Browser
+			// ✅ แทนที่จะซ่อนหน้า ให้ใช้ inert กับ content หลัก (ไม่ต้องซ่อน display)
+			const mainContent = document.getElementById('main-content');
+			const navBar = document.querySelector('nav');
+			const footer = document.querySelector('footer');
 			
-			// 🌟 2. (ถ้ามี Container หลัก) ให้ติด inert ไว้กันคนกดทะลุไปข้างหลัง
-			const mainContent = document.getElementById('app-main-content'); // แก้ id ให้ตรงกับ div คลุมแอปหลักของคุณ James
 			if (mainContent) mainContent.setAttribute('inert', '');
-
+			if (navBar) navBar.setAttribute('inert', '');
+			if (footer) footer.setAttribute('inert', '');
+			
+			// ซ่อนปุ่ม Smart Voice
 			document.getElementById('smart-voice-btn')?.classList.add('hidden');
 			
+			// แสดง lock screen
+			lockScreen.classList.remove('hidden');
+			lockScreen.removeAttribute('aria-hidden');   // ลบ aria-hidden เก่าทิ้ง
+			
+			// ตั้งค่าปุ่ม Biometric
 			const bioUnlockBtn = document.getElementById('btn-bio-unlock');
 			if (bioUnlockBtn) {
 				bioUnlockBtn.classList.toggle('hidden', !state.biometricId);
@@ -2829,11 +2869,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			clearTimeout(autoLockTimeoutId);
 			
-			// โฟกัสช่องรหัสผ่าน
 			setTimeout(() => {
 				const passInput = document.getElementById('unlock-password');
 				if (passInput) {
-					passInput.value = ''; 
+					// ตรวจสอบและลบ aria-hidden ออกจาก ancestor ทั้งหมด (เผื่อมี)
+					let ancestor = passInput.parentElement;
+					while (ancestor && ancestor !== lockScreen && ancestor !== document.body) {
+						if (ancestor.hasAttribute('aria-hidden')) {
+							ancestor.removeAttribute('aria-hidden');
+						}
+						ancestor = ancestor.parentElement;
+					}
+					lockScreen.removeAttribute('aria-hidden');
+					passInput.value = '';
 					passInput.focus();
 				}
 				
@@ -2841,9 +2889,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					(async () => {
 						try {
 							const success = await verifyBiometricIdentity();
-							if (success === true) {
-								unlockAppSuccess();
-							}
+							if (success === true) unlockAppSuccess();
 						} catch (err) {
 							console.warn("Auto scan blocked:", err);
 						}
@@ -5046,6 +5092,94 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 		
+		// ==========================================
+		// จัดการ Crop รูปโปรไฟล์
+		// ==========================================
+		let avatarCropperInstance = null;
+		let pendingAvatarFile = null;
+
+		function openAvatarCrop(file) {
+			if (!file) return;
+			pendingAvatarFile = file;
+
+			const modal = document.getElementById('avatar-crop-modal');
+			const img = document.getElementById('avatar-crop-image');
+
+			// อ่านไฟล์เป็น dataURL
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				img.src = e.target.result;
+				img.style.opacity = '0';
+				modal.classList.remove('hidden');
+				modal.classList.add('flex');
+
+				img.onload = () => {
+					img.style.opacity = '1';
+					if (avatarCropperInstance) avatarCropperInstance.destroy();
+					avatarCropperInstance = new Cropper(img, {
+						aspectRatio: 1,           // 1:1 สำหรับ avatar
+						viewMode: 2,              // รูปจะถูกปรับให้อยู่ในกรอบ
+						dragMode: 'move',
+						autoCropArea: 1,
+						restore: false,
+						guides: true,
+						center: true,
+						highlight: false,
+						cropBoxMovable: true,
+						cropBoxResizable: true,
+						toggleDragModeOnDblclick: false,
+						minCropBoxWidth: 100,
+						minCropBoxHeight: 100
+					});
+				};
+			};
+			reader.readAsDataURL(file);
+		}
+
+		function confirmAvatarCrop() {
+			if (!avatarCropperInstance) return;
+
+			// ดึง canvas ที่ถูก crop
+			const canvas = avatarCropperInstance.getCroppedCanvas({
+				maxWidth: 200,
+				maxHeight: 200,
+				imageSmoothingEnabled: true,
+				imageSmoothingQuality: 'high'
+			});
+
+			if (!canvas) return;
+
+			const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+			// บันทึกลงโปรไฟล์
+			saveProfile(undefined, dataUrl);
+
+			// ปิด modal และล้าง instance
+			closeAvatarCropModal();
+		}
+
+		function cancelAvatarCrop() {
+			closeAvatarCropModal();
+		}
+
+		function closeAvatarCropModal() {
+			const modal = document.getElementById('avatar-crop-modal');
+			if (modal) {
+				modal.classList.add('hidden');
+				modal.classList.remove('flex');
+			}
+			if (avatarCropperInstance) {
+				avatarCropperInstance.destroy();
+				avatarCropperInstance = null;
+			}
+			pendingAvatarFile = null;
+		}
+
+		// ทำให้ฟังก์ชัน global (เพื่อให้ปุ่ม onclick ทำงาน)
+		window.openAvatarCrop = openAvatarCrop;
+		window.confirmAvatarCrop = confirmAvatarCrop;
+		window.cancelAvatarCrop = cancelAvatarCrop;
+		window.closeAvatarCropModal = closeAvatarCropModal;
+		
         // ==========================================
         // ระบบแจ้งเตือนพิเศษ (Overhaul เป็น Modal แบบ Standalone)
         // ==========================================
@@ -5741,21 +5875,16 @@ document.addEventListener('DOMContentLoaded', () => {
 			const fileInput = document.getElementById('avatar-upload-input');
 			if (uploadBtn && fileInput) {
 				uploadBtn.addEventListener('click', () => fileInput.click());
-				fileInput.addEventListener('change', async (e) => {
+				fileInput.addEventListener('change', (e) => {
 					const file = e.target.files[0];
 					if (!file) return;
 					if (!file.type.startsWith('image/')) {
 						showToast("กรุณาเลือกรูปภาพ", "error");
 						return;
 					}
-					try {
-						const compressed = await compressImageForAvatar(file);
-						await saveProfile(undefined, compressed);
-					} catch (err) {
-						console.error(err);
-						showToast("อัปโหลดรูปไม่สำเร็จ", "error");
-					}
-					fileInput.value = '';
+					// เปิด modal crop
+					openAvatarCrop(file);
+					fileInput.value = ''; // เคลียร์ค่าให้สามารถเลือกไฟล์เดิมซ้ำได้
 				});
 			}
 
@@ -5778,36 +5907,34 @@ document.addEventListener('DOMContentLoaded', () => {
 			// ตรวจสอบและประมวลผลรายการประจำเมื่อผู้ใช้สลับแอปกลับมาใช้งาน (ป้องกันเปิดแอปค้างไว้ข้ามวัน)
 			document.addEventListener('visibilitychange', () => {
 				if (document.visibilityState === 'visible') {
-					if (typeof checkAndProcessRecurring === 'function') {
-						checkAndProcessRecurring();
+					if (window.bioAbortController) {
+						window.bioAbortController.abort();
+						window.bioAbortController = null;
 					}
+
+					if (typeof checkAndProcessRecurring === 'function') checkAndProcessRecurring();
 					
-					// [แก้ไข] ดักเช็คสถานะการล็อคหน้าจอ
 					const lockScreen = document.getElementById('app-lock-screen');
 					const isLocked = lockScreen && !lockScreen.classList.contains('hidden');
 					
-					// 💡 [ย้ายอัปเดต] ถ้าไม่ได้ติดหน้าจอล็อคอยู่ ถึงจะยอมให้เช็คอัปเดต
 					if (!isLocked) {
 						setTimeout(() => {
 							if (typeof checkForUpdates === 'function') checkForUpdates();
 						}, 500);
 					}
 
-					// จัดการระบบ Auto Scan Biometric เมื่อสลับแอปกลับมาและหน้าจอล็อคอยู่
 					if (isLocked && state.biometricId) {
-						// ต้องหน่วงเวลาเล็กน้อยให้เบราว์เซอร์มือถือพร้อมทำงานหลังสลับแอป
 						setTimeout(async () => {
 							try {
 								console.log("App resumed: Attempting auto-biometric scan...");
-								// พยายามเรียก Auto Scan (อาจถูกบล็อกได้ในมือถือบางรุ่นถ้าไม่มีการแตะหน้าจอก่อน)
-								const success = await verifyBiometricIdentity();
-								if (success === true) { // 💡 [แก้บั๊ก] เช็ค === true เพื่อกันการกด Back
-									unlockAppSuccess();
+								// ลบ aria-hidden ก่อนสแกน
+								if (lockScreen.hasAttribute('aria-hidden')) {
+									lockScreen.removeAttribute('aria-hidden');
 								}
+								const success = await verifyBiometricIdentity();
+								if (success === true) unlockAppSuccess();
 							} catch (err) {
-								console.warn("Auto scan on resume blocked by mobile browser security:", err);
-								// หากถูกเบราว์เซอร์บล็อก (เนื่องจากข้อกำหนดต้องเอานิ้วแตะจอก่อน) 
-								// ให้ปุ่มสแกนนิ้วกระพริบเตือนให้กดเบาๆ เพื่อเรียกร้องความสนใจ
+								console.warn("Auto scan on resume blocked:", err);
 								const bioBtn = document.getElementById('btn-bio-unlock');
 								if (bioBtn) {
 									bioBtn.classList.add('animate-bounce', 'ring-4', 'ring-purple-500', 'rounded-full');
@@ -14769,11 +14896,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				async function verifyBiometricIdentity() {
 					if (!state.biometricId) return false;
 
-					// ถ้าระบบมีการเรียกสแกนค้างไว้ (เช่น จากจอใหญ่) ให้สั่งยกเลิกทิ้งก่อน เพื่อเริ่มใหม่ให้สะอาด
-					if (typeof bioAbortController !== 'undefined' && bioAbortController) {
-						bioAbortController.abort();
+					// ยกเลิกการสแกนเก่าที่อาจค้างอยู่
+					if (window.bioAbortController) {
+						window.bioAbortController.abort();
+						window.bioAbortController = null;
 					}
-					window.bioAbortController = new AbortController();
+
+					const abortController = new AbortController();
+					window.bioAbortController = abortController;
 
 					try {
 						const savedIdBuffer = base64urlToBuffer(state.biometricId);
@@ -14787,31 +14917,30 @@ document.addEventListener('DOMContentLoaded', () => {
 								type: 'public-key',
 								transports: ['internal']
 							}],
-							userVerification: "required"
+							userVerification: "required",
+							timeout: 60000 // 60 วินาที
 						};
 
 						const assertion = await navigator.credentials.get({ 
 							publicKey,
-							signal: window.bioAbortController.signal // ผูก signal เพื่อให้แอปตัดการทำงานเดิมทิ้งได้เมื่อสลับจอ
+							signal: abortController.signal
 						});
-						
+
 						if (assertion) {
 							window.bioAbortController = null;
-							window.appVibrate([50, 50, 50]); // +++ สั่นยืนยันสแกนลายนิ้วมือสำเร็จ +++
-							return true; // สแกนผ่าน
+							return true;
 						}
 					} catch (err) {
 						console.error("Biometric verify failed:", err);
-						
-						// แยกว่าเป็นการกดยกเลิก/พับจอ (NotAllowedError) หรือ สแกนผิดจริงๆ
 						if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
+							return 'aborted';
+						}
+					} finally {
+						if (window.bioAbortController === abortController) {
 							window.bioAbortController = null;
-							return 'aborted'; // ส่งค่าพิเศษบอกว่า "แค่ยกเลิก/พับจอ" 
 						}
 					}
-					
-					window.bioAbortController = null;
-					return false; // สแกนไม่ผ่านจริงๆ
+					return false;
 				}
 				
 				// --- ฟังก์ชันส่งแจ้งเตือน LINE (เวอร์ชันรองรับรายการล่วงหน้า) ---
@@ -22119,8 +22248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				});
 			});
-			
-
+		
 			// ============================================
 			// DUMMY FUNCTIONS สำหรับ legacy calls (ป้องกัน error)
 			// ============================================
