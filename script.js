@@ -99,6 +99,206 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.warn("Web Speech API not supported in this browser.");
     }
+	
+	// ==========================================
+	// จัดการโปรไฟล์ส่วนตัว (ชื่อ + Avatar)
+	// ==========================================
+	let currentProfile = { name: null, avatarBase64: null };
+
+	async function loadProfile() {
+		try {
+			const localProfile = await dbGet(STORE_CONFIG, 'user_profile');
+			if (localProfile && localProfile.value) {
+				currentProfile = localProfile.value;
+			} else {
+				currentProfile = { name: null, avatarBase64: null };
+			}
+
+			if (window.auth && window.auth.currentUser) {
+				const uid = window.auth.currentUser.uid;
+				const docRef = window.dbDoc(window.db, 'users', uid, 'profile', 'data');
+				if (window.dbGetDoc) {
+					const docSnap = await window.dbGetDoc(docRef);
+					if (docSnap.exists()) {
+						const cloudProfile = docSnap.data();
+						if (cloudProfile.name !== undefined) currentProfile.name = cloudProfile.name;
+						if (cloudProfile.avatarBase64) currentProfile.avatarBase64 = cloudProfile.avatarBase64;
+						await dbPut(STORE_CONFIG, { key: 'user_profile', value: currentProfile });
+					}
+				} else {
+					// fallback
+					const colRef = window.dbCollection(window.db, 'users', uid, 'profile');
+					const q = window.dbQuery(colRef, window.dbWhere('__name__', '==', 'data'));
+					const querySnap = await window.dbGetDocs(q);
+					if (!querySnap.empty) {
+						const cloudProfile = querySnap.docs[0].data();
+						if (cloudProfile.name !== undefined) currentProfile.name = cloudProfile.name;
+						if (cloudProfile.avatarBase64) currentProfile.avatarBase64 = cloudProfile.avatarBase64;
+						await dbPut(STORE_CONFIG, { key: 'user_profile', value: currentProfile });
+					}
+				}
+			}
+
+			// ถ้ายังไม่มีชื่อ (null) และไม่ได้ล็อกอิน ให้ตั้งเป็น "Guest"
+			if (!currentProfile.name) {
+				if (window.auth && window.auth.currentUser && window.auth.currentUser.displayName) {
+					currentProfile.name = null; // ใช้ Google name แทน
+				} else {
+					currentProfile.name = "Guest";
+				}
+			}
+
+			updateProfileUI();
+		} catch (err) {
+			console.error("loadProfile error:", err);
+		}
+	}
+
+	function updateProfileUI() {
+		const navName = document.getElementById('nav-user-name');
+		const navAvatar = document.getElementById('nav-user-avatar');
+		const previewDiv = document.getElementById('profile-avatar-preview');
+		const nameInput = document.getElementById('profile-display-name');
+
+		// กำหนดชื่อที่แสดง (ถ้ามี custom name ให้ใช้ custom name ไม่เช่นนั้นใช้ชื่อ Google หรือ Guest)
+		let displayName = currentProfile.name;
+		if (!displayName) {
+			if (window.auth && window.auth.currentUser && window.auth.currentUser.displayName) {
+				displayName = window.auth.currentUser.displayName;
+			} else {
+				displayName = "Guest";
+			}
+		}
+		if (navName) navName.innerText = displayName;
+
+		// ฟังก์ชันช่วยแสดงรูป (รับ element และ flag ว่าเป็น Nav หรือ Preview)
+		const setAvatar = (element, isNav = true) => {
+			if (currentProfile.avatarBase64) {
+				element.innerHTML = `<img src="${currentProfile.avatarBase64}" class="w-full h-full object-cover">`;
+				element.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+			} else if (window.auth && window.auth.currentUser && window.auth.currentUser.photoURL) {
+				// ใช้รูปจาก Google (URL)
+				element.innerHTML = `<img src="${window.auth.currentUser.photoURL}" class="w-full h-full object-cover">`;
+				element.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+			} else {
+				// ไอคอน default
+				const iconClass = isNav ? 'text-sm' : 'text-4xl';
+				element.innerHTML = `<i class="fas fa-user text-gray-500 dark:text-gray-400 ${iconClass}"></i>`;
+				element.classList.add('bg-gray-200', 'dark:bg-gray-700');
+			}
+		};
+
+		if (navAvatar) setAvatar(navAvatar, true);
+		if (previewDiv) setAvatar(previewDiv, false);
+		if (nameInput) nameInput.value = currentProfile.name || '';
+	}
+
+	async function saveProfile(name, avatarBase64) {
+		try {
+			// ถ้าชื่อเป็น string ว่าง ให้ set เป็น null (ใช้ Google name แทน)
+			if (name !== undefined) {
+				if (name === "") {
+					currentProfile.name = null;
+				} else {
+					currentProfile.name = name;
+				}
+			}
+			if (avatarBase64 !== undefined) currentProfile.avatarBase64 = avatarBase64;
+
+			await dbPut(STORE_CONFIG, { key: 'user_profile', value: currentProfile });
+
+			if (window.auth && window.auth.currentUser) {
+				const uid = window.auth.currentUser.uid;
+				const docRef = window.dbDoc(window.db, 'users', uid, 'profile', 'data');
+				await window.dbSetDoc(docRef, {
+					name: currentProfile.name,
+					avatarBase64: currentProfile.avatarBase64,
+					updatedAt: new Date().toISOString()
+				}, { merge: true });
+			}
+
+			updateProfileUI();
+			showToast("บันทึกโปรไฟล์เรียบร้อย", "success");
+		} catch (err) {
+			console.error("saveProfile error:", err);
+			showToast("บันทึกโปรไฟล์ไม่สำเร็จ", "error");
+		}
+	}
+	
+	async function clearAvatar() {
+		if (!currentProfile.avatarBase64) {
+			showToast("ไม่มีรูปภาพให้ลบ", "info");
+			return;
+		}
+		const confirm = await Swal.fire({
+			title: 'ลบรูปโปรไฟล์?',
+			text: 'คุณต้องการลบรูปโปรไฟล์นี้ใช่หรือไม่',
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonColor: '#d33',
+			confirmButtonText: 'ลบ',
+			cancelButtonText: 'ยกเลิก'
+		});
+		if (confirm.isConfirmed) {
+			currentProfile.avatarBase64 = null;
+			// บันทึกลง IndexedDB
+			await dbPut(STORE_CONFIG, { key: 'user_profile', value: currentProfile });
+			// ถ้าล็อกอิน ให้อัปเดต Firestore
+			if (window.auth && window.auth.currentUser) {
+				const uid = window.auth.currentUser.uid;
+				const docRef = window.dbDoc(window.db, 'users', uid, 'profile', 'data');
+				await window.dbSetDoc(docRef, {
+					name: currentProfile.name,
+					avatarBase64: null,
+					updatedAt: new Date().toISOString()
+				}, { merge: true });
+			}
+			updateProfileUI(); // เรียกอัปเดต UI (จะใช้รูป Google ถ้ามี)
+			showToast("ลบรูปโปรไฟล์เรียบร้อย", "success");
+		}
+	}
+
+	function compressImageForAvatar(file) {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = (event) => {
+				const img = new Image();
+				img.src = event.target.result;
+				img.onload = () => {
+					const canvas = document.createElement('canvas');
+					const MAX_SIZE = 200;
+					let width = img.width, height = img.height;
+					if (width > height) {
+						if (width > MAX_SIZE) {
+							height *= MAX_SIZE / width;
+							width = MAX_SIZE;
+						}
+					} else {
+						if (height > MAX_SIZE) {
+							width *= MAX_SIZE / height;
+							height = MAX_SIZE;
+						}
+					}
+					canvas.width = width;
+					canvas.height = height;
+					const ctx = canvas.getContext('2d');
+					ctx.drawImage(img, 0, 0, width, height);
+					const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+					resolve(dataUrl);
+				};
+				img.onerror = reject;
+			};
+			reader.onerror = reject;
+		});
+	}
+
+	// ทำให้ฟังก์ชันเหล่านี้สามารถเรียกจาก module script ได้
+	window.loadProfile = loadProfile;
+	window.updateProfileUI = updateProfileUI;
+	window.saveProfile = saveProfile;
+	window.compressImageForAvatar = compressImageForAvatar;
+	window.clearAvatar = clearAvatar;
     
     // ********** NEW AUTO LOCK VARIABLES **********
     let lastActivityTime = Date.now();
@@ -1407,7 +1607,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'settings-manual-content': true,
                 'home-accounts-content': true,
                 'home-transactions-content': true,
-                'settings-line-content': true
+                'settings-line-content': true,
+				'profile-settings-content': true
             };
             const collapseConfig = await dbGet(STORE_CONFIG, 'collapse_preferences');
             if (collapseConfig && collapseConfig.value) {
@@ -2430,7 +2631,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					// กรณีไม่มีรหัสผ่าน ให้เข้าหน้า Home เลย
 					document.getElementById(initialPageId).style.display = 'block';
 					currentPage = initialPageId.replace('page-', '');
-					onAppStart(); // <--- เรียกฟังก์ชันเริ่มแอป
+					await onAppStart(); // <--- เรียกฟังก์ชันเริ่มแอป
 					history.replaceState({ pageId: 'page-home' }, null, '#home');
 					renderDropdownList();
 				}
@@ -2442,18 +2643,19 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		}
 
-		function onAppStart() {
+		async function onAppStart() {
 			const getEl = (id) => document.getElementById(id);
 			getEl('nav-home').classList.add('text-primary-600');
 			getEl('nav-home').classList.remove('text-gray-600', 'text-purple-600');
 			getEl('nav-home-mobile').classList.add('text-primary-600'); 
 			getEl('nav-home-mobile').classList.remove('text-gray-600', 'text-purple-600');
 			
+			// โหลดโปรไฟล์
+			await window.loadProfile();
+			
 			// ตั้งค่า dropdown ในหน้าแรก
 			const homeSelect = document.getElementById('home-items-per-page-select');
 			if (homeSelect) homeSelect.value = state.homeItemsPerPage;
-
-			// ตั้งค่า dropdown ในหน้ารายการ
 			const listSelect = document.getElementById('items-per-page-select');
 			if (listSelect) listSelect.value = state.listItemsPerPage;
 
@@ -2462,18 +2664,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			renderAll(); 
 			renderSettings();
 			resetAutoLockTimer();
-			// [เพิ่มตรงนี้]
 			if (typeof updateCloudStatusIcon === 'function') {
 				updateCloudStatusIcon();
 			}
-			// [ใหม่] เช็คแจ้งเตือนหลังจากแอปเริ่มทำงาน 2 วินาที
 			setTimeout(() => {
 				if(typeof checkNotifications === 'function') {
 					checkNotifications();
 				}
 				checkAndRunAutoBackup();
-				
-				// 💡 [ย้ายอัปเดต] ถ้าไม่ได้ตั้งรหัสผ่าน ให้เช็คอัปเดตเลย
 				if (!state.password && typeof checkForUpdates === 'function') {
 					checkForUpdates();
 				}
@@ -2481,37 +2679,27 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		// [เพิ่มใหม่] ฟังก์ชันสำหรับปลดล็อคเมื่อสำเร็จ (Refactor แยกออกมาเพื่อให้เรียกใช้จากการสแกนนิ้วได้)
-		function unlockAppSuccess() {
+		async function unlockAppSuccess() {
 			const unlockBtn = document.querySelector('#unlock-form button[type="submit"]');
 			if(unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
-					
-			setTimeout(() => {
-				// 1. ซ่อนหน้าจอ Lock Screen
+			
+			setTimeout(async () => {
 				document.getElementById('app-lock-screen').classList.add('hidden'); 
 				document.getElementById('smart-voice-btn')?.classList.remove('hidden');
 				
-				// [แก้ไข] 2. ตรวจสอบสถานะว่าเปิดแอปครั้งแรก หรือ ปลดล็อคจากการพักหน้าจอ
 				if (!window.hasAppStartedFlag) {
-					// กรณีเปิดแอปครั้งแรก (เข้าสู่ระบบครั้งแรกของ Session)
 					window.hasAppStartedFlag = true;
 					document.getElementById('page-home').style.display = 'block';
 					currentPage = 'home';
-					onAppStart(); 
+					await onAppStart();
 					history.replaceState({ pageId: 'page-home' }, null, '#home');
 				} else {
-					// กรณีปลดล็อคจากระบบ Auto Lock (แอปเคยโหลดมาแล้ว)
-					// ให้กลับไปหน้าเดิมที่ค้างไว้ก่อนถูกล็อค
 					document.getElementById('page-' + currentPage).style.display = 'block';
-					
-					// บังคับอัปเดตสีของไอคอน Bottom Nav ให้แอคทีฟตรงกับหน้าปัจจุบัน
-					if (typeof updateBottomNavActive === 'function') {
-						updateBottomNavActive('page-' + currentPage);
-					}
-					
-					// อัปเดตสีเมนู Sidebar และ Navbar บนมือถือ/PC ให้ตรงกันด้วย
+					if (typeof updateBottomNavActive === 'function') updateBottomNavActive('page-' + currentPage);
 					const getEl = (id) => document.getElementById(id);
 					const navButtons = [
-						getEl('nav-home'), getEl('nav-list'), getEl('nav-calendar'), getEl('nav-accounts'), getEl('nav-settings'), getEl('nav-guide')
+						getEl('nav-home'), getEl('nav-list'), getEl('nav-calendar'),
+						getEl('nav-accounts'), getEl('nav-settings'), getEl('nav-guide')
 					];
 					navButtons.forEach(btn => {
 						if(btn) {
@@ -2519,10 +2707,10 @@ document.addEventListener('DOMContentLoaded', () => {
 							btn.classList.add('text-gray-600');
 						}
 					});
-
 					const mobileNavButtons = {
-						'page-home': getEl('nav-home-mobile'), 'page-list': getEl('nav-list-mobile'), 'page-calendar': getEl('nav-calendar-mobile'),
-						'page-accounts': getEl('nav-accounts-mobile'), 'page-settings': getEl('nav-settings-mobile'), 'page-guide': getEl('nav-guide-mobile')
+						'page-home': getEl('nav-home-mobile'), 'page-list': getEl('nav-list-mobile'),
+						'page-calendar': getEl('nav-calendar-mobile'), 'page-accounts': getEl('nav-accounts-mobile'),
+						'page-settings': getEl('nav-settings-mobile'), 'page-guide': getEl('nav-guide-mobile')
 					};
 					Object.values(mobileNavButtons).forEach(btn => {
 						if(btn) {
@@ -2530,7 +2718,6 @@ document.addEventListener('DOMContentLoaded', () => {
 							btn.classList.add('text-gray-600');
 						}
 					});
-
 					const currentNavEl = getEl('nav-' + currentPage);
 					if (currentNavEl) {
 						currentNavEl.classList.add('text-primary-600');
@@ -2543,32 +2730,17 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				}
 				
-				// 3. รีเซ็ตค่ารหัสผ่านและปุ่ม
 				document.getElementById('unlock-password').value = '';
 				if(unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-door-open"></i> เข้าสู่ระบบ';
 				renderDropdownList();
-				
-				// 4. อัปเดตไอคอนสถานะคลาวด์
-				if (typeof updateCloudStatusIcon === 'function') {
-					updateCloudStatusIcon();
-				}
-				
-				// 5. แสดง Toast
+				if (typeof updateCloudStatusIcon === 'function') updateCloudStatusIcon();
 				showToast("ปลดล็อคสำเร็จ", "success");
-				window.appVibrate([50, 50, 50]); // +++ สั่นเมื่อปลดล็อคสำเร็จ +++
+				window.appVibrate([50, 50, 50]);
 
-				// [ใหม่] 6. หน่วงเวลา 2 วินาที แล้วค่อยเช็คการแจ้งเตือน
 				setTimeout(() => {
-					if(typeof checkNotifications === 'function') {
-						checkNotifications();
-					}
-					
-					// 💡 [ย้ายอัปเดต] เช็คอัปเดตหลังจากปลดล็อคสำเร็จแล้วเท่านั้น!
-					if (typeof checkForUpdates === 'function') {
-						checkForUpdates();
-					}
+					if(typeof checkNotifications === 'function') checkNotifications();
+					if (typeof checkForUpdates === 'function') checkForUpdates();
 				}, 2000);
-
 			}, 100);
 		}
 
@@ -2600,7 +2772,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		// ********** NEW: Auto Lock Logic **********
 		// ฟังก์ชันล็อคหน้าจอ (แก้ไขให้แสดง/ซ่อนปุ่มสแกนนิ้ว)
 		function lockApp() {
-			const isLocked = !document.getElementById('app-lock-screen').classList.contains('hidden');
+			const lockScreen = document.getElementById('app-lock-screen');
+			const isLocked = !lockScreen.classList.contains('hidden');
 			
 			// ถ้าไม่มีรหัสผ่าน หรือล็อคอยู่แล้ว ไม่ต้องทำอะไร
 			if (state.password === null || isLocked) {
@@ -2612,31 +2785,26 @@ document.addEventListener('DOMContentLoaded', () => {
 			closeAccountDetailModal();
 			openAccountModal(null, true);
 			
-			// +++ เพิ่มการปิด modal และ popover อื่นๆ +++
-			closeQuickDraftModal(); // ปิด quick-draft-modal
-			closeVoiceCommandModal(); // ปิด voice-command-modal
-			closeImportedEventsModal(); // ปิด imported-events-modal
-			closeCustomNotifyModal(); // ปิด custom-notify-modal
-			closePersistentLogModal(); // ปิด persistent-log-modal
+			// ปิด modal และ popover อื่นๆ
+			closeQuickDraftModal();
+			closeVoiceCommandModal();
+			closeImportedEventsModal();
+			closeCustomNotifyModal();
+			closePersistentLogModal();
 			
-			// ปิด notification-modal (ถ้ามี)
 			const notifModal = document.getElementById('notification-modal');
 			if (notifModal) notifModal.classList.add('hidden');
 			
-			// ปิด calculator popovers ทั้งหมด
 			const calcPopovers = ['calculator-popover', 'account-calculator-popover', 'edit-account-calculator-popover'];
 			calcPopovers.forEach(id => {
 				const el = document.getElementById(id);
 				if (el) el.classList.add('hidden');
 			});
 			
-			// ปิด notification popover
 			const notifPopover = document.getElementById('notification-popover');
 			if (notifPopover) notifPopover.classList.add('hidden');
 
-			// รีเซ็ต state ที่เกี่ยวข้อง
 			state.activeModalId = null;
-			// +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 			// ซ่อนหน้าจอหลักทั้งหมด
 			PAGE_IDS.forEach(id => {
@@ -2644,18 +2812,19 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (el) el.style.display = 'none';
 			});
 
-			// แสดงหน้าจอล็อค
-			document.getElementById('app-lock-screen').classList.remove('hidden');
+			// 🌟 1. แสดงหน้าจอล็อค และล้างค่า aria-hidden ทิ้งเพื่อแก้ Error F12
+			lockScreen.classList.remove('hidden');
+			lockScreen.removeAttribute('aria-hidden'); // ลบออกเพื่อให้ Focus ทำงานได้ถูกต้องตามมาตรฐาน Browser
+			
+			// 🌟 2. (ถ้ามี Container หลัก) ให้ติด inert ไว้กันคนกดทะลุไปข้างหลัง
+			const mainContent = document.getElementById('app-main-content'); // แก้ id ให้ตรงกับ div คลุมแอปหลักของคุณ James
+			if (mainContent) mainContent.setAttribute('inert', '');
+
 			document.getElementById('smart-voice-btn')?.classList.add('hidden');
 			
-			// เช็คว่าเครื่องนี้เปิดใช้สแกนนิ้วไว้ไหม?
 			const bioUnlockBtn = document.getElementById('btn-bio-unlock');
 			if (bioUnlockBtn) {
-				if (state.biometricId) {
-					bioUnlockBtn.classList.remove('hidden');
-				} else {
-					bioUnlockBtn.classList.add('hidden');
-				}
+				bioUnlockBtn.classList.toggle('hidden', !state.biometricId);
 			}
 
 			clearTimeout(autoLockTimeoutId);
@@ -5565,6 +5734,45 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 					renderCalendarView();
 				});
+			}
+			
+			// ===== จัดการโปรไฟล์ =====
+			const uploadBtn = document.getElementById('btn-upload-avatar');
+			const fileInput = document.getElementById('avatar-upload-input');
+			if (uploadBtn && fileInput) {
+				uploadBtn.addEventListener('click', () => fileInput.click());
+				fileInput.addEventListener('change', async (e) => {
+					const file = e.target.files[0];
+					if (!file) return;
+					if (!file.type.startsWith('image/')) {
+						showToast("กรุณาเลือกรูปภาพ", "error");
+						return;
+					}
+					try {
+						const compressed = await compressImageForAvatar(file);
+						await saveProfile(undefined, compressed);
+					} catch (err) {
+						console.error(err);
+						showToast("อัปโหลดรูปไม่สำเร็จ", "error");
+					}
+					fileInput.value = '';
+				});
+			}
+
+			const saveProfileBtn = document.getElementById('btn-save-profile');
+			const profileNameInput = document.getElementById('profile-display-name');
+			if (saveProfileBtn && profileNameInput) {
+				saveProfileBtn.addEventListener('click', () => {
+					const newName = profileNameInput.value.trim();
+					// ไม่ต้องแจ้งเตือนว่าว่าง เพราะเราต้องการให้ล้างชื่อได้
+					saveProfile(newName, undefined);
+				});
+			}
+			
+			// เพิ่ม event สำหรับปุ่มลบรูป
+			const clearAvatarBtn = document.getElementById('btn-clear-avatar');
+			if (clearAvatarBtn) {
+				clearAvatarBtn.addEventListener('click', clearAvatar);
 			}
 			
 			// ตรวจสอบและประมวลผลรายการประจำเมื่อผู้ใช้สลับแอปกลับมาใช้งาน (ป้องกันเปิดแอปค้างไว้ข้ามวัน)
@@ -21912,6 +22120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				});
 			});
 			
+
 			// ============================================
 			// DUMMY FUNCTIONS สำหรับ legacy calls (ป้องกัน error)
 			// ============================================

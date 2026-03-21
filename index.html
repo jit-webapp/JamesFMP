@@ -101,59 +101,68 @@
         </div>
 
     <nav class="bg-white shadow-md sticky top-0 z-50">
-        
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="text-lg font-bold text-primary-600">
-                <i class="fa-solid fa-wallet mr-2"></i>
-                <span>ระบบจัดการรายรับ-รายจ่าย</span>
-            </div>
+		<div class="container mx-auto px-4 py-2 md:py-3 flex justify-between items-center">
+			
+			<!-- ส่วนแสดง Avatar และชื่อผู้ใช้ (ใหญ่ขึ้น) -->
+			<div class="flex items-center gap-3 mr-3 pr-3">
+				<div id="nav-user-avatar" class="w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shadow-md">
+					<i class="fas fa-user text-gray-500 dark:text-gray-400 text-xl"></i>
+				</div>
+				<div class="flex flex-col leading-tight">
+					<span class="text-[11px] text-gray-500 dark:text-gray-400">Welcome back,</span>
+					<span id="nav-user-name" class="text-base font-bold text-gray-800 dark:text-gray-200">Guest</span>
+				</div>
+			</div>
 
-            <div class="md:hidden flex items-center gap-2">
-				<i id="status-cloud-mobile" class="fa-solid fa-cloud text-gray-300 text-lg mr-1 transition-colors duration-300" title="สถานะ"></i>
-				<button id="refresh-cloud-mobile" class="text-blue-500 hover:text-blue-700 p-1 rounded-lg text-sm" title="รีเฟรชข้อมูลจากคลาวด์">
-					<i class="fa-solid fa-rotate"></i>
+			<!-- mobile buttons (ปรับขนาดให้ใหญ่ขึ้นตาม) -->
+			<div class="md:hidden flex items-center gap-2">
+				<i id="status-cloud-mobile" class="fa-solid fa-cloud text-gray-300 text-xl mr-1"></i>
+				<button id="refresh-cloud-mobile" class="text-blue-500 hover:text-blue-700 p-1 rounded-lg">
+					<i class="fa-solid fa-rotate text-lg"></i>
 				</button>
-				<!-- ปุ่มกระดิ่งมือถือ (เพิ่มตรงนี้) -->
-				<button id="notification-bell-mobile" class="relative text-gray-600 hover:text-primary-600 p-2 rounded-lg" title="ประวัติกิจกรรม">
-					<i class="fa-solid fa-bell text-lg"></i>
-					<span id="notification-badge-mobile" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+				<button id="notification-bell-mobile" class="relative text-gray-600 hover:text-primary-600 p-1 rounded-lg">
+					<i class="fa-solid fa-bell text-xl"></i>
+					<span id="notification-badge-mobile" class="absolute -top-1 -right-1 bg-red-500 text-white text-[11px] rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
 				</button>
-
-				<button id="mobile-home-button" class="text-primary-600 hover:text-primary-800 p-2 rounded-lg">
-					<i class="fa-solid fa-house text-2xl"></i> 
+				<button id="mobile-home-button" class="text-primary-600 hover:text-primary-800 p-1">
+					<i class="fa-solid fa-house text-xl"></i>
 				</button>
-				<button id="mobile-menu-button" class="text-primary-600 hover:text-primary-800 p-2 rounded-lg">
-					<i id="mobile-menu-icon" class="fa-solid fa-bars text-2xl"></i>
+				<button id="mobile-menu-button" class="text-primary-600 hover:text-primary-800 p-1">
+					<i id="mobile-menu-icon" class="fa-solid fa-bars text-xl"></i>
 				</button>
 			</div>
 
-            <div id="desktop-menu" class="hidden md:flex md:items-center md:gap-2">
-				<i id="status-cloud-desktop" class="fa-solid fa-cloud text-gray-300 text-lg mr-2 transition-colors duration-300 cursor-help" title="สถานะ"></i>
-                <button id="refresh-cloud-desktop" class="text-blue-500 hover:text-blue-700 p-1 rounded-lg text-sm" title="รีเฟรชข้อมูลจากคลาวด์">
-					<i class="fa-solid fa-rotate"></i>
+			<!-- desktop menu (ปรับขนาดไอคอนคลาวด์/รีเฟรช/กระดิ่งให้ใหญ่ขึ้น) -->
+			<div id="desktop-menu" class="hidden md:flex md:items-center md:gap-3">
+				<i id="status-cloud-desktop" class="fa-solid fa-cloud text-gray-300 text-xl mr-1 cursor-help"></i>
+				<button id="refresh-cloud-desktop" class="text-blue-500 hover:text-blue-700 p-1 rounded-lg">
+					<i class="fa-solid fa-rotate text-lg"></i>
 				</button>
-				<button id="nav-home" class="text-primary-600 hover:text-primary-800 font-medium px-4 py-3 rounded-lg text-lg"><i class="fa-solid fa-house mr-1"></i> หน้าแรก</button>
-                <button id="nav-list" class="text-gray-600 hover:text-primary-800 font-medium px-4 py-3 rounded-lg text-lg"><i class="fa-solid fa-list-ul mr-1"></i> รายการ</button>
-                <button id="nav-calendar" class="text-gray-600 hover:text-primary-800 font-medium px-4 py-3 rounded-lg text-lg"><i class="fa-solid fa-calendar-days mr-1"></i> ปฏิทิน</button>
-                <button id="nav-accounts" class="text-gray-600 hover:text-primary-800 font-medium px-4 py-3 rounded-lg text-lg"><i class="fa-solid fa-wallet mr-1"></i> บัญชี</button>
-                <button id="nav-settings" class="text-gray-600 hover:text-primary-800 font-medium px-4 py-3 rounded-lg text-lg"><i class="fa-solid fa-gear mr-1"></i> ตั้งค่า</button>
-				<button id="nav-guide" class="text-gray-600 hover:text-primary-800 font-medium px-4 py-3 rounded-lg text-lg"><i class="fa-solid fa-book mr-1"></i> คู่มือ</button>
-				<button id="notification-bell" class="relative text-gray-600 hover:text-primary-600 p-2 rounded-lg" title="ประวัติกิจกรรม">
-					<i class="fa-solid fa-bell text-lg"></i>
-					<span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+				<button id="notification-bell" class="relative text-gray-600 hover:text-primary-600 p-1 rounded-lg">
+					<i class="fa-solid fa-bell text-xl"></i>
+					<span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[11px] rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
 				</button>
-			</div>
-        </div>
 
-        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg">
-            <button id="nav-home-mobile" class="block w-full text-left text-primary-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-house mr-2"></i> หน้าแรก</button>
-            <button id="nav-list-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-list-ul mr-2"></i> รายการ</button>
-            <button id="nav-calendar-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-calendar-days mr-2"></i> ปฏิทิน</button>
-            <button id="nav-accounts-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-wallet mr-2"></i> บัญชี</button>
-            <button id="nav-settings-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-gear mr-2"></i> ตั้งค่า</button>
-            <button id="nav-guide-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg"><i class="fa-solid fa-book mr-2"></i> คู่มือ</button>
+				<!-- เมนูหลักคงขนาดปกติ ไม่ขยาย -->
+				<button id="nav-home" class="text-primary-600 hover:text-primary-800 font-medium px-3 py-2 rounded-lg text-base"><i class="fa-solid fa-house mr-1"></i> หน้าแรก</button>
+				<button id="nav-list" class="text-gray-600 hover:text-primary-800 font-medium px-3 py-2 rounded-lg text-base"><i class="fa-solid fa-list-ul mr-1"></i> รายการ</button>
+				<button id="nav-calendar" class="text-gray-600 hover:text-primary-800 font-medium px-3 py-2 rounded-lg text-base"><i class="fa-solid fa-calendar-days mr-1"></i> ปฏิทิน</button>
+				<button id="nav-accounts" class="text-gray-600 hover:text-primary-800 font-medium px-3 py-2 rounded-lg text-base"><i class="fa-solid fa-wallet mr-1"></i> บัญชี</button>
+				<button id="nav-settings" class="text-gray-600 hover:text-primary-800 font-medium px-3 py-2 rounded-lg text-base"><i class="fa-solid fa-gear mr-1"></i> ตั้งค่า</button>
+				<button id="nav-guide" class="text-gray-600 hover:text-primary-800 font-medium px-3 py-2 rounded-lg text-base"><i class="fa-solid fa-book mr-1"></i> คู่มือ</button>
+			</div>
 		</div>
-    </nav>
+
+		<!-- mobile menu (คงเดิม) -->
+		<div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg">
+			<button id="nav-home-mobile" class="block w-full text-left text-primary-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-house mr-2"></i> หน้าแรก</button>
+			<button id="nav-list-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-list-ul mr-2"></i> รายการ</button>
+			<button id="nav-calendar-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-calendar-days mr-2"></i> ปฏิทิน</button>
+			<button id="nav-accounts-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-wallet mr-2"></i> บัญชี</button>
+			<button id="nav-settings-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg border-b border-gray-100"><i class="fa-solid fa-gear mr-2"></i> ตั้งค่า</button>
+			<button id="nav-guide-mobile" class="block w-full text-left text-gray-600 hover:bg-primary-100 font-medium px-6 py-4 text-lg"><i class="fa-solid fa-book mr-2"></i> คู่มือ</button>
+		</div>
+	</nav>
 	
 	<!-- Notification Popover (ซ่อนไว้ก่อน) -->
 		<div id="notification-popover" class="fixed z-[100] hidden bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-80 max-h-96 overflow-y-auto p-2" style="top: 0; left: 0; box-sizing: border-box;">
@@ -927,6 +936,45 @@
 										</button>
 									</div>
 								</div>
+								
+								<!-- ส่วนจัดการโปรไฟล์ส่วนตัว (Collapsible) -->
+								<div class="mt-6 pt-4 border-t border-blue-200 dark:border-blue-800">
+									<div class="flex justify-between items-center cursor-pointer settings-toggle-header" data-target="profile-settings-content">
+										<h3 class="text-base font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+											<i class="fa-regular fa-id-card"></i> จัดการโปรไฟล์ส่วนตัว
+										</h3>
+										<i class="fa-solid fa-chevron-down text-green-500 transition-transform duration-300 rotate-180"></i>
+									</div>
+									
+									<div id="profile-settings-content" class="mt-4 transition-all">
+										<div class="flex flex-col sm:flex-row items-center gap-6 mb-4">
+											<!-- Avatar ปัจจุบัน + ปุ่มอัปโหลด -->
+											<div class="relative">
+												<div id="profile-avatar-preview" class="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shadow-md border-2 border-blue-300 dark:border-blue-600">
+													<i class="fas fa-user text-gray-500 dark:text-gray-400 text-4xl"></i>
+												</div>
+												<button id="btn-upload-avatar" class="absolute -bottom-2 -right-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-md text-xs transition">
+													<i class="fa-solid fa-camera"></i>
+												</button>
+												<input type="file" id="avatar-upload-input" accept="image/*" class="hidden">
+											</div>
+											<div class="flex-1 w-full">
+												<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ชื่อที่แสดง</label>
+												<input type="text" id="profile-display-name" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition" placeholder="ชื่อที่ต้องการแสดง">
+												<div class="flex justify-end mt-3 gap-3">
+													<button id="btn-clear-avatar" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition flex items-center gap-2">
+														<i class="fa-regular fa-trash-can"></i> ลบรูป
+													</button>
+													<button id="btn-save-profile" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-md transition flex items-center gap-2">
+														<i class="fa-regular fa-floppy-disk"></i> บันทึกโปรไฟล์
+													</button>
+												</div>
+											</div>
+										</div>
+										<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">* รูปจะถูกบีบอัดอัตโนมัติเพื่อประหยัดพื้นที่ ข้อมูลบันทึกในเครื่องและซิงก์ขึ้นคลาวด์เมื่อเข้าสู่ระบบ</p>
+									</div>
+								</div>
+								
 							</div>
 						</div>
 						
@@ -2323,7 +2371,7 @@
 	<!-- Bottom Navigation (มือถือ) -->
 	<div id="bottom-nav" class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 grid grid-cols-6 items-center py-1 z-40 hidden md:hidden shadow-lg">
 		<button data-page="home" class="flex flex-col items-center text-primary-600">
-			<i class="fa-solid fa-house text-lg"></i>
+			<i class="fa-solid fa-house text-2xl"></i>   <!-- text-2xl = 1.5rem -->
 			<span class="text-[10px] mt-0.5">หน้าแรก</span>
 		</button>
 		<button data-page="list" class="flex flex-col items-center text-gray-600">
@@ -2624,13 +2672,16 @@
 				}
 			});
 		};
-		// 6. onAuthStateChanged (เหมือนเดิม)
-		onAuthStateChanged(auth, (user) => {
+		// 6. onAuthStateChanged (ปรับปรุงให้อัปเดต Navbar)
+		onAuthStateChanged(auth, async (user) => {
 			const nameDisplay = document.getElementById('user-name-display');
 			const statusDisplay = document.getElementById('user-status');
 			const avatar = document.getElementById('user-avatar');
 			const btnLogin = document.getElementById('btn-login');
 			const btnLogout = document.getElementById('btn-logout');
+
+			const navName = document.getElementById('nav-user-name');
+			const navAvatar = document.getElementById('nav-user-avatar');
 
 			if (!nameDisplay) return;
 
@@ -2639,35 +2690,59 @@
 				statusDisplay.innerHTML = '<i class="fa-solid fa-circle text-green-500 text-[10px] mr-1"></i> ออนไลน์ (ซิงค์อัตโนมัติ)';
 				statusDisplay.className = "text-xs md:text-sm text-green-600 dark:text-green-400 block font-medium";
 
-				if(user.photoURL) {
+				if (user.photoURL) {
 					avatar.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
 					avatar.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+				} else {
+					avatar.innerHTML = `<i class="fas fa-user text-gray-500 dark:text-gray-400 text-lg"></i>`;
+					avatar.classList.add('bg-gray-200', 'dark:bg-gray-700');
 				}
 
 				btnLogin.style.display = 'none';
 				btnLogout.style.display = 'inline-flex';
 
-				if (typeof window.loadDataFromCloud === 'function') {
-					window.loadDataFromCloud(user.uid);
+				if (navName) navName.innerText = user.displayName;
+				if (navAvatar) {
+					if (user.photoURL) {
+						navAvatar.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
+						navAvatar.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+					} else {
+						navAvatar.innerHTML = `<i class="fas fa-user text-gray-500 dark:text-gray-400 text-lg"></i>`;
+						navAvatar.classList.add('bg-gray-200', 'dark:bg-gray-700');
+					}
 				}
+
+				if (typeof window.loadDataFromCloud === 'function') {
+					await window.loadDataFromCloud(user.uid);
+				}
+
+				// โหลดโปรไฟล์ส่วนตัว (ต้องผ่าน window)
+				await window.loadProfile();
+
 			} else {
 				nameDisplay.innerText = "Guest (Offline)";
 				statusDisplay.innerText = "ข้อมูลเก็บในเครื่องนี้เท่านั้น";
 				statusDisplay.className = "text-xs md:text-sm text-gray-500 dark:text-gray-400 block";
-				
+
 				avatar.innerHTML = `<i class="fas fa-user text-gray-500 dark:text-gray-400 text-lg"></i>`;
 				avatar.classList.add('bg-gray-200', 'dark:bg-gray-700');
 
 				btnLogin.style.display = 'inline-flex';
 				btnLogout.style.display = 'none';
+
+				if (navName) navName.innerText = "Guest";
+				if (navAvatar) {
+					navAvatar.innerHTML = `<i class="fas fa-user text-gray-500 dark:text-gray-400 text-lg"></i>`;
+					navAvatar.classList.add('bg-gray-200', 'dark:bg-gray-700');
+				}
+
+				await window.loadProfile();
 			}
 
-			// เรียกฟังก์ชันอัปเดตไอคอน (ส่ง user object เพื่อความแม่นยำ)
 			if (typeof window.updateCloudStatusIcon === 'function') {
 				window.updateCloudStatusIcon(user);
 			}
 
-			// เรียกอีกครั้งหลังจาก 200ms เพื่อให้แน่ใจว่า DOM และ auth state พร้อม
 			setTimeout(() => {
 				if (typeof window.updateCloudStatusIcon === 'function') {
 					window.updateCloudStatusIcon(user);
