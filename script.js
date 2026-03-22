@@ -2667,6 +2667,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (typeof updateCloudStatusIcon === 'function') {
 				updateCloudStatusIcon();
 			}
+			
+			// ✅ เพิ่ม: อัปเดต active state สำหรับ bottom navigation
+			if (state.mobileMenuStyle === 'bottom' && typeof updateBottomNavActive === 'function') {
+				updateBottomNavActive('page-home');
+			}
+			
 			setTimeout(() => {
 				if(typeof checkNotifications === 'function') {
 					checkNotifications();
@@ -5994,14 +6000,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	function updateBottomNavActive(pageId) {
 		const bottomNav = document.getElementById('bottom-nav');
 		if (!bottomNav) return;
-		const pageName = pageId.replace('page-', '');
+		const pageName = pageId.replace('page-', ''); // 'home'
 		bottomNav.querySelectorAll('button').forEach(btn => {
-			const btnPage = btn.dataset.page;
-			// ล้างคลาสสีเก่าออกให้หมดเพื่อป้องกันสีค้าง
-			btn.classList.remove('text-purple-600', 'text-primary-600', 'text-gray-600');
+			const btnPage = btn.dataset.page; // 'home'
 			if (btnPage === pageName) {
+				btn.classList.add('active');
 				btn.classList.add('text-primary-600');
+				btn.classList.remove('text-gray-600');
 			} else {
+				btn.classList.remove('active');
+				btn.classList.remove('text-primary-600');
 				btn.classList.add('text-gray-600');
 			}
 		});
@@ -6149,6 +6157,11 @@ document.addEventListener('DOMContentLoaded', () => {
             newPageEl.style.opacity = '';
             
             currentPage = pageName;
+			
+			if (state.mobileMenuStyle === 'bottom') {
+				updateBottomNavActive(pageId);
+			}
+			
             isTransitioning = false; 
 
 			// อัปเดตปุ่ม Nav (โค้ดเดิม)
@@ -14620,35 +14633,50 @@ document.addEventListener('DOMContentLoaded', () => {
 						widget.classList.add('hidden');
 						return;
 					}
-					
+
 					widget.classList.remove('hidden');
 					container.innerHTML = '';
 
+					// วันที่ปัจจุบัน (ใช้วันที่ใน state.homeCurrentDate เพื่อให้ตรงกับเดือนที่เลือก)
 					const selectedDate = new Date(state.homeCurrentDate);
-					const selectedMonth = selectedDate.getMonth();
 					const selectedYear = selectedDate.getFullYear();
+					const selectedMonth = selectedDate.getMonth(); // 0-index
 					const monthName = selectedDate.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' });
+
+					// หัวข้อ
 					const headerTitle = widget.querySelector('h2');
 					if (headerTitle) headerTitle.innerHTML = `<i class="fa-solid fa-bullseye text-red-500 mr-1.5"></i> งบประมาณ (${monthName})`;
 
-					const expenses = state.transactions.filter(tx => new Date(tx.date).getMonth() === selectedMonth && new Date(tx.date).getFullYear() === selectedYear && tx.type === 'expense');
+					// กรองเฉพาะรายจ่ายในเดือนที่เลือก
+					const expenses = state.transactions.filter(tx => {
+						const txDate = new Date(tx.date);
+						return tx.type === 'expense' &&
+							txDate.getMonth() === selectedMonth &&
+							txDate.getFullYear() === selectedYear;
+					});
+
+					// จำนวนวันเหลือในเดือน (ใช้สำหรับคำนวณค่าเฉลี่ยต่อวัน)
+					const today = new Date();
+					const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0);
+					const remainingDays = Math.max(0, Math.floor((lastDayOfMonth - today) / (1000 * 60 * 60 * 24)));
+
 					const uiStyle = localStorage.getItem('fmpro_home_ui') || 'icon';
 					const isDark = document.body.classList.contains('dark');
 					const isMobile = window.innerWidth < 768;
+					const isExpanded = widget.dataset.expanded !== 'false';
 
-					// ===================================
-					// 🌟 1. ส่วนควบคุมปุ่ม (มัดรวมชิดขวา)
-					// ===================================
+					// ==========================================
+					// จัดการปุ่มย่อ/ขยาย (เฉพาะมือถือ + icon mode)
+					// ==========================================
 					const headerDiv = headerTitle ? headerTitle.parentElement : null;
 					if (headerDiv) {
 						let controlsWrapper = document.getElementById('budget-controls-wrapper');
 						let toggleBtn = document.getElementById('budget-toggle-btn');
-						
 						if (!controlsWrapper) {
 							const manageBtn = headerTitle.nextElementSibling;
 							controlsWrapper = document.createElement('div');
 							controlsWrapper.id = 'budget-controls-wrapper';
-							controlsWrapper.className = 'flex items-center gap-1.5 ml-auto'; 
+							controlsWrapper.className = 'flex items-center gap-1.5 ml-auto';
 							if (manageBtn && manageBtn.id !== 'budget-toggle-btn') {
 								headerDiv.insertBefore(controlsWrapper, manageBtn);
 								controlsWrapper.appendChild(manageBtn);
@@ -14656,96 +14684,156 @@ document.addEventListener('DOMContentLoaded', () => {
 								headerDiv.appendChild(controlsWrapper);
 							}
 						}
-						
 						if (uiStyle !== 'classic' && isMobile) {
 							if (!toggleBtn) {
 								toggleBtn = document.createElement('button');
 								toggleBtn.id = 'budget-toggle-btn';
 								toggleBtn.className = 'text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-lg active:scale-90 transition-transform bg-transparent border-0 flex items-center justify-center outline-none cursor-pointer w-8 h-8';
-								controlsWrapper.appendChild(toggleBtn); 
+								controlsWrapper.appendChild(toggleBtn);
 							}
-							const isExpanded = widget.dataset.expanded !== 'false';
-							toggleBtn.innerHTML = `<i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>`;
+							const expanded = widget.dataset.expanded !== 'false';
+							toggleBtn.innerHTML = `<i class="fa-solid ${expanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>`;
 							toggleBtn.onclick = (e) => {
 								e.stopPropagation();
-								widget.dataset.expanded = isExpanded ? 'false' : 'true';
+								widget.dataset.expanded = expanded ? 'false' : 'true';
 								renderBudgetWidget();
 							};
 						} else {
-							if (toggleBtn) toggleBtn.remove();
+							const oldBtn = document.getElementById('budget-toggle-btn');
+							if (oldBtn) oldBtn.remove();
 							widget.dataset.expanded = 'true';
 						}
 					}
 
-					const isExpanded = widget.dataset.expanded !== 'false';
+					// ฟังก์ชันช่วยจัดรูปแบบจำนวนเงิน
+					const format = (num) => typeof formatCurrency === 'function' ? formatCurrency(num) : num.toFixed(2);
 
-					// ===================================
-					// 🌟 2. สถานะ "ย่อ" (แยกหลอด + ชื่อจิ๋ว)
-					// ===================================
-					if (!isExpanded && uiStyle !== 'classic' && isMobile) {
-						let miniBarsHtml = '<div class="w-full flex gap-1.5 cursor-pointer hover:opacity-90 transition-opacity pt-1 pb-1" id="budget-mini-bar">';
-						
-						state.budgets.forEach(budget => {
-							const spent = expenses.filter(tx => tx.category === budget.category).reduce((s, tx) => s + tx.amount, 0);
-							const percent = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0;
-							let bClass = percent >= 100 ? 'bg-red-600' : (percent >= 80 ? 'bg-orange-600' : (percent >= 50 ? 'bg-amber-500' : 'bg-emerald-600'));
-							
-							miniBarsHtml += `
-								<div class="flex-1 flex flex-col gap-1">
-									<span class="text-[9px] font-medium text-gray-500 dark:text-gray-400 truncate leading-none px-0.5">
-										${escapeHTML(budget.category)}
-									</span>
-									<div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
-										<div class="${bClass} h-full rounded-full transition-all duration-500 ease-out" style="width: ${percent}%;"></div>
+					// ฟังก์ชันคำนวณและแสดงข้อมูลต่อหมวดหมู่
+					const renderBudgetItem = (budget) => {
+						const spent = expenses.filter(tx => tx.category === budget.category).reduce((s, tx) => s + tx.amount, 0);
+						const remaining = budget.amount - spent;
+						const percent = Math.min((spent / budget.amount) * 100, 100);
+						const daily = remainingDays > 0 ? remaining / remainingDays : 0;
+
+						const formatAmount = (num) => typeof formatCurrency === 'function' ? formatCurrency(num) : num.toFixed(2);
+
+						const budgetText = `งบ ${formatAmount(budget.amount)}`;       // แทนที่ amountText เดิม
+						const remainingText = remaining >= 0 ? `เหลือ ${formatAmount(remaining)}` : `เกิน ${formatAmount(Math.abs(remaining))}`;
+						const dailyText = daily >= 0 ? `เฉลี่ยวันละ ${formatAmount(daily)}` : `เฉลี่ยวันละ 0.00 ฿`;
+
+						let percentClass = '';
+						let remainingClass = '';
+						if (percent >= 100) {
+							percentClass = 'text-red-600 dark:text-red-500';
+							remainingClass = 'text-red-600 dark:text-red-500';
+						} else if (percent >= 80) {
+							percentClass = 'text-orange-600 dark:text-orange-500';
+							remainingClass = 'text-orange-600 dark:text-orange-500';
+						} else if (percent >= 50) {
+							percentClass = 'text-amber-500 dark:text-amber-400';
+							remainingClass = 'text-amber-500 dark:text-amber-400';
+						} else {
+							percentClass = 'text-emerald-600 dark:text-emerald-500';
+							remainingClass = 'text-emerald-600 dark:text-emerald-500';
+						}
+
+						if (uiStyle === 'classic') {
+							const progressColor = percent >= 100 ? 'bg-red-600' : (percent >= 80 ? 'bg-orange-600' : (percent >= 50 ? 'bg-amber-500' : 'bg-emerald-600'));
+							return `
+								<div class="budget-item-click cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded-xl border border-transparent transition-all mb-2" data-category="${escapeHTML(budget.category)}">
+									<div class="flex flex-wrap justify-between items-center gap-2 mb-1">
+										<span class="font-bold text-gray-800 dark:text-gray-200 text-sm">${escapeHTML(budget.category)}</span>
+										<span class="text-xs ${percentClass} font-bold">${Math.round(percent)}%</span>
+									</div>
+									<div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-2">
+										<div class="${progressColor} h-full rounded-full" style="width: ${percent}%"></div>
+									</div>
+									<div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 text-xs">
+										<span class="text-gray-600 dark:text-gray-400">${budgetText}</span>
+										<span class="font-medium ${remainingClass}">${remainingText}</span>
+										<span class="text-gray-500 dark:text-gray-400">${dailyText}</span>
 									</div>
 								</div>
 							`;
-						});
-						
-						miniBarsHtml += '</div>';
-						container.innerHTML = miniBarsHtml;
-						
-						const miniBar = document.getElementById('budget-mini-bar');
-						if (miniBar) {
-							miniBar.onclick = () => {
-								widget.dataset.expanded = 'true';
-								renderBudgetWidget();
-							};
+						} else {
+							// โหมด ICON
+							if (isExpanded) {
+								const catObj = state.categories?.expense?.find(c => c.name === budget.category);
+								const iconName = catObj?.icon || 'fa-tag';
+								const progressColor = `conic-gradient(${percent >= 100 ? '#dc2626' : (percent >= 80 ? '#ea580c' : (percent >= 50 ? '#f59e0b' : '#059669'))} ${percent}%, ${isDark ? '#374151' : '#e5e7eb'} 0)`;
+								return `
+									<div class="budget-item-click flex-shrink-0 flex flex-col items-center gap-3 cursor-pointer snap-center w-[120px] md:w-[140px]" data-category="${escapeHTML(budget.category)}">
+										<div class="relative w-24 h-24 md:w-28 md:h-28 rounded-full shadow-md" style="background: ${progressColor};">
+											<div class="absolute inset-[7px] ${isDark ? 'bg-gray-900' : 'bg-[#f3f4f6]'} rounded-full flex flex-col items-center justify-center">
+												<i class="fa-solid ${iconName} text-gray-400 text-base mb-1"></i>
+												<span class="text-xs font-bold ${percentClass}">${Math.round(percent)}%</span>
+											</div>
+										</div>
+										<div class="text-center w-full px-1">
+											<h3 class="text-xs font-bold text-gray-700 dark:text-gray-200 truncate w-full">${escapeHTML(budget.category)}</h3>
+											<p class="text-[11px] font-medium text-gray-600 dark:text-gray-400 truncate mt-1">${budgetText}</p>
+											<p class="text-[11px] font-bold ${remainingClass} truncate">${remainingText}</p>
+											<p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">${dailyText}</p>
+										</div>
+									</div>
+								`;
+							} else {
+								const progressColor = percent >= 100 ? 'bg-red-600' : (percent >= 80 ? 'bg-orange-600' : (percent >= 50 ? 'bg-amber-500' : 'bg-emerald-600'));
+								return `
+									<div class="budget-item-click flex-1 min-w-[110px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-all" data-category="${escapeHTML(budget.category)}">
+										<div class="flex items-center justify-between gap-1 mb-0.5">
+											<span class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">${escapeHTML(budget.category)}</span>
+											<span class="text-[10px] ${percentClass} font-bold">${Math.round(percent)}%</span>
+										</div>
+										<div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mb-1">
+											<div class="${progressColor} h-full rounded-full" style="width: ${percent}%"></div>
+										</div>
+										<div class="flex flex-wrap justify-between items-center gap-x-1 text-[9px]">
+											<span class="text-gray-600 dark:text-gray-400 truncate">${budgetText}</span>
+											<span class="font-medium ${remainingClass} truncate">${remainingText}</span>
+										</div>
+										<div class="text-[9px] text-gray-500 dark:text-gray-400 truncate text-center mt-0.5">${dailyText}</div>
+									</div>
+								`;
+							}
 						}
-						return; 
+					};
+
+					// แสดงรายการงบประมาณทั้งหมด (เรียงตามชื่อหมวดหมู่)
+					const sortedBudgets = [...state.budgets].sort((a, b) => a.category.localeCompare(b.category));
+					let html = '';
+
+					if (uiStyle === 'classic') {
+						html = sortedBudgets.map(b => renderBudgetItem(b)).join('');
+					} else {
+						if (isExpanded) {
+							// แบบขยาย: ใช้ flex scroll
+							html = `<div class="flex gap-4 overflow-x-auto pb-3 px-2 snap-x hide-scrollbar">${sortedBudgets.map(b => renderBudgetItem(b)).join('')}</div>`;
+						} else {
+							// แบบย่อ: ใช้ flex wrap เพื่อให้พอดีจอ
+							html = `<div class="flex flex-wrap gap-3 justify-start items-stretch">${sortedBudgets.map(b => renderBudgetItem(b)).join('')}</div>`;
+						}
 					}
 
-					// ===================================
-					// 🌟 3. สถานะ "กาง" (แสดงวงกลมปกติ)
-					// ===================================
-					state.budgets.forEach(budget => {
-						const spent = expenses.filter(tx => tx.category === budget.category).reduce((s, tx) => s + tx.amount, 0);
-						const percent = Math.min((spent / budget.amount) * 100, 100);
-						const remaining = budget.amount - spent;
-						
-						let rColor = percent >= 100 ? '#dc2626' : (percent >= 80 ? '#ea580c' : (percent >= 50 ? '#f59e0b' : '#059669'));
-						let tClass = percent >= 100 ? 'text-red-600 dark:text-red-500' : (percent >= 80 ? 'text-orange-600 dark:text-orange-500' : (percent >= 50 ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-500'));
+					container.innerHTML = html;
 
-						let html = '';
-						if (uiStyle === 'classic') {
-							let bClass = percent >= 100 ? 'bg-red-600' : (percent >= 80 ? 'bg-orange-600' : (percent >= 50 ? 'bg-amber-500' : 'bg-emerald-600'));
-							html = `<div class="budget-item-click cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-1.5 rounded-lg border border-transparent" data-category="${escapeHTML(budget.category)}"><div class="flex justify-between items-end mb-1"><span class="font-bold text-gray-700 dark:text-gray-200 text-xs">${escapeHTML(budget.category)}</span><span class="text-[0.65rem] ${tClass} font-bold">${Math.round(percent)}%</span></div><div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mb-1"><div class="${bClass} h-full rounded-full" style="width: ${percent}%"></div></div><div class="flex justify-between items-center"><span class="text-[0.65rem] text-gray-500">${formatCurrency(spent)} / ${formatCurrency(budget.amount)}</span><span class="text-[0.65rem] font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'}">${remaining >= 0 ? 'เหลือ ' + formatCurrency(remaining) : 'เกิน ' + formatCurrency(Math.abs(remaining))}</span></div></div>`;
-						} else {
-							const catObj = state.categories && state.categories.expense ? state.categories.expense.find(c => c.name === budget.category) : null;
-							const iconName = catObj && catObj.icon ? catObj.icon : 'fa-tag';
-							html = `<div class="budget-item-click flex-shrink-0 flex flex-col items-center gap-3 cursor-pointer snap-center w-[96px] md:w-32" data-category="${escapeHTML(budget.category)}"><div class="relative w-24 h-24 md:w-28 md:h-28 rounded-full shadow-md" style="background: conic-gradient(${rColor} ${percent}%, ${isDark ? '#374151' : '#e5e7eb'} 0);"><div class="absolute inset-[7px] ${isDark ? 'bg-gray-900' : 'bg-[#f3f4f6]'} rounded-full flex flex-col items-center justify-center"><i class="fa-solid ${iconName} text-gray-400 text-base mb-1"></i><span class="text-xs font-bold ${tClass}">${Math.round(percent)}%</span></div></div><div class="text-center w-full px-1"><h3 class="text-xs font-bold text-gray-700 dark:text-gray-200 truncate w-full">${escapeHTML(budget.category)}</h3><p class="text-[11px] font-bold ${remaining < 0 ? 'text-red-500' : 'text-gray-500'} truncate mt-1">${formatCurrency(Math.abs(remaining))}</p></div></div>`;
-						}
-						container.insertAdjacentHTML('beforeend', html);
-					});
-
+					// ผูก event คลิกที่ item
 					container.querySelectorAll('.budget-item-click').forEach(item => {
 						item.addEventListener('click', () => {
 							const category = item.dataset.category;
-							state.advFilterType = 'expense'; state.advFilterSearch = category;
-							const d = new Date(state.homeCurrentDate); const formatDate = (date) => [date.getFullYear(), ('0'+(date.getMonth()+1)).slice(-2), ('0'+date.getDate()).slice(-2)].join('-');
-							state.advFilterStart = formatDate(new Date(d.getFullYear(), d.getMonth(), 1));
-							state.advFilterEnd = formatDate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
-							showPage('page-list'); if (typeof renderListPage === 'function') renderListPage();
+							if (!category) return;
+
+							// เปลี่ยนไปหน้า list และตั้งค่า filter หมวดหมู่ + ช่วงเดือนปัจจุบัน
+							state.advFilterType = 'expense';
+							state.advFilterSearch = category;
+							const d = new Date(state.homeCurrentDate);
+							const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
+							const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+							const format = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+							state.advFilterStart = format(firstDay);
+							state.advFilterEnd = format(lastDay);
+							showPage('page-list');
+							if (typeof renderListPage === 'function') renderListPage();
 						});
 					});
 				}

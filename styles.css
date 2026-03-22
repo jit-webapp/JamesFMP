@@ -1304,3 +1304,36 @@ body.dark.has-wallpaper #home-accounts-widget {
     width: 3.5rem;
     height: 3.5rem;
 }
+
+/* Bottom Navigation - ปรับพื้นฐานให้พร้อม transition */
+#bottom-nav button {
+    transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    transform-origin: center;
+}
+
+/* ไอคอนในปุ่มปกติ */
+#bottom-nav button i {
+    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    display: inline-block;
+}
+
+/* ข้อความใต้ไอคอนปกติ */
+#bottom-nav button span {
+    transition: font-size 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1), margin 0.2s ease;
+}
+
+/* ปุ่ม active (หน้าปัจจุบัน) */
+#bottom-nav button.active i {
+    transform: scale(1.4);           /* ขยายไอคอน 25% */
+}
+
+#bottom-nav button.active span {
+    font-size: 0.8rem;               /* ขยายข้อความเล็กน้อย (ถ้าต้องการ) */
+    font-weight: bold;                /* เพิ่มความหนาให้ข้อความ */
+    margin-top: 2px;                  /* ปรับระยะห่างให้สมดุล */
+}
+
+/* ถ้าต้องการให้ปุ่ม active มีเอฟเฟกต์เรืองแสงเพิ่มเติม */
+#bottom-nav button.active {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
