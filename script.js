@@ -946,6 +946,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		];
 
 		try {
+			// 👉 เพิ่มบรรทัดนี้: หน่วงเวลาหลอกๆ 0.8 วินาที ให้ผู้ใช้เห็นข้อความแจ้งเตือน
+			await new Promise(resolve => setTimeout(resolve, 800));
 			let hasDownloaded = false;
 			let hasUploaded = false;
 			let syncMode = 'overwrite'; 
