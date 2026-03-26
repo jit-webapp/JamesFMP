@@ -1281,6 +1281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let myChart;
 	let isAutoScanning = false;
+	let isLocking = false;
     let myListPageBarChart;
     let myExpenseByNameChart; 
     //let myCalendar = null;
@@ -2725,15 +2726,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				window.bioAbortController = null;
 			}
 
-			// รีเซ็ต flag การสแกนอัตโนมัติเพื่อป้องกันค้าง
+			// รีเซ็ต flag
 			if (typeof isAutoScanning !== 'undefined') {
 				isAutoScanning = false;
+			}
+			if (typeof isLocking !== 'undefined') {
+				isLocking = false;
 			}
 
 			const unlockBtn = document.querySelector('#unlock-form button[type="submit"]');
 			if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
 
-			// ไม่ต้องใช้ async ใน setTimeout แล้ว เพราะเราจะโหลดแอปแบบไม่บล็อก UI
 			setTimeout(() => {
 				// 👉 1. ซ่อน lock screen และล้าง aria-hidden/ inert ทันที
 				const lockScreen = document.getElementById('app-lock-screen');
@@ -2744,9 +2747,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// 👉 2. เปิดใช้งาน main content อีกครั้ง (เอา inert ออก)
 				const mainContent = document.getElementById('main-content');
+				const navBar = document.querySelector('nav');
+				const footer = document.querySelector('footer');
+				
 				if (mainContent) mainContent.removeAttribute('inert');
+				if (navBar) navBar.removeAttribute('inert');
+				if (footer) footer.removeAttribute('inert');
 
-				// 👉 3. แสดงข้อความ "ปลดล็อคสำเร็จ" และคืนค่าฟอร์ม "ทันที" ให้ผู้ใช้รู้สึกว่าไวมาก
+				// 👉 3. แสดงข้อความ "ปลดล็อคสำเร็จ" และคืนค่าฟอร์ม
 				const passInput = document.getElementById('unlock-password');
 				if (passInput) passInput.value = '';
 				if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-door-open"></i> เข้าสู่ระบบ';
@@ -2756,25 +2764,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				document.getElementById('smart-voice-btn')?.classList.remove('hidden');
 
+				// ========== 🚀 ตรวจสอบและแจ้งเตือนการอัปเดต ==========
+				// 4.1 ตรวจสอบว่ามีการอัปเดตเพิ่งเสร็จ (flag fmpro_just_updated)
+				if (localStorage.getItem('fmpro_just_updated') === 'true') {
+					localStorage.removeItem('fmpro_just_updated');  // ลบ flag ทิ้ง
+					
+					const isDark = document.body.classList.contains('dark');
+					let notesPlain = '';
+					if (window.APP_UPDATE_NOTES) {
+						notesPlain = window.APP_UPDATE_NOTES.replace(/<[^>]*>?/gm, '').trim();
+					}
+					
+					// แสดง Swal แจ้งเตือน (ให้เหมือนเดิม)
+					Swal.fire({
+						icon: 'success',
+						title: 'อัปเดตเสร็จสมบูรณ์!',
+						html: `แอปพลิเคชันเป็นเวอร์ชัน <b>${window.APP_VERSION}</b> แล้ว<br><br>${window.APP_UPDATE_NOTES.replace(/\n/g, '<br>')}`,
+						confirmButtonColor: '#9333ea',
+						customClass: { popup: isDark ? 'swal2-popup' : '' },
+						background: isDark ? '#1a1a1a' : '#fff',
+						color: isDark ? '#e5e7eb' : '#545454'
+					});
+					
+					// เพิ่มแจ้งเตือนลงในกระดิ่ง (Notification)
+					if (typeof addActivityLog === 'function') {
+						const logMessage = `แอปพลิเคชันอัปเดตเป็นเวอร์ชัน ${window.APP_VERSION} เรียบร้อยแล้ว`;
+						const fullMessage = notesPlain ? `${logMessage}\n${notesPlain}` : logMessage;
+						addActivityLog(
+							'🚀 อัปเดตระบบสำเร็จ',
+							fullMessage,
+							'fa-arrow-up-right-dots',
+							'text-green-600'
+						);
+					}
+				}
+				// ====================================================
+
 				// 👉 4. จัดการหน้าจอและการดึงข้อมูล
 				if (!window.hasAppStartedFlag) {
 					window.hasAppStartedFlag = true;
 					document.getElementById('page-home').style.display = 'block';
 					currentPage = 'home';
 					
-					// 🚀 เอา await ออก! ปล่อยให้ onAppStart ทำงานเบื้องหลัง ไม่ให้หน้าจอมืด/ค้าง
 					if (typeof onAppStart === 'function') {
 						onAppStart(); 
 					}
 					history.replaceState({ pageId: 'page-home' }, null, '#home');
 				} else {
-					// กลับไปหน้าปัจจุบันที่ค้างไว้
 					document.getElementById('page-' + currentPage).style.display = 'block';
 					if (typeof updateBottomNavActive === 'function') {
 						updateBottomNavActive('page-' + currentPage);
 					}
 
-					// 🚀 โหลดข้อมูลล่าสุดจาก Local มาโชว์ทันทีเมื่อกลับเข้ามา (กันหน้าจอว่างเปล่า)
 					if (typeof refreshAllUI === 'function') {
 						refreshAllUI();
 					}
@@ -2792,7 +2833,6 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 					});
 
-					// อัปเดตสีของปุ่มเมนูมือถือ (Mobile)
 					const mobileNavButtons = {
 						'page-home': getEl('nav-home-mobile'),
 						'page-list': getEl('nav-list-mobile'),
@@ -2808,7 +2848,6 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 					});
 
-					// ตั้งค่าปุ่มเมนูที่ตรงกับหน้าปัจจุบัน
 					const currentNavEl = getEl('nav-' + currentPage);
 					if (currentNavEl) {
 						currentNavEl.classList.add('text-primary-600');
@@ -2825,13 +2864,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (typeof renderDropdownList === 'function') renderDropdownList();
 				if (typeof updateCloudStatusIcon === 'function') updateCloudStatusIcon();
 
-				// 👉 6. เช็คการแจ้งเตือนและอัปเดต (หน่วงเวลาไว้ไม่ให้กวนการแสดงผลหลัก)
+				// 👉 6. เช็คการแจ้งเตือนและอัปเดต (หน่วงเวลา)
 				setTimeout(() => {
 					if (typeof checkNotifications === 'function') checkNotifications();
 					if (typeof checkForUpdates === 'function') checkForUpdates();
 				}, 2000);
 
-			}, 50); // ลดเวลา setTimeout ลงให้ตอบสนองเข้าแอปได้ไวขึ้น
+			}, 50);
 		}
 
 		// [แก้ไข] ฟังก์ชันเดิม ปรับให้เรียกใช้ unlockAppSuccess
@@ -2862,19 +2901,26 @@ document.addEventListener('DOMContentLoaded', () => {
 		// ********** NEW: Auto Lock Logic **********
 		// ฟังก์ชันล็อคหน้าจอ (แก้ไขให้แสดง/ซ่อนปุ่มสแกนนิ้ว)
 		function lockApp() {
+			// ป้องกันการเรียกซ้ำ
+			if (isLocking) return;
+			isLocking = true;
+
 			const lockScreen = document.getElementById('app-lock-screen');
 			const isLocked = !lockScreen.classList.contains('hidden');
 			
-			if (state.password === null || isLocked) return;
+			if (state.password === null || isLocked) {
+				isLocking = false;
+				return;
+			}
 			
 			// ยกเลิกการสแกนค้าง
 			if (window.bioAbortController) {
 				window.bioAbortController.abort();
 				window.bioAbortController = null;
 			}
-			isAutoScanning = false;   // ✅ รีเซ็ต flag
+			isAutoScanning = false;
 			
-			// ปิด Modal และ Popover ทั้งหมด (คงเดิม)
+			// ปิด Modal และ Popover ทั้งหมด
 			closeModal(); 
 			closeAccountDetailModal();
 			openAccountModal(null, true);
@@ -2898,7 +2944,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			state.activeModalId = null;
 
-			// ✅ แทนที่จะซ่อนหน้า ให้ใช้ inert กับ content หลัก (ไม่ต้องซ่อน display)
+			// ✅ ใช้ inert กับ content หลัก
 			const mainContent = document.getElementById('main-content');
 			const navBar = document.querySelector('nav');
 			const footer = document.querySelector('footer');
@@ -2912,7 +2958,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			// แสดง lock screen
 			lockScreen.classList.remove('hidden');
-			lockScreen.removeAttribute('aria-hidden');   // ลบ aria-hidden เก่าทิ้ง
+			lockScreen.removeAttribute('aria-hidden');
 			
 			// ตั้งค่าปุ่ม Biometric
 			const bioUnlockBtn = document.getElementById('btn-bio-unlock');
@@ -2925,7 +2971,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			setTimeout(() => {
 				const passInput = document.getElementById('unlock-password');
 				if (passInput) {
-					// ตรวจสอบและลบ aria-hidden ออกจาก ancestor ทั้งหมด (เผื่อมี)
 					let ancestor = passInput.parentElement;
 					while (ancestor && ancestor !== lockScreen && ancestor !== document.body) {
 						if (ancestor.hasAttribute('aria-hidden')) {
@@ -2945,8 +2990,12 @@ document.addEventListener('DOMContentLoaded', () => {
 							if (success === true) unlockAppSuccess();
 						} catch (err) {
 							console.warn("Auto scan blocked:", err);
+						} finally {
+							isLocking = false;
 						}
 					})();
+				} else {
+					isLocking = false;
 				}
 			}, 300);
 		}
@@ -5959,6 +6008,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			// ตรวจสอบและประมวลผลรายการประจำเมื่อผู้ใช้สลับแอปกลับมาใช้งาน (ป้องกันเปิดแอปค้างไว้ข้ามวัน)
 			document.addEventListener('visibilitychange', () => {
+				// ===== ป้องกันการทำงานซ้ำขณะล็อค =====
+				if (isLocking) return;
+				// =============================================
 				if (document.visibilityState === 'visible') {
 					// 1. ตรวจสอบรายการประจำ (เดิม)
 					if (typeof checkAndProcessRecurring === 'function') checkAndProcessRecurring();
