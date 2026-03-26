@@ -17960,7 +17960,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					case 'openPage':
 						if (cmd.page) {
 							showPage(cmd.page);
-							speak(`เปิด${getPageName(cmd.page)}แล้ว`);
+							speak(`รับทราบ เปิด${getPageName(cmd.page)}แล้ว`);
 						}
 						break;
 
@@ -17976,20 +17976,20 @@ document.addEventListener('DOMContentLoaded', () => {
 								section.scrollIntoView({ behavior: 'smooth' });
 							}
 						}, 300);
-						speak(`เปิดหน้าการตั้งค่าส่วน${cmd.section || ''}แล้ว`);
+						speak(`รับทราบ เปิดหน้าการตั้งค่าส่วน${cmd.section || ''}แล้ว`);
 						break;
 
 					case 'toggleDarkMode':
 						document.getElementById('toggle-dark-mode')?.click();
 						setTimeout(() => {
-							speak(state.isDarkMode ? 'เปิดโหมดมืดแล้ว' : 'ปิดโหมดมืดแล้ว');
+							speak(state.isDarkMode ? 'รับทราบ เปิดโหมดมืดแล้ว' : 'รับทราบ ปิดโหมดมืดแล้ว');
 						}, 50);
 						break;
 
 					case 'toggleBalanceVisibility':
 						document.getElementById('toggle-show-balance')?.click();
 						setTimeout(() => {
-							speak(state.showBalanceCard ? 'แสดงยอดคงเหลือแล้ว' : 'ซ่อนยอดคงเหลือแล้ว');
+							speak(state.showBalanceCard ? 'รับทราบ แสดงยอดคงเหลือแล้ว' : 'รับทราบ ซ่อนยอดคงเหลือแล้ว');
 						}, 50);
 						break;
 
@@ -17998,7 +17998,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							handleManagePassword();
 							// รอให้ handleManagePassword ทำงานเสร็จและ Swal แสดงเต็มที่
 							setTimeout(() => {
-								speak('กำลังเปิดหน้าจัดการรหัสผ่าน');
+								speak('รับทราบ กำลังเปิดหน้าจัดการรหัสผ่าน');
 							}, 500); // ให้เวลาหลังจากเปิด Swal 200ms
 						}, 500);
 						break;
@@ -18007,7 +18007,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							handleBackup();
 							setTimeout(() => {
-								speak('กำลังเปิดศูนย์สำรองข้อมูล');
+								speak('รับทราบ กำลังเปิดศูนย์สำรองข้อมูล');
 							}, 500);
 						}, 500);
 						break;
@@ -18018,11 +18018,11 @@ document.addEventListener('DOMContentLoaded', () => {
 							// ------------------------------
 							// 1. ตั้งค่าประเภทรายการ (ถ้ามี)
 							// ------------------------------
-							const targetType = cmd.defaultType || 'expense'; // fallback ถ้าไม่มี
+							const targetType = cmd.defaultType || 'expense';
 							const radio = document.querySelector(`input[name="tx-type"][value="${targetType}"]`);
 							if (radio) {
 								radio.checked = true;
-								radio.dispatchEvent(new Event('change', { bubbles: true })); // เรียก change เพื่อให้ฟอร์มอัปเดต
+								radio.dispatchEvent(new Event('change', { bubbles: true }));
 							}
 
 							// ------------------------------
@@ -18053,7 +18053,7 @@ document.addEventListener('DOMContentLoaded', () => {
 										if (accSelect) accSelect.value = cmd.defaultAccountId;
 									}
 								}
-							}, 150); // รอให้ DOM อัปเดตจากการ change event
+							}, 150);
 
 							// ------------------------------
 							// 3. ตั้งค่าฟิลด์อื่น ๆ (ชื่อ, จำนวน, คำอธิบาย)
@@ -18069,7 +18069,20 @@ document.addEventListener('DOMContentLoaded', () => {
 								document.getElementById('tx-desc').value = cmd.defaultDesc;
 							}
 
-							speak('เปิดฟอร์มเพิ่มรายการตามที่คุณสอนไว้');
+							// ------------------------------
+							// 4. สร้างข้อความตอบรับแบบมีรายละเอียด
+							// ------------------------------
+							let typeText = '';
+							if (cmd.defaultType === 'income') typeText = 'รายรับ';
+							else if (cmd.defaultType === 'expense') typeText = 'รายจ่าย';
+							else if (cmd.defaultType === 'transfer') typeText = 'โอนย้าย';
+							else typeText = 'รายการ';
+							
+							let nameText = cmd.defaultName ? cmd.defaultName : '';
+							let descText = cmd.defaultDesc ? ` ${cmd.defaultDesc}` : '';
+							
+							let message = `รับทราบ เปิดฟอร์มเพิ่ม ${typeText} ${nameText}${descText}แล้ว`;
+							speak(message);
 						}, 300);
 						break;
 
@@ -18078,7 +18091,9 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							if (cmd.defaultAmount) document.getElementById('draft-amount').value = cmd.defaultAmount;
 							document.getElementById('draft-note').value = cmd.defaultDesc || cmd.command;
-							speak('จดบันทึกด่วนตามที่คุณสอนไว้');
+							
+							const commandText = cmd.command || 'ด่วน';
+							speak(`รับทราบ จดบันทึกด่วน "${commandText}"`);
 						}, 300);
 						break;
 						
@@ -18086,7 +18101,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							handleBackup();  // เรียกฟังก์ชันสำรองข้อมูลที่มีอยู่แล้ว
 							setTimeout(() => {
-								speak('กำลังเปิดศูนย์สำรองข้อมูล');
+								speak('รับทราบ กำลังเปิดศูนย์สำรองข้อมูล');
 							}, 500);
 						}, 500);
 						break;
@@ -18095,7 +18110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							document.getElementById('btn-import').click(); // คลิกปุ่มนำเข้า
 							setTimeout(() => {
-								speak('เตรียมนำเข้าข้อมูล กรุณาเลือกไฟล์');
+								speak('รับทราบ เตรียมนำเข้าข้อมูล กรุณาเลือกไฟล์');
 							}, 500);
 						}, 500);
 						break;
@@ -18117,7 +18132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							handleSystemUpdate();
 							setTimeout(() => {
-								speak('กำลังตรวจสอบและอัปเดตระบบ');
+								speak('รับทราบ กำลังตรวจสอบและอัปเดตระบบ');
 							}, 500);
 						}, 500);
 						break;
@@ -18126,7 +18141,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							handleUndo();  // ฟังก์ชันย้อนกลับที่มีอยู่แล้ว
 							setTimeout(() => {
-								speak('ย้อนกลับรายการล่าสุด');
+								speak('รับทราบ ย้อนกลับรายการล่าสุด');
 							}, 500);
 						}, 500);
 						break;
@@ -18135,7 +18150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							handleRedo();  // ฟังก์ชันทำซ้ำที่มีอยู่แล้ว
 							setTimeout(() => {
-								speak('ทำซ้ำรายการล่าสุด');
+								speak('รับทราบ ทำซ้ำรายการล่าสุด');
 							}, 500);
 						}, 500);
 						break;
@@ -18143,13 +18158,13 @@ document.addEventListener('DOMContentLoaded', () => {
 					case 'lockApp':
 						setTimeout(() => {
 							lockApp(); // ฟังก์ชันล็อคหน้าจอ
-							speak('ล็อคแอปแล้ว');
+							speak('รับทราบ ล็อคแอปแล้ว');
 						}, 500);
 						break;
 
 					case 'openAccountsPage':
 						showPage('page-accounts');
-						speak('เปิดหน้าบัญชีแล้ว');
+						speak('รับทราบ เปิดหน้าบัญชีแล้ว');
 						break;
 
 					case 'openBudgetSettings':
@@ -18162,7 +18177,7 @@ document.addEventListener('DOMContentLoaded', () => {
 								budgetHeader.click();
 							}
 							if (budgetContent) budgetContent.scrollIntoView({ behavior: 'smooth' });
-							speak('เปิดหน้าการตั้งค่างบประมาณแล้ว');
+							speak('รับทราบ เปิดหน้าการตั้งค่างบประมาณแล้ว');
 						}, 300);
 						break;
 
@@ -18176,7 +18191,7 @@ document.addEventListener('DOMContentLoaded', () => {
 								recHeader.click();
 							}
 							if (recContent) recContent.scrollIntoView({ behavior: 'smooth' });
-							speak('เปิดหน้าการตั้งค่ารายการประจำแล้ว');
+							speak('รับทราบ เปิดหน้าการตั้งค่ารายการประจำแล้ว');
 						}, 300);
 						break;
 
@@ -18188,9 +18203,9 @@ document.addEventListener('DOMContentLoaded', () => {
 								const keyword = cmd.defaultKeyword || cmd.command;
 								searchInput.value = keyword;
 								searchInput.dispatchEvent(new Event('input'));
-								speak(`ค้นหารายการที่เกี่ยวข้องกับ ${keyword}`);
+								speak(`รับทราบ ค้นหารายการที่เกี่ยวข้องกับ ${keyword}`);
 							} else {
-								speak('เปิดหน้ารายการแล้ว');
+								speak('รับทราบ เปิดหน้ารายการแล้ว');
 							}
 						}, 300);
 						break;
@@ -18456,7 +18471,7 @@ document.addEventListener('DOMContentLoaded', () => {
 										'page-settings': 'หน้าตั้งค่า',
 										'page-guide': 'หน้าคู่มือ'
 									};
-									speak(`เปิด${pageNames[pageId] || pageId}แล้ว`);
+									speak(`รับทราบ เปิด${pageNames[pageId] || pageId}แล้ว`);
 									return true;
 								}
 							}
@@ -18479,7 +18494,7 @@ document.addEventListener('DOMContentLoaded', () => {
 								'page-settings': 'หน้าตั้งค่า',
 								'page-guide': 'หน้าคู่มือ'
 							};
-							speak(`เปิด${pageNames[pageId] || pageId}แล้ว`);
+							speak(`รับทราบ เปิด${pageNames[pageId] || pageId}แล้ว`);
 							return true;
 						}
 					}
@@ -18510,7 +18525,7 @@ document.addEventListener('DOMContentLoaded', () => {
 									}
 									if (section) section.scrollIntoView({ behavior: 'smooth' });
 								}, 300);
-								speak(`เปิดหน้าการตั้งค่า${kw}แล้ว`);
+								speak(`รับทราบ เปิดหน้าการตั้งค่า${kw}แล้ว`);
 								return true;
 							}
 						}
@@ -18715,7 +18730,7 @@ document.addEventListener('DOMContentLoaded', () => {
 											  document.querySelector('input[placeholder*="ค้นหา"]');
 							if (searchInput) {
 								searchInput.focus();
-								speak('กรุณาพิมพ์คำที่ต้องการค้นหา');
+								speak('รับทราบ กรุณาพิมพ์คำที่ต้องการค้นหา');
 							}
 						}, 300);
 						return true;
@@ -18731,7 +18746,7 @@ document.addEventListener('DOMContentLoaded', () => {
 												  document.querySelector('input[placeholder*="ค้นหา"]');
 								if (searchInput) {
 									searchInput.focus();
-									speak('กรุณาพิมพ์คำที่ต้องการค้นหา');
+									speak('รับทราบ กรุณาพิมพ์คำที่ต้องการค้นหา');
 								}
 							}, 300);
 							return true;
@@ -18755,7 +18770,7 @@ document.addEventListener('DOMContentLoaded', () => {
 									setTimeout(() => {
 										const results = document.querySelectorAll('.transaction-item, .list-item, tbody tr');
 										const count = results.length > 0 ? results.length - 1 : 0;
-										speak(`พบ ${count} รายการที่ตรงกับ "${keyword}"`);
+										speak(`รับทราบ พบ ${count} รายการที่ตรงกับ "${keyword}"`);
 									}, 800);
 								}
 							}, 300);
@@ -18785,7 +18800,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							setTimeout(() => {
 								const results = document.querySelectorAll('.transaction-item, .list-item, tbody tr');
 								const count = results.length > 0 ? results.length - 1 : 0;
-								speak(`พบ ${count} รายการที่ตรงกับ "${keyword}"`);
+								speak(`รับทราบ พบ ${count} รายการที่ตรงกับ "${keyword}"`);
 							}, 800);
 						}
 					}, 300);
@@ -18795,14 +18810,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				// 3. ค้นหาเฉพาะประเภทรายจ่าย
 				if (lowerText.match(/^(รายจ่าย|จ่าย|เสีย|outcome|expense)/)) {
 					filterByType('expense');
-					speak("แสดงรายจ่ายทั้งหมด");
+					speak("รับทราบ แสดงรายจ่ายทั้งหมด");
 					return true;
 				}
 
 				// 4. ค้นหาเฉพาะประเภทรายรับ
 				if (lowerText.match(/^(รายรับ|รับ|ได้|income|revenue)/)) {
 					filterByType('income');
-					speak("แสดงรายรับทั้งหมด");
+					speak("รับทราบ แสดงรายรับทั้งหมด");
 					return true;
 				}
 
@@ -18810,7 +18825,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const timeMatch = lowerText.match(/(วันนี้|เมื่อวาน|สัปดาห์นี้|เดือนนี้|ปีนี้|7วัน|30วัน)/);
 				if (timeMatch) {
 					applyTimeFilter(timeMatch[1]);
-					speak(`แสดงข้อมูล${timeMatch[1]}`);
+					speak(`รับทราบ แสดงข้อมูล${timeMatch[1]}`);
 					return true;
 				}
 
@@ -18823,53 +18838,53 @@ document.addEventListener('DOMContentLoaded', () => {
 				// เปลี่ยนธีม
 				if (lowerText.match(/^(โหมดมืด|dark|ดำ|night)/)) {
 					document.getElementById('toggle-dark-mode').click();
-					speak("เปลี่ยนเป็นโหมดมืดแล้ว");
+					speak("รับทราบ เปลี่ยนเป็นโหมดมืดแล้ว");
 					return true;
 				}
 				
 				if (lowerText.match(/^(โหมดสว่าง|light|ขาว|day)/)) {
 					document.getElementById('toggle-dark-mode').click();
-					speak("เปลี่ยนเป็นโหมดสว่างแล้ว");
+					speak("รับทราบ เปลี่ยนเป็นโหมดสว่างแล้ว");
 					return true;
 				}
 				
 				// เปลี่ยนภาษา
 				if (lowerText.match(/^(ภาษาไทย|ไทย|thai)/)) {
 					setLanguage('th');
-					speak("เปลี่ยนภาษาเป็นไทยแล้ว");
+					speak("รับทราบ เปลี่ยนภาษาเป็นไทยแล้ว");
 					return true;
 				}
 				
 				if (lowerText.match(/^(ภาษาอังกฤษ|อังกฤษ|english)/)) {
 					setLanguage('en');
-					speak("เปลี่ยนภาษาเป็นอังกฤษแล้ว");
+					speak("รับทราบ เปลี่ยนภาษาเป็นอังกฤษแล้ว");
 					return true;
 				}
 				
 				// ควบคุมเสียง
 				if (lowerText.match(/^(เสียงเปิด|พูด|เสียง|voice on)/)) {
 					localStorage.setItem('voiceEnabled', 'true');
-					speak("เปิดเสียงพูดแล้ว");
+					speak("รับทราบ เปิดเสียงพูดแล้ว");
 					return true;
 				}
 				
 				if (lowerText.match(/^(เสียงปิด|เงียบ|mute|silent)/)) {
 					localStorage.setItem('voiceEnabled', 'false');
-					speak("ปิดเสียงพูดแล้ว");
+					speak("รับทราบ ปิดเสียงพูดแล้ว");
 					return true;
 				}
 				
 				// สำรองข้อมูล
 				if (lowerText.match(/^(สำรอง|backup|export|เก็บ)/)) {
 					handleBackup();
-					speak("กำลังเปิดศูนย์สำรองข้อมูล");
+					speak("รับทราบ กำลังเปิดศูนย์สำรองข้อมูล");
 					return true;
 				}
 				
 				// นำเข้าข้อมูล
 				if (lowerText.match(/^(กู้คืน|restore|import|นำเข้า)/)) {
 					document.getElementById('btn-import').click();
-					speak("เตรียมนำเข้าข้อมูล กรุณาเลือกไฟล์");
+					speak("รับทราบ เตรียมนำเข้าข้อมูล กรุณาเลือกไฟล์");
 					return true;
 				}
 				
@@ -19640,7 +19655,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				
 				// พูดแจ้งเตือน
 				const typeName = type === 'income' ? 'รายรับ' : (type === 'expense' ? 'รายจ่าย' : 'โอนย้าย');
-				speak(`แสดงเฉพาะ${typeName}`);
+				speak(`รับทราบ แสดงเฉพาะ${typeName}`);
 			}
 
 			// ===== ฟังก์ชันกรองตามช่วงเวลา =====
@@ -19677,7 +19692,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				renderListPage();
 				
 				const periodMap = { 'today': 'วันนี้', 'this_week': 'สัปดาห์นี้', 'this_month': 'เดือนนี้', 'this_year': 'ปีนี้' };
-				speak(`แสดงข้อมูล${periodMap[period] || period}`);
+				speak(`รับทราบ แสดงข้อมูล${periodMap[period] || period}`);
 			}
 			
 			// แผนที่ช่วงเวลาภาษาไทย -> รหัสภายใน
