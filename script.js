@@ -17137,6 +17137,13 @@ document.addEventListener('DOMContentLoaded', () => {
 					return;
 				}
 				
+				// 👉👉👉 เพิ่มไม้ตายตรงนี้! จองสิทธิ์เสียง iOS ทันทีที่ปลายนิ้วสัมผัสปุ่ม 👈👈👈
+				// ห้ามเอาคำสั่ง await หรือการหน่วงเวลาใดๆ มาขวางหน้าบล็อกนี้เด็ดขาด
+				if ('speechSynthesis' in window) {
+					window.speechSynthesis.resume();
+					window.speechSynthesis.speak(new SpeechSynthesisUtterance(' '));
+				}
+				
 				// +++ สั่นสั้นๆ 1 ครั้ง (50ms) เพื่อแจ้งให้ผู้ใช้ทราบว่าปุ่มกำลังรับคำสั่ง +++
 				window.appVibrate(50);
 
@@ -22464,6 +22471,35 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				});
 			}
+			
+			// ฟังก์ชันปลดล็อคเสียงสำหรับ iOS (Speech Synthesis Unlocker)
+			function unlockAudioOnIOS() {
+				if ('speechSynthesis' in window) {
+					// 👉 1. สั่ง Resume เผื่อในกรณีที่ iOS แอบ Pause ระบบเสียงไว้
+					window.speechSynthesis.resume();
+
+					// 👉 2. เปลี่ยนจากข้อความว่างเปล่า ('') เป็นการเคาะช่องว่าง (' ')
+					// เพื่อบังคับให้ Engine ทำงานโดยไม่มีเสียงออกมา
+					const unlockMsg = new SpeechSynthesisUtterance(' ');
+					
+					// 👉 3. ไม่ต้องปรับ volume = 0 แล้ว ปล่อยค่าปกติไปเลย (เพราะช่องว่างมันไม่มีเสียงอยู่แล้ว)
+					// การตั้งค่าเป็น 0 อาจทำให้ iOS บางเครื่องมองว่าเป็นสแปม
+					unlockMsg.rate = 1;
+					unlockMsg.pitch = 1;
+					
+					// สั่งพูดเพื่อขอสิทธิ์
+					window.speechSynthesis.speak(unlockMsg);
+
+					// ถอด Event ออกเมื่อทำเสร็จ
+					document.removeEventListener('touchstart', unlockAudioOnIOS);
+					document.removeEventListener('click', unlockAudioOnIOS);
+					console.log("🔓 ปลดล็อคระบบเสียงสำหรับ iOS เรียบร้อยแล้ว (อัปเกรด)");
+				}
+			}
+
+			// ผูก Event รอรับการสัมผัสครั้งแรกบนหน้าจอ
+			document.addEventListener('touchstart', unlockAudioOnIOS, { once: true });
+			document.addEventListener('click', unlockAudioOnIOS, { once: true });
 
 			// เรียกใช้งานเมื่อโหลดหน้าเว็บ
 			document.addEventListener('DOMContentLoaded', updateHomeUISettingsUI);
