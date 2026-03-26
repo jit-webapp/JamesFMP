@@ -1280,6 +1280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     let myChart;
+	let isAutoScanning = false;
     let myListPageBarChart;
     let myExpenseByNameChart; 
     //let myCalendar = null;
@@ -2724,6 +2725,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				window.bioAbortController = null;
 			}
 
+			// รีเซ็ต flag การสแกนอัตโนมัติเพื่อป้องกันค้าง
+			if (typeof isAutoScanning !== 'undefined') {
+				isAutoScanning = false;
+			}
+
 			const unlockBtn = document.querySelector('#unlock-form button[type="submit"]');
 			if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
 
@@ -2866,6 +2872,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				window.bioAbortController.abort();
 				window.bioAbortController = null;
 			}
+			isAutoScanning = false;   // ✅ รีเซ็ต flag
 			
 			// ปิด Modal และ Popover ทั้งหมด (คงเดิม)
 			closeModal(); 
@@ -5953,43 +5960,70 @@ document.addEventListener('DOMContentLoaded', () => {
 			// ตรวจสอบและประมวลผลรายการประจำเมื่อผู้ใช้สลับแอปกลับมาใช้งาน (ป้องกันเปิดแอปค้างไว้ข้ามวัน)
 			document.addEventListener('visibilitychange', () => {
 				if (document.visibilityState === 'visible') {
-					if (window.bioAbortController) {
-						window.bioAbortController.abort();
-						window.bioAbortController = null;
-					}
-
+					// 1. ตรวจสอบรายการประจำ (เดิม)
 					if (typeof checkAndProcessRecurring === 'function') checkAndProcessRecurring();
-					
+
 					const lockScreen = document.getElementById('app-lock-screen');
 					const isLocked = lockScreen && !lockScreen.classList.contains('hidden');
-					
+
+					// 2. ถ้าแอปไม่ได้ถูกล็อคอยู่ ให้ตรวจสอบว่า Auto Lock ถึงเวลาหรือยัง
+					if (!isLocked && state.autoLockTimeout > 0 && state.password) {
+						const now = Date.now();
+						const elapsed = now - lastActivityTime;
+						const timeoutMs = state.autoLockTimeout * 60 * 1000;
+						if (elapsed >= timeoutMs) {
+							console.log('Auto-lock triggered on visibility change');
+							lockApp();  // ล็อคทันที
+							return;      // หยุดทำงานต่อไป เพราะตอนนี้ล็อคแล้ว
+						} else {
+							// ถ้ายังไม่ถึงเวลา ให้รีเซ็ตตัวจับเวลาใหม่
+							resetAutoLockTimer();
+						}
+					}
+
+					// 3. ถ้าแอปถูก lock อยู่ และมี Biometric ให้ลองสแกนอัตโนมัติ (ใช้ flag ป้องกันซ้ำ)
+					if (isLocked && state.biometricId) {
+						if (window.isAutoScanning) return;   // ป้องกันการเรียกซ้ำ
+						window.isAutoScanning = true;
+
+						setTimeout(async () => {
+							try {
+								console.log("App resumed: Attempting auto-biometric scan...");
+								if (lockScreen.hasAttribute('aria-hidden')) {
+									lockScreen.removeAttribute('aria-hidden');
+								}
+
+								// ตรวจสอบเพิ่ม: ปุ่ม unlock ยังไม่ถูกปิดใช้งาน (เผื่อกรณี)
+								const unlockBtn = document.querySelector('#unlock-form button[type="submit"]');
+								if (unlockBtn && unlockBtn.disabled) {
+									console.log("Unlock button disabled, aborting auto scan");
+									window.isAutoScanning = false;
+									return;
+								}
+
+								const success = await verifyBiometricIdentity();
+								if (success === true) {
+									unlockAppSuccess();
+								} else if (success === 'aborted') {
+									console.log("Biometric aborted by user");
+								} else {
+									console.log("Biometric failed, show fallback");
+									const passInput = document.getElementById('unlock-password');
+									if (passInput) passInput.focus();
+								}
+							} catch (err) {
+								console.error("Auto scan error:", err);
+							} finally {
+								window.isAutoScanning = false;
+							}
+						}, 300);
+					}
+
+					// 4. ถ้าแอปไม่ได้ล็อค ให้ตรวจสอบอัปเดต (ปกติทำที่ 2 วินาทีหลัง unlock แต่เราทำไว้ใน unlockAppSuccess แล้ว)
 					if (!isLocked) {
 						setTimeout(() => {
 							if (typeof checkForUpdates === 'function') checkForUpdates();
 						}, 500);
-					}
-
-					if (isLocked && state.biometricId) {
-						setTimeout(async () => {
-							try {
-								console.log("App resumed: Attempting auto-biometric scan...");
-								// ลบ aria-hidden ก่อนสแกน
-								if (lockScreen.hasAttribute('aria-hidden')) {
-									lockScreen.removeAttribute('aria-hidden');
-								}
-								const success = await verifyBiometricIdentity();
-								if (success === true) unlockAppSuccess();
-							} catch (err) {
-								console.warn("Auto scan on resume blocked:", err);
-								const bioBtn = document.getElementById('btn-bio-unlock');
-								if (bioBtn) {
-									bioBtn.classList.add('animate-bounce', 'ring-4', 'ring-purple-500', 'rounded-full');
-									setTimeout(() => {
-										bioBtn.classList.remove('animate-bounce', 'ring-4', 'ring-purple-500', 'rounded-full');
-									}, 3000);
-								}
-							}
-						}, 300);
 					}
 				}
 			});
@@ -15024,7 +15058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				async function verifyBiometricIdentity() {
 					if (!state.biometricId) return false;
 
-					// ยกเลิกการสแกนเก่าที่อาจค้างอยู่
+					// ยกเลิกการสแกนที่ค้างอยู่
 					if (window.bioAbortController) {
 						window.bioAbortController.abort();
 						window.bioAbortController = null;
@@ -15063,6 +15097,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
 							return 'aborted';
 						}
+						return false;
 					} finally {
 						if (window.bioAbortController === abortController) {
 							window.bioAbortController = null;
