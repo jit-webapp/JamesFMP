@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	async function loadProfile() {
 		try {
+			// 1. อ่านข้อมูลจาก Local ก่อน
 			const localProfile = await dbGet(STORE_CONFIG, 'user_profile');
 			if (localProfile && localProfile.value) {
 				currentProfile = localProfile.value;
@@ -114,32 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				currentProfile = { name: null, avatarBase64: null };
 			}
 
-			if (window.auth && window.auth.currentUser) {
-				const uid = window.auth.currentUser.uid;
-				const docRef = window.dbDoc(window.db, 'users', uid, 'profile', 'data');
-				if (window.dbGetDoc) {
-					const docSnap = await window.dbGetDoc(docRef);
-					if (docSnap.exists()) {
-						const cloudProfile = docSnap.data();
-						if (cloudProfile.name !== undefined) currentProfile.name = cloudProfile.name;
-						if (cloudProfile.avatarBase64) currentProfile.avatarBase64 = cloudProfile.avatarBase64;
-						await dbPut(STORE_CONFIG, { key: 'user_profile', value: currentProfile });
-					}
-				} else {
-					// fallback
-					const colRef = window.dbCollection(window.db, 'users', uid, 'profile');
-					const q = window.dbQuery(colRef, window.dbWhere('__name__', '==', 'data'));
-					const querySnap = await window.dbGetDocs(q);
-					if (!querySnap.empty) {
-						const cloudProfile = querySnap.docs[0].data();
-						if (cloudProfile.name !== undefined) currentProfile.name = cloudProfile.name;
-						if (cloudProfile.avatarBase64) currentProfile.avatarBase64 = cloudProfile.avatarBase64;
-						await dbPut(STORE_CONFIG, { key: 'user_profile', value: currentProfile });
-					}
-				}
-			}
-
-			// ถ้ายังไม่มีชื่อ (null) และไม่ได้ล็อกอิน ให้ตั้งเป็น "Guest"
+			// 2. จัดการชื่อกรณีเป็นค่าว่าง (ทำก่อนอัปเดต UI)
 			if (!currentProfile.name) {
 				if (window.auth && window.auth.currentUser && window.auth.currentUser.displayName) {
 					currentProfile.name = null; // ใช้ Google name แทน
@@ -148,7 +124,49 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			}
 
-			updateProfileUI();
+			// 👉 3. อัปเดตหน้าจอทันทีด้วยข้อมูลจากเครื่อง (ไม่ต้องรอโหลดคลาวด์)
+			if (typeof updateProfileUI === 'function') updateProfileUI();
+
+			// 4. ดึงข้อมูลล่าสุดจาก Cloud เป็นเบื้องหลัง
+			if (window.auth && window.auth.currentUser) {
+				const uid = window.auth.currentUser.uid;
+				const docRef = window.dbDoc(window.db, 'users', uid, 'profile', 'data');
+				let cloudProfileData = null;
+
+				if (window.dbGetDoc) {
+					const docSnap = await window.dbGetDoc(docRef);
+					if (docSnap.exists()) {
+						cloudProfileData = docSnap.data();
+					}
+				} else {
+					// fallback
+					const colRef = window.dbCollection(window.db, 'users', uid, 'profile');
+					const q = window.dbQuery(colRef, window.dbWhere('__name__', '==', 'data'));
+					const querySnap = await window.dbGetDocs(q);
+					if (!querySnap.empty) {
+						cloudProfileData = querySnap.docs[0].data();
+					}
+				}
+
+				// ถ้ามีข้อมูลบนคลาวด์ ให้อัปเดตและแสดงผลใหม่อีกครั้ง
+				if (cloudProfileData) {
+					let hasChanges = false;
+					if (cloudProfileData.name !== undefined && currentProfile.name !== cloudProfileData.name) {
+						currentProfile.name = cloudProfileData.name;
+						hasChanges = true;
+					}
+					if (cloudProfileData.avatarBase64 && currentProfile.avatarBase64 !== cloudProfileData.avatarBase64) {
+						currentProfile.avatarBase64 = cloudProfileData.avatarBase64;
+						hasChanges = true;
+					}
+
+					// 👉 5. ถ้าข้อมูลบน Cloud แตกต่างจากในเครื่อง ค่อยบันทึกและอัปเดต UI ซ้ำอีกรอบ
+					if (hasChanges) {
+						await dbPut(STORE_CONFIG, { key: 'user_profile', value: currentProfile });
+						if (typeof updateProfileUI === 'function') updateProfileUI();
+					}
+				}
+			}
 		} catch (err) {
 			console.error("loadProfile error:", err);
 		}
@@ -930,20 +948,19 @@ document.addEventListener('DOMContentLoaded', () => {
 		try {
 			let hasDownloaded = false;
 			let hasUploaded = false;
-			
 			let syncMode = 'overwrite'; 
 
-			const cloudTxRef = window.dbCollection(window.db, 'users', uid, STORE_TRANSACTIONS);
-			const cloudTxSnapshot = await window.dbGetDocs(cloudTxRef);
+			// 👉 1. สร้าง Promise สำหรับโหลดข้อมูลทุกคอลเลกชันพร้อมๆ กัน
+			const fetchPromises = collectionsToSync.map(storeName => {
+				const colRef = window.dbCollection(window.db, 'users', uid, storeName);
+				return window.dbGetDocs(colRef).then(snapshot => ({ storeName, snapshot }));
+			});
 
-			for (const storeName of collectionsToSync) {
-				let snapshot;
-				if (storeName === STORE_TRANSACTIONS) {
-					snapshot = cloudTxSnapshot;
-				} else {
-					const colRef = window.dbCollection(window.db, 'users', uid, storeName);
-					snapshot = await window.dbGetDocs(colRef);
-				}
+			// 👉 2. รอรับผลลัพธ์ทั้งหมดทีเดียว (ลดเวลาแบบมหาศาล)
+			const allSnapshots = await Promise.all(fetchPromises);
+
+			// 👉 3. นำผลลัพธ์ที่ได้มาวนลูปบันทึกลงฐานข้อมูลในเครื่อง
+			for (const { storeName, snapshot } of allSnapshots) {
 				
 				if (!snapshot.empty) {
 					if (syncMode === 'overwrite') {
@@ -1007,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const now = new Date();
 			state.cloudSyncLastTime = now.toISOString();
 			await updateCloudSyncTimeInDB(state.cloudSyncLastTime);
-			if (currentPage === 'page-settings') {
+			if (typeof currentPage !== 'undefined' && currentPage === 'page-settings') {
 				const cloudSpan = document.getElementById('last-cloud-sync-time');
 				if (cloudSpan) cloudSpan.textContent = now.toLocaleString('th-TH');
 			}
@@ -2650,8 +2667,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			getEl('nav-home-mobile').classList.add('text-primary-600'); 
 			getEl('nav-home-mobile').classList.remove('text-gray-600', 'text-purple-600');
 			
-			// โหลดโปรไฟล์
-			await window.loadProfile();
+			// 👉 1. โหลดโปรไฟล์แบบไม่รอ (ดึงจากเครื่องมาโชว์ทันที)
+			window.loadProfile();
 			
 			// ตั้งค่า dropdown ในหน้าแรก
 			const homeSelect = document.getElementById('home-items-per-page-select');
@@ -2661,18 +2678,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			getEl('shared-controls-header').style.display = 'flex';
 			updateSharedControls('home');
+
+			// 👉 2. วาดหน้าจอทันทีจาก Local Memory (ทำให้ลื่นไหล ไม่หน่วง)
 			renderAll(); 
 			renderSettings();
 			resetAutoLockTimer();
+			
 			if (typeof updateCloudStatusIcon === 'function') {
 				updateCloudStatusIcon();
 			}
 			
-			// ✅ เพิ่ม: อัปเดต active state สำหรับ bottom navigation
+			// ✅ อัปเดต active state สำหรับ bottom navigation
 			if (state.mobileMenuStyle === 'bottom' && typeof updateBottomNavActive === 'function') {
 				updateBottomNavActive('page-home');
 			}
 			
+			// 👉 3. ทำงานเบื้องหลังหลังจากหน้าจอวาดเสร็จไปแล้ว 2 วินาที
 			setTimeout(() => {
 				if(typeof checkNotifications === 'function') {
 					checkNotifications();
@@ -2680,6 +2701,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				checkAndRunAutoBackup();
 				if (!state.password && typeof checkForUpdates === 'function') {
 					checkForUpdates();
+				}
+
+				// 🚀 สั่งซิงค์ข้อมูล Cloud แบบเงียบๆ หลังบ้าน 
+				if (window.auth && window.auth.currentUser) {
+					const uid = window.auth.currentUser.uid;
+					if (typeof window.loadDataFromCloud === 'function') {
+						// ซิงค์เสร็จจะมีการอัปเดต UI ใหม่อัตโนมัติใน loadDataFromCloud
+						window.loadDataFromCloud(uid).catch(err => console.error("Background sync error:", err));
+					}
 				}
 			}, 2000);
 		}
@@ -2695,33 +2725,50 @@ document.addEventListener('DOMContentLoaded', () => {
 			const unlockBtn = document.querySelector('#unlock-form button[type="submit"]');
 			if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
 
-			setTimeout(async () => {
-				// 1. ซ่อน lock screen และล้าง aria-hidden/ inert
+			// ไม่ต้องใช้ async ใน setTimeout แล้ว เพราะเราจะโหลดแอปแบบไม่บล็อก UI
+			setTimeout(() => {
+				// 👉 1. ซ่อน lock screen และล้าง aria-hidden/ inert ทันที
 				const lockScreen = document.getElementById('app-lock-screen');
 				if (lockScreen) {
 					lockScreen.classList.add('hidden');
 					lockScreen.removeAttribute('aria-hidden');
 				}
 
-				// 2. เปิดใช้งาน main content อีกครั้ง (เอา inert ออก)
+				// 👉 2. เปิดใช้งาน main content อีกครั้ง (เอา inert ออก)
 				const mainContent = document.getElementById('main-content');
 				if (mainContent) mainContent.removeAttribute('inert');
 
-				// 3. แสดงปุ่ม Smart Voice (ถ้ามี)
+				// 👉 3. แสดงข้อความ "ปลดล็อคสำเร็จ" และคืนค่าฟอร์ม "ทันที" ให้ผู้ใช้รู้สึกว่าไวมาก
+				const passInput = document.getElementById('unlock-password');
+				if (passInput) passInput.value = '';
+				if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-door-open"></i> เข้าสู่ระบบ';
+				
+				if (typeof showToast === 'function') showToast("ปลดล็อคสำเร็จ", "success");
+				if (typeof window.appVibrate === 'function') window.appVibrate([50, 50, 50]);
+
 				document.getElementById('smart-voice-btn')?.classList.remove('hidden');
 
-				// 4. ถ้าแอปยังไม่เคยเริ่มต้น (หน้าแรกยังไม่ถูกโหลด)
+				// 👉 4. จัดการหน้าจอและการดึงข้อมูล
 				if (!window.hasAppStartedFlag) {
 					window.hasAppStartedFlag = true;
 					document.getElementById('page-home').style.display = 'block';
 					currentPage = 'home';
-					await onAppStart();                        // รอให้แอปเริ่มต้นเสร็จ
+					
+					// 🚀 เอา await ออก! ปล่อยให้ onAppStart ทำงานเบื้องหลัง ไม่ให้หน้าจอมืด/ค้าง
+					if (typeof onAppStart === 'function') {
+						onAppStart(); 
+					}
 					history.replaceState({ pageId: 'page-home' }, null, '#home');
 				} else {
 					// กลับไปหน้าปัจจุบันที่ค้างไว้
 					document.getElementById('page-' + currentPage).style.display = 'block';
 					if (typeof updateBottomNavActive === 'function') {
 						updateBottomNavActive('page-' + currentPage);
+					}
+
+					// 🚀 โหลดข้อมูลล่าสุดจาก Local มาโชว์ทันทีเมื่อกลับเข้ามา (กันหน้าจอว่างเปล่า)
+					if (typeof refreshAllUI === 'function') {
+						refreshAllUI();
 					}
 
 					// อัปเดตสีของปุ่มเมนูหลัก (Desktop)
@@ -2766,26 +2813,17 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				}
 
-				// 5. เคลียร์รหัสผ่านที่ค้างในช่อง input
-				const passInput = document.getElementById('unlock-password');
-				if (passInput) passInput.value = '';
-
-				// 6. คืนค่าปุ่ม submit
-				if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-door-open"></i> เข้าสู่ระบบ';
-
-				// 7. อัปเดต UI เพิ่มเติม
-				renderDropdownList();
+				// 👉 5. อัปเดต UI เพิ่มเติมแบบเบื้องหลัง
+				if (typeof renderDropdownList === 'function') renderDropdownList();
 				if (typeof updateCloudStatusIcon === 'function') updateCloudStatusIcon();
-				showToast("ปลดล็อคสำเร็จ", "success");
-				window.appVibrate([50, 50, 50]);
 
-				// 8. เช็คการแจ้งเตือนและอัปเดต (หน่วงเวลาเล็กน้อย)
+				// 👉 6. เช็คการแจ้งเตือนและอัปเดต (หน่วงเวลาไว้ไม่ให้กวนการแสดงผลหลัก)
 				setTimeout(() => {
 					if (typeof checkNotifications === 'function') checkNotifications();
 					if (typeof checkForUpdates === 'function') checkForUpdates();
 				}, 2000);
 
-			}, 100);
+			}, 50); // ลดเวลา setTimeout ลงให้ตอบสนองเข้าแอปได้ไวขึ้น
 		}
 
 		// [แก้ไข] ฟังก์ชันเดิม ปรับให้เรียกใช้ unlockAppSuccess
@@ -22326,17 +22364,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			// เรียกใช้งานเมื่อโหลดหน้าเว็บ
 			document.addEventListener('DOMContentLoaded', updateHomeUISettingsUI);
 
-			// 2. ตั้งค่าให้ปุ่มติ๊กถูก (Checked) ตรงกับค่าที่บันทึกไว้ตอนเปิดแอป
-			document.addEventListener('DOMContentLoaded', () => {
-				const currentUi = localStorage.getItem('fmpro_home_ui') || 'icon';
-				const uiRadios = document.querySelectorAll('input[name="home-ui-style"]');
-				uiRadios.forEach(radio => {
-					if (radio.value === currentUi) {
-						radio.checked = true;
-					}
-				});
-			});
-		
 			// ============================================
 			// DUMMY FUNCTIONS สำหรับ legacy calls (ป้องกัน error)
 			// ============================================

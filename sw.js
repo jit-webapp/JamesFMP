@@ -6,33 +6,33 @@ const CACHE_NAME = 'finance-manager-' + APP_VERSION;
 
 // รายการไฟล์ที่ต้องการให้จำไว้ในเครื่อง (App Shell)
 const ASSETS_TO_CACHE = [
-  `./?v=${APP_VERSION}`,
-  `./index.html?v=${APP_VERSION}`,
-  `./script.js?v=${APP_VERSION}`,
-  `./version.js?v=${APP_VERSION}`,
-  `./styles.css?v=${APP_VERSION}`,
-  `./config.js?v=${APP_VERSION}`, 
-  `./guide.js?v=${APP_VERSION}`,
-  `./manifest.json`,
+  './',
+  './index.html',
+  './script.js',
+  './version.js',
+  './styles.css',
+  './config.js', 
+  './guide.js',
+  './manifest.json',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png',
-  `./libs/tailwindcss.js?v=${APP_VERSION}`,
-  `./libs/prompt.css?v=${APP_VERSION}`,
-  `./libs/all.min.css?v=${APP_VERSION}`,
-  `./libs/sweetalert2.js?v=${APP_VERSION}`,
-  `./libs/chart.js?v=${APP_VERSION}`,
-  `./libs/chartjs-plugin-datalabels.js?v=${APP_VERSION}`,
-  `./libs/crypto-js.min.js?v=${APP_VERSION}`,
-  `./libs/fullcalendar.min.js?v=${APP_VERSION}`,
-  `./libs/panzoom.min.js?v=${APP_VERSION}`,
-  `./libs/xlsx.full.min.js?v=${APP_VERSION}`,
-  `./libs/tesseract.min.js?v=${APP_VERSION}`,
-  `./libs/ical.min.js?v=${APP_VERSION}`,
+  './libs/tailwindcss.js',
+  './libs/prompt.css',
+  './libs/all.min.css',
+  './libs/sweetalert2.js',
+  './libs/chart.js',
+  './libs/chartjs-plugin-datalabels.js',
+  './libs/crypto-js.min.js',
+  './libs/fullcalendar.min.js',
+  './libs/panzoom.min.js',
+  './libs/xlsx.full.min.js',
+  './libs/tesseract.min.js',
+  './libs/ical.min.js',
   
   // เพิ่ม 2 บรรทัดนี้สำหรับระบบ Crop รูปภาพออฟไลน์ 👇
-  `./libs/cropper.min.css?v=${APP_VERSION}`,
-  `./libs/cropper.min.js?v=${APP_VERSION}`,
-  `./libs/iro.min.js?v=${APP_VERSION}`,
+  './libs/cropper.min.css',
+  './libs/cropper.min.js',
+  './libs/iro.min.js'
 ];
 
 // 2. Event Install: ติดตั้งและรอให้ผู้ใช้กดปุ่ม (ไม่บังคับอัปเดตอัตโนมัติ)
@@ -66,7 +66,7 @@ self.addEventListener('activate', (event) => {
       }));
     })
   );
-  //return self.clients.claim();
+  return self.clients.claim();
 });
 
 // 4. Event Fetch: ดักจับการโหลดไฟล์ + Dynamic Caching

@@ -3,14 +3,14 @@
 // ============================================
 
 // เวอร์ชันหลัก
-var APP_VERSION = 'v8.7.05';
-var APP_LAST_UPDATED = '22-03-2026';
-var APP_LAST_UPDATED_TH = '22 มีนาคม 2569';
+var APP_VERSION = 'v8.7.06;
+var APP_LAST_UPDATED = '26-03-2026';
+var APP_LAST_UPDATED_TH = '26 มีนาคม 2569';
 
 // ช่องสำหรับพิมพ์รายละเอียดการอัปเดต (ให้พิมพ์ไว้ในเครื่องหมาย ` `)
 var APP_UPDATE_NOTES = `
 <b>⚙️ รายการอัพเดท </b>
-- เพิ่มเอฟเฟกต์ขยายไอคอน Bottom Navigation เหมือน Dock macOS
+- แก้ไขบัคโหลดข้อมูลจากคลาวช้า
 `;
 
 var APP_STATUS = '';
