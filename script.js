@@ -18229,10 +18229,19 @@ document.addEventListener('DOMContentLoaded', () => {
 						showToast('ไม่รู้จัก Action นี้', 'warning');
 				}
 			}
+			
+			// ==========================================
+			// 🧠 GLOBAL BRAIN PROCESSOR V.8 (TIME MACHINE RANGE EDITION)
+			// รองรับการค้นหาแบบ "ช่วงเวลา" (เดือน X ถึง Y, ปี X ถึง Y, ปี X และ Y)
+			// ==========================================
 
-			// ==========================================
-			// GLOBAL BRAIN PROCESSOR V.2 (ฉบับสมองกลอัจฉริยะ)
-			// ==========================================
+			// State สำหรับจดจำบริบทการสนทนาล่าสุด (Stateful)
+			window.voiceConversationState = {
+				lastIntent: null,
+				lastCategory: null,
+				lastTimeframe: null
+			};
+
 			async function processGlobalCommand(text) {
 				if (!text) return;
 
@@ -18240,82 +18249,501 @@ document.addEventListener('DOMContentLoaded', () => {
 				text = text.trim().replace(/[.。,]+$/, "").replace(/\s+/g, ' ');
 				const lowerText = text.toLowerCase();
 
-				console.log("🧠 SMART BRAIN V.7 Analyzing:", text);
+				console.log("🧠 SMART BRAIN V.8 Analyzing:", text);
 
 				// ===== 0. ตรวจสอบคำสั่งที่เรียนรู้ก่อน =====
-				const learned = await findLearnedCommand(text);
-				if (learned) {
-					console.log('🎓 Found learned command:', learned);
-					await executeLearnedCommand(learned);
-					return;
+				if (typeof findLearnedCommand === 'function') {
+					const learned = await findLearnedCommand(text);
+					if (learned) {
+						console.log('🎓 Found learned command:', learned);
+						if (typeof executeLearnedCommand === 'function') await executeLearnedCommand(learned);
+						return;
+					}
 				}
 
 				// ===== 1. PRIORITY: คำสั่งระบบด่วน =====
-				// ปิด/ยกเลิก ทุกอย่าง
 				if (lowerText.match(/^(ปิด|ยกเลิก|หยุด|ออก|esc|cancel|ปิดหน้าต่าง|ไปต่อ)/)) {
-					closeEverything();
+					if (typeof closeEverything === 'function') closeEverything();
+					else if (typeof closeModal === 'function') { closeModal(); closeAccountDetailModal(); closeQuickDraftModal(); }
 					showToast('ยกเลิกแล้ว', 'info');
 					return;
 				}
 
-				// บันทึก/ตกลง (ระบุ modal context)
 				if (lowerText.match(/^(บันทึก|เสร็จ|เรียบร้อย|save|ตกลง|ok|โอเค|ยืนยัน|ใช่)/)) {
-					const saved = clickSaveButton(state.activeModalId);
-					if (saved) return;
+					if (typeof clickSaveButton === 'function') {
+						const saved = clickSaveButton(state.activeModalId);
+						if (saved) return;
+					} else {
+						const saveBtn = document.querySelector('#transaction-form button[type="submit"]');
+						if (saveBtn && !document.getElementById('form-modal').classList.contains('hidden')) {
+							saveBtn.click();
+							return;
+						}
+					}
 				}
 
-				// ความช่วยเหลือ
 				if (lowerText.match(/^(ช่วยเหลือ|ช่วย|help|คู่มือ|สอน|วิธีใช้|ใช้งาน)/)) {
 					showPage('page-guide');
-					speak("เปิดหน้าคู่มือการใช้งานแล้ว คุณสามารถถามเกี่ยวกับวิธีใช้ได้");
+					if (typeof speak === 'function') speak("เปิดหน้าคู่มือการใช้งานแล้ว คุณสามารถถามเกี่ยวกับวิธีใช้ได้");
+					else if (typeof speakText === 'function') speakText("เปิดหน้าคู่มือการใช้งานแล้ว");
 					return;
 				}
 				
-				// ===== 1.2 คำสั่งที่ซับซ้อน (ช่วงวันที่, ช่วงเงิน, หมวดหมู่+เงื่อนไข) =====
-				if (handleComplexCommand(text, lowerText)) {
-					return;
-				}
-				
-				    // ===== 1.5 คำสั่งกรองตามประเภท + ช่วงเวลา (รายจ่ายวันนี้, รายรับเดือนนี้, โอนย้ายปีนี้) =====
-				if (handlePeriodFilterCommand(text, lowerText)) {
-					return;
-				}
+				// ===== 1.1 STATEFUL CONVERSATION (Chatbot โต้ตอบอัจฉริยะ) =====
+				const chatbotHandled = await handleStatefulChatbot(text, lowerText);
+				if (chatbotHandled) return;
 
-				// ===== 1.6 คำสั่งค้นหาคำ + ช่วงเวลา (กินข้าววันนี้, ค่าน้ำเดือนนี้) =====
-				if (handleKeywordPeriodCommand(text, lowerText)) {
-					return;
-				}
+				// ===== 1.2 คำสั่งที่ซับซ้อน (ช่วงวันที่, ช่วงเงิน, หมวดหมู่+เงื่อนไข) =====
+				if (typeof handleComplexCommand === 'function' && handleComplexCommand(text, lowerText)) return;
+				
+				// ===== 1.5 คำสั่งกรองตามประเภท + ช่วงเวลา =====
+				if (typeof handlePeriodFilterCommand === 'function' && handlePeriodFilterCommand(text, lowerText)) return;
+
+				// ===== 1.6 คำสั่งค้นหาคำ + ช่วงเวลา =====
+				if (typeof handleKeywordPeriodCommand === 'function' && handleKeywordPeriodCommand(text, lowerText)) return;
 
 				// ===== 2. CONTEXT AWARE =====
-				const activeContext = detectCurrentContext();
+				let activeContext = 'home';
+				if (typeof detectCurrentContext === 'function') activeContext = detectCurrentContext();
+				else if (typeof currentPage !== 'undefined') activeContext = currentPage;
+				
 				if (activeContext !== 'home') {
-					const handled = handleContextualCommand(text, activeContext);
-					if (handled) return;
+					if (typeof handleContextualCommand === 'function' && handleContextualCommand(text, activeContext)) return;
 				}
 
 				// ===== 3. SMART MENU NAVIGATION =====
-				const menuHandled = handleMenuNavigation(lowerText, text);
-				if (menuHandled) return;
+				if (typeof handleMenuNavigation === 'function' && handleMenuNavigation(lowerText, text)) return;
+				else {
+					if (lowerText.includes('หน้าแรก') || lowerText.includes('โฮม')) { showPage('page-home'); return; }
+					if (lowerText.includes('รายการ') || lowerText.includes('ประวัติ')) { showPage('page-list'); return; }
+					if (lowerText.includes('ปฏิทิน')) { showPage('page-calendar'); return; }
+					if (lowerText.includes('บัญชี') || lowerText.includes('กระเป๋าเงิน')) { showPage('page-accounts'); return; }
+					if (lowerText.includes('ตั้งค่า') || lowerText.includes('ระบบ')) { showPage('page-settings'); return; }
+				}
 
-				// ===== 4. SMART DATA ENTRY =====
-				const dataHandled = handleSmartDataEntry(text, lowerText);
-				if (dataHandled) return;
+				// ===== 4. SMART DATA ENTRY (บันทึกรายรับรายจ่าย) =====
+				if (typeof handleSmartDataEntry === 'function' && handleSmartDataEntry(text, lowerText)) return;
+				else if (typeof handleTransactionDetection === 'function' && handleTransactionDetection(text, lowerText)) return;
 
 				// ===== 5. SMART SEARCH =====
-				const searchHandled = handleSmartSearch(text, lowerText);
-				if (searchHandled) return;
+				if (typeof handleSmartSearch === 'function' && handleSmartSearch(text, lowerText)) return;
 
 				// ===== 6. SETTINGS & CONFIG =====
-				const settingsHandled = handleSmartSettings(text, lowerText);
-				if (settingsHandled) return;
-
-				// ===== 7. SMART TRANSACTION DETECTION =====
-				const transactionHandled = handleTransactionDetection(text, lowerText);
-				if (transactionHandled) return;
+				if (typeof handleSmartSettings === 'function' && handleSmartSettings(text, lowerText)) return;
 
 				// ===== 8. FALLBACK =====
-				handleFallbackCommand(text);
+				if (typeof handleFallbackCommand === 'function') {
+					handleFallbackCommand(text);
+				} else {
+					console.warn("Unhandled command:", text);
+					showToast(`ไม่เข้าใจคำสั่ง: "${text}"`, 'warning');
+				}
 			}
+
+			// ==========================================
+			// 🤖 ระบบตัวช่วยแยกแยะเวลาและหมวดหมู่ (NLP Parsers V.8)
+			// ==========================================
+			function parseVoiceTimeframe(text) {
+				const now = new Date();
+				let y = now.getFullYear();
+				let m = now.getMonth();
+				let mode = 'month';
+				let label = "เดือนนี้";
+				
+				if (text.includes("ทั้งหมด") || text.includes("ตั้งแต่ต้น") || text.includes("รวมทั้งหมด")) {
+					return { mode: 'all', label: "ทั้งหมด" };
+				}
+
+				const thMonths = ['มกรา', 'กุมภา', 'มีนา', 'เมษา', 'พฤษภา', 'มิถุนา', 'กรกฎา', 'สิงหา', 'กันยา', 'ตุลา', 'พฤศจิกา', 'ธันวา'];
+				
+				const parseYear = (yStr) => {
+					let num = parseInt(yStr, 10);
+					if (num >= 2500) return num - 543;
+					if (num >= 1000 && num < 2500) return num;
+					if (num >= 40 && num <= 99) return (2500 + num) - 543;
+					if (num >= 0 && num <= 39) return 2000 + num;
+					return now.getFullYear();
+				};
+
+				const parseMonth = (mStr) => {
+					if (!mStr) return -1;
+					let num = parseInt(mStr, 10);
+					if (!isNaN(num) && num >= 1 && num <= 12) return num - 1;
+					for (let i = 0; i < 12; i++) {
+						if (mStr.includes(thMonths[i])) return i;
+					}
+					return -1;
+				};
+
+				let yearFound = false, multiYear = false;
+				let y1 = y, y2 = y;
+
+				// 🌟 ตรวจจับช่วงของ "ปี" (เช่น ปี 68 ถึง 69, ปี 68 และ 69)
+				const yearRangeMatch = text.match(/ปี\s*([0-9]{2,4})\s*(ถึง|และ|กับ|-)\s*(?:ปี\s*)?([0-9]{2,4})/);
+				if (yearRangeMatch) {
+					y1 = parseYear(yearRangeMatch[1]);
+					y2 = parseYear(yearRangeMatch[3]);
+					if (y1 > y2) { let t = y1; y1 = y2; y2 = t; }
+					multiYear = true;
+					yearFound = true;
+				} else {
+					const yearMatch = text.match(/ปี\s*([0-9]{2,4})/);
+					if (yearMatch) {
+						y = parseYear(yearMatch[1]);
+						y1 = y; y2 = y;
+						yearFound = true;
+					} else if (text.includes("ปีที่แล้ว") || text.includes("ปีก่อน")) {
+						y -= 1; y1 = y; y2 = y;
+						yearFound = true;
+					} else if (text.includes("ปีนี้")) {
+						yearFound = true;
+					}
+				}
+
+				let monthFound = false, multiMonth = false;
+				let m1 = m, m2 = m;
+
+				// 🌟 ตรวจจับช่วงของ "เดือน" (เช่น เดือน 1 ถึง 5, มกราถึงพฤษภา)
+				const mRangeRegex1 = /(?:เดือน\s*)([0-9]{1,2}|มกรา|กุมภา|มีนา|เมษา|พฤษภา|มิถุนา|กรกฎา|สิงหา|กันยา|ตุลา|พฤศจิกา|ธันวา)\s*(ถึง|และ|กับ|-)\s*(?:เดือน\s*)?([0-9]{1,2}|มกรา|กุมภา|มีนา|เมษา|พฤษภา|มิถุนา|กรกฎา|สิงหา|กันยา|ตุลา|พฤศจิกา|ธันวา)/;
+				const mRangeRegex2 = /(มกรา|กุมภา|มีนา|เมษา|พฤษภา|มิถุนา|กรกฎา|สิงหา|กันยา|ตุลา|พฤศจิกา|ธันวา)\s*(ถึง|และ|กับ|-)\s*(?:เดือน\s*)?([0-9]{1,2}|มกรา|กุมภา|มีนา|เมษา|พฤษภา|มิถุนา|กรกฎา|สิงหา|กันยา|ตุลา|พฤศจิกา|ธันวา)/;
+				
+				let mRangeMatch = text.match(mRangeRegex1) || text.match(mRangeRegex2);
+				if (mRangeMatch) {
+					m1 = parseMonth(mRangeMatch[1]);
+					m2 = parseMonth(mRangeMatch[3]);
+					if (m1 !== -1 && m2 !== -1) {
+						if (m1 > m2 && !multiYear) { let t = m1; m1 = m2; m2 = t; }
+						multiMonth = true;
+						monthFound = true;
+					}
+				} else {
+					const monthNumMatch = text.match(/เดือน\s*0?([1-9]|1[0-2])(?![0-9])/);
+					if (monthNumMatch) {
+						m = parseInt(monthNumMatch[1], 10) - 1;
+						m1 = m; m2 = m;
+						monthFound = true;
+					} else {
+						for (let i = 0; i < 12; i++) {
+							if (text.includes(thMonths[i])) {
+								m = i; m1 = m; m2 = m;
+								monthFound = true;
+								break;
+							}
+						}
+					}
+				}
+
+				if (!monthFound && (text.includes("เดือนที่แล้ว") || text.includes("เดือนก่อน"))) {
+					m -= 1;
+					if (m < 0) { 
+						m = 11; 
+						if (!yearFound) { y -= 1; y1 = y; y2 = y; } 
+					}
+					m1 = m; m2 = m;
+					monthFound = true;
+				}
+
+				// 🌟 สรุปโหมดการค้นหา (หากเป็น Range จะใช้โหมด Custom)
+				if (multiYear || multiMonth) {
+					mode = 'custom';
+					let startM = monthFound ? m1 : 0;
+					let endM = monthFound ? m2 : 11;
+
+					if (multiYear && !multiMonth) {
+						label = `ปี ${y1+543} ถึง ${y2+543}`;
+					} else if (!multiYear && multiMonth) {
+						label = `เดือน${thMonths[m1]}ถึง${thMonths[m2]} ปี ${y1+543}`;
+					} else {
+						label = `เดือน${thMonths[m1]} ปี ${y1+543} ถึง เดือน${thMonths[m2]} ปี ${y2+543}`;
+					}
+
+					const fd = new Date(y1, startM, 1);
+					const ld = new Date(y2, endM + 1, 0); // วันสุดท้ายของเดือนสิ้นสุด
+
+					const formatDt = date => {
+						let mo = '' + (date.getMonth() + 1), da = '' + date.getDate(), yr = date.getFullYear();
+						if (mo.length < 2) mo = '0' + mo;
+						if (da.length < 2) da = '0' + da;
+						return [yr, mo, da].join('-');
+					};
+
+					return { mode, startDt: formatDt(fd), endDt: formatDt(ld), label, year: y1, month: m1 };
+
+				} else if (yearFound && !monthFound && !text.includes("เดือน")) {
+					mode = 'year';
+					label = `ปี ${y + 543}`;
+				} else if (monthFound) {
+					mode = 'month';
+					let yearLabel = yearFound ? ` ปี ${y + 543}` : '';
+					if (!yearFound && (text.includes("เดือนที่แล้ว") || text.includes("เดือนก่อน")) && m === 11) {
+						yearLabel = ` ปี ${y + 543}`;
+					}
+					label = `เดือน${thMonths[m]}${yearLabel}`;
+				} else {
+					mode = 'month';
+					label = "เดือนนี้";
+				}
+
+				return { mode, year: y, month: m, label };
+			}
+
+			function matchVoiceCategory(str) {
+				if (typeof EXPENSE_KEYWORD_MAP !== 'undefined') {
+					for (let key in EXPENSE_KEYWORD_MAP) {
+						if (str.includes(key)) return EXPENSE_KEYWORD_MAP[key];
+					}
+				}
+				// ลบคำที่เกี่ยวกับการกำหนดช่วงเวลาทั้งหมดออก เพื่อให้เหลือแค่ชื่อหมวดหมู่ที่ต้องการค้นหาจริงๆ
+				let cat = str.replace(/(ภาพรวม|ทั้งหมด|ปีนี้|ปีที่แล้ว|ปีก่อน|ปี\s*[0-9]{2,4}|เดือน\s*[0-9]{1,2}|เดือน|มกรา|กุมภา|มีนา|เมษา|พฤษภา|มิถุนา|กรกฎา|สิงหา|กันยา|ตุลา|พฤศจิกา|ธันวา|ที่แล้ว|ก่อน|งบ|ค่า|หมวด|ฉัน|ใช้เงิน|ใช้ไป|จ่ายไป|หมดไปกับ|หมดเงินไปกับ|หมดไป|เหลือ|เท่าไหร่|กี่บาท|รายจ่าย|หน่อย|ช่วยบอก|ดู|แล้ว|ล่ะ|ละ|น้อยสุด|น้อยที่สุด|เยอะสุด|มากสุด|ถึง|และ|กับ|-)/g, '').trim();
+				return cat || null;
+			}
+
+			// ==========================================
+			// 🤖 ฟังก์ชันหลัก Stateful Chatbot
+			// ==========================================
+			async function handleStatefulChatbot(text, textLower) {
+				let isHandled = false;
+				let speechResponse = "";
+				
+				// ประมวลผลเวลา (Timeframe)
+				let timeInfo = parseVoiceTimeframe(textLower);
+				let isMin = textLower.includes("น้อยสุด") || textLower.includes("น้อยที่สุด");
+
+				// กฎ 1: การสนทนาต่อเนื่อง (Follow-up)
+				if (textLower.includes("แล้ว") && (textLower.includes("ล่ะ") || textLower.includes("ละ"))) {
+					if (window.voiceConversationState.lastIntent) {
+						let catName = matchVoiceCategory(textLower);
+						timeInfo = window.voiceConversationState.lastTimeframe || timeInfo; 
+						if (catName) {
+							speechResponse = await calculateVoiceFinanceContext('budget_left', catName, timeInfo, isMin);
+							if (speechResponse) {
+								window.voiceConversationState.lastIntent = 'budget_left';
+								window.voiceConversationState.lastCategory = catName;
+								isHandled = true;
+							}
+						}
+					}
+				}
+
+				// กฎ 2: ถามงบ หรือ เช็คยอดหมวดหมู่
+				if (!isHandled && (textLower.includes("เท่าไหร่") || textLower.includes("กี่บาท") || textLower.includes("ใช้ไป") || textLower.includes("เหลือ")) && (textLower.includes("งบ") || textLower.includes("ค่า") || textLower.includes("หมวด") || matchVoiceCategory(textLower))) {
+					if (!textLower.includes("รวม") && !textLower.includes("ภาพรวม") && (!textLower.includes("ทั้งหมด") || matchVoiceCategory(textLower))) {
+						let catName = matchVoiceCategory(textLower);
+						if (catName) {
+							speechResponse = await calculateVoiceFinanceContext('budget_left', catName, timeInfo, isMin);
+							window.voiceConversationState.lastIntent = 'budget_left';
+							window.voiceConversationState.lastCategory = catName;
+							window.voiceConversationState.lastTimeframe = timeInfo;
+							isHandled = true;
+						}
+					}
+				}
+
+				// กฎ 3: ถามหาสิ่งที่ มากสุด / น้อยสุด
+				if (!isHandled && (textLower.includes("เยอะสุด") || textLower.includes("มากสุด") || textLower.includes("เยอะที่สุด") || textLower.includes("จ่ายอะไรไปเยอะ") || textLower.includes("หมดเงินไปกับอะไร") || textLower.includes("น้อยสุด") || textLower.includes("น้อยที่สุด"))) {
+					speechResponse = await calculateVoiceFinanceContext('extreme_expense', null, timeInfo, isMin);
+					window.voiceConversationState.lastIntent = 'extreme_expense';
+					window.voiceConversationState.lastTimeframe = timeInfo;
+					isHandled = true;
+				}
+
+				// กฎ 4: ถามภาพรวม / สรุปยอด
+				if (!isHandled && (textLower.includes("ภาพรวม") || textLower.includes("สรุปยอด") || textLower.includes("รวม") || textLower.includes("ใช้เงินไปเท่าไหร่") || textLower.includes("รายรับและรายจ่าย"))) {
+					speechResponse = await calculateVoiceFinanceContext('summary', null, timeInfo, isMin);
+					window.voiceConversationState.lastIntent = 'summary';
+					window.voiceConversationState.lastCategory = null; 
+					window.voiceConversationState.lastTimeframe = timeInfo;
+					isHandled = true;
+				}
+
+				if (isHandled && speechResponse) {
+					console.log("🤖 Chatbot Processed:", speechResponse, "Time:", timeInfo);
+					
+					// 🌟 ล้างตัวกรองเก่า
+					if (typeof state !== 'undefined') {
+						state.searchTerm = '';
+						state.advFilterType = 'all';
+						state.filterType = 'all';
+						['adv-filter-search', 'search-transaction', 'search-input'].forEach(id => {
+							const el = document.getElementById(id);
+							if (el) { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
+						});
+					}
+					
+					if (typeof showPage === 'function') showPage('page-list');
+
+					// 🌟 อัปเดต Advanced Filter UI
+					setTimeout(() => {
+						let keywordToSearch = window.voiceConversationState.lastCategory;
+						
+						if (typeof state !== 'undefined') {
+							state.searchTerm = keywordToSearch && keywordToSearch !== "รวม" ? keywordToSearch : '';
+							
+							// 🌟 ตั้งค่า UI ให้ตรงกับรูปแบบเวลา (รวมโหมด Custom สำหรับ Range)
+							if (timeInfo.mode === 'all') {
+								state.listViewMode = 'all';
+								state.advFilterStart = '';
+								state.advFilterEnd = '';
+							} else if (timeInfo.mode === 'year') {
+								state.listViewMode = 'custom';
+								state.advFilterStart = `${timeInfo.year}-01-01`;
+								state.advFilterEnd = `${timeInfo.year}-12-31`;
+							} else if (timeInfo.mode === 'custom') {
+								state.listViewMode = 'custom';
+								state.advFilterStart = timeInfo.startDt;
+								state.advFilterEnd = timeInfo.endDt;
+							} else { // month
+								state.listViewMode = 'month';
+								const firstDay = new Date(timeInfo.year, timeInfo.month, 1);
+								const lastDay = new Date(timeInfo.year, timeInfo.month + 1, 0);
+								const formatDt = (date) => {
+									let m = '' + (date.getMonth() + 1), d = '' + date.getDate(), y = date.getFullYear();
+									if (m.length < 2) m = '0' + m; if (d.length < 2) d = '0' + d;
+									return [y, m, d].join('-');
+								};
+								state.advFilterStart = formatDt(firstDay);
+								state.advFilterEnd = formatDt(lastDay);
+							}
+
+							if (keywordToSearch || window.voiceConversationState.lastIntent === 'extreme_expense') {
+								state.filterType = 'expense';
+								state.advFilterType = 'expense';
+								const typeSelect = document.getElementById('adv-filter-type');
+								if (typeSelect) { typeSelect.value = 'expense'; typeSelect.dispatchEvent(new Event('change', { bubbles: true })); }
+							}
+
+							// สั่ง UI อัปเดตช่องวันที่
+							const startInput = document.getElementById('adv-filter-start');
+							const endInput = document.getElementById('adv-filter-end');
+							if (startInput) startInput.value = state.advFilterStart;
+							if (endInput) endInput.value = state.advFilterEnd;
+							
+							['adv-filter-search', 'search-transaction', 'search-input'].forEach(id => {
+								const el = document.getElementById(id);
+								if (el && state.searchTerm) {
+									el.value = state.searchTerm;
+									el.dispatchEvent(new Event('input', { bubbles: true }));
+								}
+							});
+						}
+
+						if (typeof renderListPage === 'function') renderListPage();
+
+						let displayTime = Math.max(5000, speechResponse.length * 120); 
+						if (typeof Swal !== 'undefined') {
+							Swal.fire({
+								position: 'top', icon: 'info', title: `สรุปข้อมูล (${timeInfo.label})`, text: speechResponse,
+								showConfirmButton: true, confirmButtonText: 'รับทราบ', timer: displayTime, timerProgressBar: true,
+								customClass: { popup: document.body.classList.contains('dark') ? 'swal2-dark' : '' }
+							});
+						}
+
+						if (typeof window.speakText === 'function') window.speakText(speechResponse);
+						else {
+							let msg = new SpeechSynthesisUtterance(speechResponse);
+							msg.lang = 'th-TH'; msg.rate = 1; msg.pitch = 1; window.speechSynthesis.speak(msg);
+						}
+					}, 400);
+
+					return true;
+				}
+				return false;
+			}
+
+			// ==========================================
+			// 🤖 ฟังก์ชันคำนวณเงิน (รองรับการหั่นช่วงเวลาแบบ Custom Range)
+			// ==========================================
+			async function calculateVoiceFinanceContext(intent, specificCategory, timeInfo, isMin) {
+				let txs = [];
+				try {
+					if (typeof state !== 'undefined' && state.transactions) txs = state.transactions;
+					else {
+						const storedTxs = localStorage.getItem('fmpro_transactions');
+						if (storedTxs) txs = JSON.parse(storedTxs);
+					}
+				} catch(e) { console.error("Error loading txs:", e); }
+
+				// 🌟 กรองข้อมูลตามห้วงเวลา (TimeMachine Range Edition)
+				let filteredTxs = txs;
+				if (timeInfo.mode !== 'all') {
+					filteredTxs = txs.filter(t => {
+						const d = new Date(t.timestamp || t.date);
+						if (timeInfo.mode === 'custom') {
+							// เทียบ String ของวันที่ในรูปแบบ YYYY-MM-DD เพื่อความแม่นยำสูงสูด
+							const formatDt = date => {
+								let mo = '' + (date.getMonth() + 1), da = '' + date.getDate(), yr = date.getFullYear();
+								if (mo.length < 2) mo = '0' + mo;
+								if (da.length < 2) da = '0' + da;
+								return [yr, mo, da].join('-');
+							};
+							const tStr = formatDt(d);
+							return tStr >= timeInfo.startDt && tStr <= timeInfo.endDt;
+						} else if (timeInfo.mode === 'year') {
+							return d.getFullYear() === timeInfo.year;
+						}
+						return d.getFullYear() === timeInfo.year && d.getMonth() === timeInfo.month;
+					});
+				}
+
+				if (intent === 'summary') {
+					let income = 0, expense = 0;
+					filteredTxs.forEach(t => {
+						if(t.type === 'income') income += Number(t.amount);
+						if(t.type === 'expense') expense += Number(t.amount);
+					});
+					let balance = income - expense;
+					return `สำหรับ${timeInfo.label} มีรายจ่ายรวม ${expense.toLocaleString()} บาท รายรับ ${income.toLocaleString()} บาท คงเหลือสุทธิ ${balance.toLocaleString()} บาทครับ`;
+				}
+
+				if (intent === 'extreme_expense') {
+					let expenses = filteredTxs.filter(t => t.type === 'expense');
+					if(expenses.length === 0) return `${timeInfo.label} ยังไม่มีข้อมูลรายจ่ายที่บันทึกไว้ครับ`;
+					
+					let categorySums = {};
+					expenses.forEach(t => { categorySums[t.category] = (categorySums[t.category] || 0) + Number(t.amount); });
+					
+					let sortedCats = Object.keys(categorySums).sort((a,b) => isMin ? categorySums[a] - categorySums[b] : categorySums[b] - categorySums[a]);
+					
+					let extremeCat = sortedCats[0];
+					let extremeAmount = categorySums[extremeCat];
+					window.voiceConversationState.lastCategory = extremeCat; 
+
+					let word = isMin ? "น้อยที่สุด" : "เยอะที่สุด";
+					let responseText = `${timeInfo.label} จ่ายหมวด${extremeCat}${word} เป็นเงิน ${extremeAmount.toLocaleString()} บาทครับ`;
+					if (sortedCats.length > 1) {
+						let nextWord = isMin ? "เยอะกว่านั้นมานิดนึง" : "รองลงมา";
+						responseText += ` ${nextWord}คือหมวด${sortedCats[1]} ${categorySums[sortedCats[1]].toLocaleString()} บาทครับ`;
+					}
+					return responseText;
+				}
+
+				if (intent === 'budget_left' && specificCategory) {
+					let expenses = filteredTxs.filter(t => t.type === 'expense' && t.category && t.category.includes(specificCategory));
+					let spent = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+					
+					let budgetAmount = 0;
+					if (timeInfo.mode === 'month' && typeof state !== 'undefined' && state.budgets && state.budgets.length > 0) {
+						let userBudget = state.budgets.find(b => b.category === specificCategory);
+						if (userBudget) budgetAmount = Number(userBudget.amount);
+					}
+					
+					if (budgetAmount > 0) {
+						let left = budgetAmount - spent;
+						if (left < 0) {
+							return `สำหรับค่า${specificCategory} ${timeInfo.label} ตั้งงบไว้ ${budgetAmount.toLocaleString()} ใช้ไปแล้ว ${spent.toLocaleString()} เกินงบไป ${Math.abs(left).toLocaleString()} บาทแล้วครับ`;
+						} else {
+							return `${timeInfo.label} งบค่า${specificCategory} ใช้ไปแล้ว ${spent.toLocaleString()} คงเหลืองบอีก ${left.toLocaleString()} บาทครับ`;
+						}
+					} else {
+						if (spent === 0) return `${timeInfo.label} คุณยังไม่มีรายจ่ายในหมวด${specificCategory}ครับ`;
+						return `สำหรับค่า${specificCategory} ${timeInfo.label} คุณใช้ไปแล้ว ${spent.toLocaleString()} บาทครับ`;
+					}
+				}
+				
+				return null;
+			}
+			
+			// ==========================================
 			
 			function getPageName(pageId) {
 				const map = {
@@ -22470,6 +22898,207 @@ document.addEventListener('DOMContentLoaded', () => {
 						radio.checked = true;
 					}
 				});
+			}
+			
+			// =====================================================================
+			// 🌟 SMART VOICE CHATBOT & STATEFUL CONVERSATION EXTENSION
+			// ขยายความสามารถ processGlobalCommand ให้รองรับการสนทนาโต้ตอบแบบมี Context
+			// =====================================================================
+
+			// 1. สร้าง State สำหรับจดจำบริบทการสนทนาล่าสุด (Stateful)
+			window.voiceConversationState = {
+				lastIntent: null,
+				lastCategory: null,
+				lastMonth: new Date().getMonth(),
+				lastYear: new Date().getFullYear()
+			};
+
+			// 2. ฟังก์ชันวิเคราะห์และคำนวณข้อมูลทางการเงิน (ห้ามย่อ ทำงานเต็มรูปแบบ)
+			window.calculateVoiceFinanceContext = function(intent, specificCategory = null) {
+				// โหลดข้อมูลทั้งหมดจาก LocalStorage หรือตัวแปร Global ที่ระบบใช้
+				let txs = [];
+				try {
+					const storedTxs = localStorage.getItem('fmpro_transactions');
+					if (storedTxs) {
+						txs = JSON.parse(storedTxs);
+					} else if (typeof window.transactions !== 'undefined') {
+						txs = window.transactions;
+					}
+				} catch(e) { 
+					console.error("Error loading transactions for voice AI:", e); 
+				}
+
+				const currentDate = new Date();
+				const currentMonth = currentDate.getMonth();
+				const currentYear = currentDate.getFullYear();
+
+				// กรองเฉพาะข้อมูลของเดือนปัจจุบัน
+				let monthTxs = txs.filter(t => {
+					const d = new Date(t.timestamp || t.date);
+					return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+				});
+
+				// Intent 1: สรุปยอดรวมเดือนนี้
+				if (intent === 'summary_month') {
+					let income = 0;
+					let expense = 0;
+					monthTxs.forEach(t => {
+						if(t.type === 'income') income += Number(t.amount);
+						if(t.type === 'expense') expense += Number(t.amount);
+					});
+					let balance = income - expense;
+					return `เดือนนี้คุณมีรายจ่ายรวม ${expense.toLocaleString()} บาท รายรับ ${income.toLocaleString()} บาท คงเหลือ ${balance.toLocaleString()} บาทครับ`;
+				}
+
+				// Intent 2: ค้นหาหมวดหมู่ที่รายจ่ายเยอะที่สุด
+				if (intent === 'top_expense') {
+					let expenses = monthTxs.filter(t => t.type === 'expense');
+					if(expenses.length === 0) return "เดือนนี้คุณยังไม่มีข้อมูลรายจ่ายที่บันทึกไว้ครับ";
+					
+					let categorySums = {};
+					expenses.forEach(t => {
+						categorySums[t.category] = (categorySums[t.category] || 0) + Number(t.amount);
+					});
+					
+					// เรียงลำดับหาหมวดที่ใช้เยอะสุด และรองลงมา
+					let sortedCats = Object.keys(categorySums).sort((a,b) => categorySums[b] - categorySums[a]);
+					let topCat = sortedCats[0];
+					let topAmount = categorySums[topCat];
+					
+					window.voiceConversationState.lastCategory = topCat; // บันทึก State ลงหน่วยความจำ
+					
+					let responseText = `หมวด${topCat}เยอะที่สุด ${topAmount.toLocaleString()} บาทครับ`;
+					if (sortedCats.length > 1) {
+						let secondCat = sortedCats[1];
+						let secondAmount = categorySums[secondCat];
+						responseText += ` รองลงมาคือหมวด${secondCat} ${secondAmount.toLocaleString()} บาทครับ`;
+					}
+					return responseText;
+				}
+
+				// Intent 3: ถามเจาะจงหมวดหมู่ หรือ Follow-up จาก State เดิม
+				if (intent === 'category_expense' && specificCategory) {
+					let expenses = monthTxs.filter(t => t.type === 'expense' && t.category && t.category.includes(specificCategory));
+					let sum = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+					
+					if (sum === 0) {
+						return `เดือนนี้คุณยังไม่มีรายจ่ายในหมวด${specificCategory}ครับ`;
+					}
+					return `สำหรับค่า${specificCategory}ในเดือนนี้ รวมเป็นเงิน ${sum.toLocaleString()} บาทครับ`;
+				}
+
+				// Intent 4: เช็คยอดงบประมาณคงเหลือ (อิงจากการคำนวณงบประมาณ หากยังไม่มีโมดูลนี้ จะใช้ยอดใช้จ่ายมาแสดงผล)
+				if (intent === 'budget_left' && specificCategory) {
+					let expenses = monthTxs.filter(t => t.type === 'expense' && t.category && t.category.includes(specificCategory));
+					let sum = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+					
+					// หมายเหตุ: หากมีการเก็บงบประมาณแต่ละหมวดไว้ใน localStorage สามารถดึงมาลบกับ sum ได้
+					// ในที่นี้เป็นการรายงานยอดใช้จ่ายปัจจุบันของหมวดนั้นแทน
+					return `สำหรับงบหมวด${specificCategory} เดือนนี้คุณใช้จ่ายไปแล้ว ${sum.toLocaleString()} บาทครับ`;
+				}
+				
+				return null;
+			};
+
+			// 3. ปรับแต่ง processGlobalCommand โดยใช้หลักการ Hook (เพื่อให้โค้ดเดิมทำงานได้ 100% ตามคำสั่ง)
+			if (typeof window.processGlobalCommand === 'function' && !window.isVoiceHooked) {
+				const originalProcessGlobalCommand = window.processGlobalCommand;
+				window.isVoiceHooked = true; // ป้องกันการ Hook ซ้อน
+
+				window.processGlobalCommand = function(transcript) {
+					if (!transcript) return;
+					let text = transcript.trim();
+					let textLower = text.toLowerCase().replace(/\s+/g, ''); // ตัดช่องว่างเพื่อจับ Keyword ให้แม่นยำขึ้น
+					let isHandled = false;
+					let speechResponse = "";
+
+					// ============================================
+					// 💬 วิเคราะห์คำถาม (Intent Mapping & NLP Regex)
+					// ============================================
+
+					// กฎที่ 1: การสนทนาต่อเนื่อง (Follow-up) -> เช็คจากคำว่า "แล้ว...ล่ะ"
+					if (!isHandled && textLower.includes("แล้ว") && (textLower.includes("ล่ะ") || textLower.includes("ละ"))) {
+						if (['summary_month', 'top_expense', 'category_expense', 'budget_left'].includes(window.voiceConversationState.lastIntent)) {
+							// แยกชื่อหมวดหมู่ออกมา
+							let catMatch = textLower.match(/แล้ว(ค่า|หมวด)?(.*)(ล่ะ|ละ)/);
+							let catName = catMatch ? catMatch[2].replace('ค่า', '').replace('หมวด', '').trim() : null;
+							
+							if (catName) {
+								speechResponse = window.calculateVoiceFinanceContext('category_expense', catName);
+								if (speechResponse) {
+									window.voiceConversationState.lastIntent = 'category_expense';
+									window.voiceConversationState.lastCategory = catName;
+									isHandled = true;
+								}
+							}
+						}
+					}
+
+					// กฎที่ 2: ถามงบประมาณคงเหลือ
+					if (!isHandled && textLower.includes("งบ") && textLower.includes("เหลือเท่าไหร่")) {
+						let catMatch = textLower.match(/งบ(ค่า|หมวด)?(.*)เหลือเท่าไหร่/);
+						let catName = catMatch ? catMatch[2].replace('ค่า', '').replace('หมวด', '').trim() : "รวม";
+						
+						speechResponse = window.calculateVoiceFinanceContext('budget_left', catName);
+						window.voiceConversationState.lastIntent = 'budget_left';
+						window.voiceConversationState.lastCategory = catName;
+						isHandled = true;
+					}
+
+					// กฎที่ 3: ถามหาหมวดหมู่ที่รายจ่ายเยอะที่สุด
+					if (!isHandled && (textLower.includes("รายจ่ายอะไรเยอะที่สุด") || textLower.includes("หมวดไหนเยอะสุด") || textLower.includes("จ่ายอะไรไปเยอะสุด") || textLower.includes("หมดเงินไปกับอะไรเยอะสุด"))) {
+						speechResponse = window.calculateVoiceFinanceContext('top_expense');
+						window.voiceConversationState.lastIntent = 'top_expense';
+						isHandled = true;
+					}
+
+					// กฎที่ 4: ถามสรุปยอดรวมเดือนนี้
+					if (!isHandled && (textLower.includes("เดือนนี้ฉันใช้เงินไปเท่าไหร่") || textLower.includes("เดือนนี้มีรายรับและรายจ่ายเท่าไหร่") || textLower.includes("เดือนนี้ใช้จ่ายรวมเท่าไหร่") || textLower.includes("สรุปยอดเดือนนี้"))) {
+						speechResponse = window.calculateVoiceFinanceContext('summary_month');
+						window.voiceConversationState.lastIntent = 'summary_month';
+						isHandled = true;
+					}
+
+					// ============================================
+					// 📢 กลไกการตอบกลับ (Voice Feedback)
+					// ============================================
+					if (isHandled && speechResponse) {
+						console.log("🤖 Chatbot Processed:", speechResponse);
+						
+						// ใช้ SweetAlert2 แสดงข้อความขึ้นบนหน้าจอตาม UI ของระบบที่มีอยู่
+						if (typeof Swal !== 'undefined') {
+							Swal.fire({
+								position: 'top',
+								icon: 'info',
+								title: 'ผู้ช่วยการเงิน',
+								text: speechResponse,
+								showConfirmButton: false,
+								timer: 4500,
+								customClass: {
+									popup: document.body.classList.contains('dark') ? 'swal2-dark' : ''
+								}
+							});
+						}
+
+						// พูดตอบกลับผ่านระบบ TTS ที่มีอยู่
+						if (typeof window.speakText === 'function') {
+							window.speakText(speechResponse);
+						} else {
+							let msg = new SpeechSynthesisUtterance(speechResponse);
+							msg.lang = 'th-TH';
+							msg.rate = 1; // คงค่า Rate ไว้ตาม config iOS ที่แก้บั๊กไปแล้ว
+							msg.pitch = 1;
+							window.speechSynthesis.speak(msg);
+						}
+						return; // 🛑 จบการทำงานของรอบนี้ทันที ไม่ให้ไปรบกวนฟังก์ชันบันทึกข้อมูล
+					}
+
+					// ============================================
+					// 🔄 ส่งคืนสู่ระบบเดิม 100% (Fallback to Original)
+					// ============================================
+					// หากประโยคที่พูดมาไม่ใช่คำถามสำหรับ Chatbot ระบบจะเรียกใช้โค้ดต้นฉบับดั้งเดิมทั้งหมด
+					return originalProcessGlobalCommand(transcript);
+				};
 			}
 			
 			// ฟังก์ชันปลดล็อคเสียงสำหรับ iOS (Speech Synthesis Unlocker)
