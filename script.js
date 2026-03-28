@@ -17906,42 +17906,80 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			// ============================================
 
-			// เรียกใช้ฟังก์ชันนี้หลังจาก DOM พร้อม เช่น ใน initApp หรือ onAppStart
-			// ควรเรียกหลังจากที่ container ถูกสร้างแล้ว
-			
-			// ค้นหาคำสั่งที่ใกล้เคียงที่สุด (ใช้ similarity อย่างง่าย)
+			/**
+			 * ค้นหาคำสั่งที่ผู้ใช้สอนไว้ รองรับแบบ prefix (พูดคำสั่งต้นประโยค)
+			 * @param {string} spokenText - ข้อความที่ได้จาก Speech Recognition
+			 * @returns {Promise<{command: object, remainingText: string}|null>}
+			 */
 			async function findLearnedCommand(spokenText) {
 				try {
 					const allCommands = await dbGetAll(STORE_VOICE_COMMANDS);
 					if (!allCommands || allCommands.length === 0) return null;
 
-					const spokenLower = spokenText.toLowerCase().trim();
+					let cleanSpoken = spokenText.trim().toLowerCase();
+					const politeSuffixes = ['ครับ', 'ค่ะ', 'จ้ะ', 'จ้า', 'นะ', 'หน่อย', 'ที', 'น่ะ', 'ละ', 'หละ', 'จั๊บ', 'เด้อ', 'เถอะ', 'ซิ'];
+					for (const suf of politeSuffixes) {
+						if (cleanSpoken.endsWith(suf)) {
+							cleanSpoken = cleanSpoken.slice(0, -suf.length).trim();
+							break;
+						}
+					}
 
-					// 1. Exact match (กรณีพูดตรงกับคำสั่งที่เคยบันทึก)
-					const exactMatch = allCommands.find(cmd => cmd.command.toLowerCase() === spokenLower);
+					// 1. Exact match (ตรงทั้งหมด)
+					const exactMatch = allCommands.find(cmd => {
+						let cleanCmd = cmd.command.trim().toLowerCase();
+						for (const suf of politeSuffixes) {
+							if (cleanCmd.endsWith(suf)) {
+								cleanCmd = cleanCmd.slice(0, -suf.length).trim();
+								break;
+							}
+						}
+						return cleanCmd === cleanSpoken;
+					});
 					if (exactMatch) {
 						exactMatch.useCount = (exactMatch.useCount || 0) + 1;
 						await dbPut(STORE_VOICE_COMMANDS, exactMatch);
-						return exactMatch;
+						return { command: exactMatch, remainingText: '' };
 					}
 
-					// 2. Token overlap scoring (เฉพาะคำที่มีความหมาย)
-					const spokenTokens = spokenLower.split(/\s+/).filter(t => t.length > 1);
+					// 2. Prefix match (จับคู่ส่วนต้น)
+					const sortedCommands = [...allCommands].sort((a, b) => b.command.length - a.command.length);
+					for (const cmd of sortedCommands) {
+						let cleanCmd = cmd.command.trim().toLowerCase();
+						for (const suf of politeSuffixes) {
+							if (cleanCmd.endsWith(suf)) {
+								cleanCmd = cleanCmd.slice(0, -suf.length).trim();
+								break;
+							}
+						}
+						if (cleanSpoken.startsWith(cleanCmd)) {
+							const remaining = cleanSpoken.slice(cleanCmd.length).trim();
+							cmd.useCount = (cmd.useCount || 0) + 1;
+							await dbPut(STORE_VOICE_COMMANDS, cmd);
+							return { command: cmd, remainingText: remaining };
+						}
+					}
+
+					// 3. Token overlap (เดิม) ใช้เมื่อไม่เจอ prefix
+					const spokenTokens = cleanSpoken.split(/\s+/).filter(t => t.length > 1);
 					if (spokenTokens.length === 0) return null;
 
 					let bestMatch = null;
 					let bestScore = 0;
-
 					for (const cmd of allCommands) {
-						const cmdTokens = cmd.command.toLowerCase().split(/\s+/).filter(t => t.length > 1);
+						let cleanCmd = cmd.command.trim().toLowerCase();
+						for (const suf of politeSuffixes) {
+							if (cleanCmd.endsWith(suf)) {
+								cleanCmd = cleanCmd.slice(0, -suf.length).trim();
+								break;
+							}
+						}
+						const cmdTokens = cleanCmd.split(/\s+/).filter(t => t.length > 1);
 						if (cmdTokens.length === 0) continue;
 
-						// นับจำนวน token ที่ตรงกัน
 						const matchCount = spokenTokens.filter(t => cmdTokens.includes(t)).length;
-						// คะแนน = สัดส่วนของ token ที่ตรงกัน เทียบกับจำนวน token ของคำสั่งที่บันทึก
 						const score = matchCount / cmdTokens.length;
 
-						// ต้องมีคะแนน >= 0.7 และมากกว่าคะแนนเดิม
 						if (score >= 0.7 && score > bestScore) {
 							bestScore = score;
 							bestMatch = cmd;
@@ -17951,17 +17989,54 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (bestMatch) {
 						bestMatch.useCount = (bestMatch.useCount || 0) + 1;
 						await dbPut(STORE_VOICE_COMMANDS, bestMatch);
+						return { command: bestMatch, remainingText: '' };
 					}
 
-					return bestMatch;
+					return null;
 				} catch (err) {
 					console.error('Error finding learned command:', err);
 					return null;
 				}
 			}
 			
-			async function executeLearnedCommand(cmd) {
-				console.log('Executing learned command:', cmd);
+			/**
+			 * ดำเนินการตามคำสั่งที่เรียนรู้
+			 * @param {object} cmd - ข้อมูลคำสั่งที่เรียนรู้
+			 * @param {string} remainingText - ข้อความที่เหลือหลังจากตัดคำสั่งออก (ถ้ามี)
+			 */
+			async function executeLearnedCommand(cmd, remainingText = '') {
+				console.log('Executing learned command:', cmd, 'Remaining:', remainingText);
+
+				// ฟังก์ชันช่วยแปลง remainingText เป็นช่วงวันที่ และอัปเดต UI
+				const applyTimeFromRemaining = () => {
+					if (!remainingText) return false;
+					const timeInfo = parseVoiceTimeframe(remainingText);
+					// ถ้าเป็น custom (มี startDt/endDt) หรือ mode ไม่ใช่ 'month' (เพื่อป้องกันการทับค่า default)
+					if (timeInfo.mode === 'custom' && timeInfo.startDt && timeInfo.endDt) {
+						document.getElementById('adv-filter-start').value = timeInfo.startDt;
+						document.getElementById('adv-filter-end').value = timeInfo.endDt;
+						return true;
+					} else if (timeInfo.mode === 'year') {
+						const start = `${timeInfo.year}-01-01`;
+						const end = `${timeInfo.year}-12-31`;
+						document.getElementById('adv-filter-start').value = start;
+						document.getElementById('adv-filter-end').value = end;
+						return true;
+					} else if (timeInfo.mode === 'month') {
+						const start = new Date(timeInfo.year, timeInfo.month, 1);
+						const end = new Date(timeInfo.year, timeInfo.month + 1, 0);
+						const formatDate = (d) => {
+							let m = '' + (d.getMonth() + 1), day = '' + d.getDate(), y = d.getFullYear();
+							if (m.length < 2) m = '0' + m;
+							if (day.length < 2) day = '0' + day;
+							return `${y}-${m}-${day}`;
+						};
+						document.getElementById('adv-filter-start').value = formatDate(start);
+						document.getElementById('adv-filter-end').value = formatDate(end);
+						return true;
+					}
+					return false;
+				};
 
 				switch (cmd.action) {
 					case 'openPage':
@@ -18003,10 +18078,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					case 'changePassword':
 						setTimeout(() => {
 							handleManagePassword();
-							// รอให้ handleManagePassword ทำงานเสร็จและ Swal แสดงเต็มที่
 							setTimeout(() => {
 								speak('รับทราบ กำลังเปิดหน้าจัดการรหัสผ่าน');
-							}, 500); // ให้เวลาหลังจากเปิด Swal 200ms
+							}, 500);
 						}, 500);
 						break;
 
@@ -18022,9 +18096,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					case 'addTransaction':
 						openModal();
 						setTimeout(() => {
-							// ------------------------------
-							// 1. ตั้งค่าประเภทรายการ (ถ้ามี)
-							// ------------------------------
 							const targetType = cmd.defaultType || 'expense';
 							const radio = document.querySelector(`input[name="tx-type"][value="${targetType}"]`);
 							if (radio) {
@@ -18032,19 +18103,12 @@ document.addEventListener('DOMContentLoaded', () => {
 								radio.dispatchEvent(new Event('change', { bubbles: true }));
 							}
 
-							// ------------------------------
-							// 2. รอให้ฟอร์มอัปเดต visibility และ dropdown หมวดหมู่
-							// ------------------------------
 							setTimeout(() => {
-								// ตั้งค่าหมวดหมู่ (ถ้ามี)
 								if (cmd.defaultCategory) {
 									const catSelect = document.getElementById('tx-category');
-									if (catSelect) {
-										catSelect.value = cmd.defaultCategory;
-									}
+									if (catSelect) catSelect.value = cmd.defaultCategory;
 								}
 
-								// ตั้งค่าบัญชีตามประเภท
 								if (targetType === 'transfer') {
 									if (cmd.defaultAccountId) {
 										const fromSelect = document.getElementById('tx-account-from');
@@ -18062,23 +18126,13 @@ document.addEventListener('DOMContentLoaded', () => {
 								}
 							}, 150);
 
-							// ------------------------------
-							// 3. ตั้งค่าฟิลด์อื่น ๆ (ชื่อ, จำนวน, คำอธิบาย)
-							// ------------------------------
-							if (cmd.defaultName) {
-								document.getElementById('tx-name').value = cmd.defaultName;
-							}
+							if (cmd.defaultName) document.getElementById('tx-name').value = cmd.defaultName;
 							if (cmd.defaultAmount) {
 								document.getElementById('tx-amount').value = cmd.defaultAmount;
 								document.getElementById('tx-amount').dispatchEvent(new Event('keyup'));
 							}
-							if (cmd.defaultDesc) {
-								document.getElementById('tx-desc').value = cmd.defaultDesc;
-							}
+							if (cmd.defaultDesc) document.getElementById('tx-desc').value = cmd.defaultDesc;
 
-							// ------------------------------
-							// 4. สร้างข้อความตอบรับแบบมีรายละเอียด
-							// ------------------------------
 							let typeText = '';
 							if (cmd.defaultType === 'income') typeText = 'รายรับ';
 							else if (cmd.defaultType === 'expense') typeText = 'รายจ่าย';
@@ -18087,7 +18141,6 @@ document.addEventListener('DOMContentLoaded', () => {
 							
 							let nameText = cmd.defaultName ? cmd.defaultName : '';
 							let descText = cmd.defaultDesc ? ` ${cmd.defaultDesc}` : '';
-							
 							let message = `รับทราบ เปิดฟอร์มเพิ่ม ${typeText} ${nameText}${descText}แล้ว`;
 							speak(message);
 						}, 300);
@@ -18098,15 +18151,14 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							if (cmd.defaultAmount) document.getElementById('draft-amount').value = cmd.defaultAmount;
 							document.getElementById('draft-note').value = cmd.defaultDesc || cmd.command;
-							
 							const commandText = cmd.command || 'ด่วน';
 							speak(`รับทราบ จดบันทึกด่วน "${commandText}"`);
 						}, 300);
 						break;
-						
+
 					case 'exportData':
 						setTimeout(() => {
-							handleBackup();  // เรียกฟังก์ชันสำรองข้อมูลที่มีอยู่แล้ว
+							handleBackup();
 							setTimeout(() => {
 								speak('รับทราบ กำลังเปิดศูนย์สำรองข้อมูล');
 							}, 500);
@@ -18115,7 +18167,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					case 'importData':
 						setTimeout(() => {
-							document.getElementById('btn-import').click(); // คลิกปุ่มนำเข้า
+							document.getElementById('btn-import').click();
 							setTimeout(() => {
 								speak('รับทราบ เตรียมนำเข้าข้อมูล กรุณาเลือกไฟล์');
 							}, 500);
@@ -18124,17 +18176,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					case 'clearAllData':
 						setTimeout(() => {
-							handleClearAll();  // ฟังก์ชันล้างข้อมูลทั้งหมด
-							// handleClearAll จะจัดการป๊อปอัปและเสียงพูดเอง
+							handleClearAll();
 						}, 500);
 						break;
 
 					case 'hardReset':
 						setTimeout(() => {
-							handleHardReset(); // ฟังก์ชันรีเซ็ตระบบ
+							handleHardReset();
 						}, 500);
 						break;
-						
+
 					case 'systemUpdate':
 						setTimeout(() => {
 							handleSystemUpdate();
@@ -18143,10 +18194,10 @@ document.addEventListener('DOMContentLoaded', () => {
 							}, 500);
 						}, 500);
 						break;
-						
+
 					case 'undo':
 						setTimeout(() => {
-							handleUndo();  // ฟังก์ชันย้อนกลับที่มีอยู่แล้ว
+							handleUndo();
 							setTimeout(() => {
 								speak('รับทราบ ย้อนกลับรายการล่าสุด');
 							}, 500);
@@ -18155,7 +18206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					case 'redo':
 						setTimeout(() => {
-							handleRedo();  // ฟังก์ชันทำซ้ำที่มีอยู่แล้ว
+							handleRedo();
 							setTimeout(() => {
 								speak('รับทราบ ทำซ้ำรายการล่าสุด');
 							}, 500);
@@ -18164,7 +18215,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					case 'lockApp':
 						setTimeout(() => {
-							lockApp(); // ฟังก์ชันล็อคหน้าจอ
+							lockApp();
 							speak('รับทราบ ล็อคแอปแล้ว');
 						}, 500);
 						break;
@@ -18177,7 +18228,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					case 'openBudgetSettings':
 						showPage('page-accounts');
 						setTimeout(() => {
-							// ขยายส่วนงบประมาณ (ถ้ายังไม่เปิด)
 							const budgetContent = document.getElementById('settings-budget-content');
 							const budgetHeader = document.querySelector('[data-target="settings-budget-content"]');
 							if (budgetContent && budgetHeader && budgetContent.classList.contains('hidden')) {
@@ -18191,7 +18241,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					case 'openRecurringSettings':
 						showPage('page-accounts');
 						setTimeout(() => {
-							// ขยายส่วนรายการประจำ
 							const recContent = document.getElementById('settings-recurring-content');
 							const recHeader = document.getElementById('btn-manage-recurring');
 							if (recContent && recHeader && recContent.classList.contains('hidden')) {
@@ -18202,27 +18251,175 @@ document.addEventListener('DOMContentLoaded', () => {
 						}, 300);
 						break;
 
+					// ใน executeLearnedCommand
+
 					case 'search':
 						showPage('page-list');
 						setTimeout(() => {
+							// 1. ดึง keyword
+							let keyword = cmd.defaultKeyword || cmd.command;
+
+							// 2. ตั้งค่า search input
 							const searchInput = document.getElementById('adv-filter-search');
 							if (searchInput) {
-								const keyword = cmd.defaultKeyword || cmd.command;
 								searchInput.value = keyword;
 								searchInput.dispatchEvent(new Event('input'));
-								speak(`รับทราบ ค้นหารายการที่เกี่ยวข้องกับ ${keyword}`);
-							} else {
-								speak('รับทราบ เปิดหน้ารายการแล้ว');
 							}
+
+							// 3. ตั้งค่าวันที่จาก remainingText (ถ้ามี)
+							let timeLabel = '';
+							if (remainingText) {
+								const timeInfo = parseVoiceTimeframe(remainingText);
+								if (timeInfo.mode === 'custom' && timeInfo.startDt && timeInfo.endDt) {
+									document.getElementById('adv-filter-start').value = timeInfo.startDt;
+									document.getElementById('adv-filter-end').value = timeInfo.endDt;
+									timeLabel = timeInfo.label;
+								} else if (timeInfo.mode === 'year') {
+									const start = `${timeInfo.year}-01-01`;
+									const end = `${timeInfo.year}-12-31`;
+									document.getElementById('adv-filter-start').value = start;
+									document.getElementById('adv-filter-end').value = end;
+									timeLabel = `ปี ${timeInfo.year + 543}`;
+								} else if (timeInfo.mode === 'month') {
+									const start = new Date(timeInfo.year, timeInfo.month, 1);
+									const end = new Date(timeInfo.year, timeInfo.month + 1, 0);
+									const formatDate = (d) => {
+										let m = '' + (d.getMonth() + 1), day = '' + d.getDate(), y = d.getFullYear();
+										if (m.length < 2) m = '0' + m;
+										if (day.length < 2) day = '0' + day;
+										return `${y}-${m}-${day}`;
+									};
+									document.getElementById('adv-filter-start').value = formatDate(start);
+									document.getElementById('adv-filter-end').value = formatDate(end);
+									const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+														'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+									timeLabel = `เดือน${monthNames[timeInfo.month]} พ.ศ. ${timeInfo.year + 543}`;
+								} else {
+									applyCustomPeriod(remainingText);
+									timeLabel = remainingText;
+								}
+							}
+
+							// 4. รีเฟรชหน้ารายการ
+							renderListPage();
+
+							// 5. หลังจาก render เสร็จ ให้ดึงข้อมูลที่กรองแล้วมาพูดสรุป
+							setTimeout(() => {
+								const filtered = getCurrentFilteredTransactions();
+								if (filtered.length === 0) {
+									let msg = `ไม่พบรายการที่ตรงกับ "${keyword}"`;
+									if (timeLabel) msg += ` ใน${timeLabel}`;
+									speak(msg);
+									return;
+								}
+
+								// คำนวณสถิติแยกตามประเภท
+								let incomeCount = 0, incomeSum = 0;
+								let expenseCount = 0, expenseSum = 0;
+								let transferCount = 0, transferSum = 0;
+
+								for (const tx of filtered) {
+									if (tx.type === 'income') {
+										incomeCount++;
+										incomeSum += tx.amount;
+									} else if (tx.type === 'expense') {
+										expenseCount++;
+										expenseSum += tx.amount;
+									} else if (tx.type === 'transfer') {
+										transferCount++;
+										transferSum += tx.amount;
+									}
+								}
+
+								// สร้างข้อความสรุป
+								let summary = `พบ ${filtered.length} รายการ`;
+								if (timeLabel) summary += ` ใน${timeLabel}`;
+
+								// ต่อท้ายรายละเอียดตามประเภทที่มีข้อมูล
+								if (incomeCount > 0 && expenseCount > 0) {
+									summary += ` รายรับ ${incomeCount} รายการ รวม ${formatCurrency(incomeSum)} รายจ่าย ${expenseCount} รายการ รวม ${formatCurrency(expenseSum)}`;
+									const net = incomeSum - expenseSum;
+									summary += ` คงเหลือสุทธิ ${formatCurrency(net)}`;
+								} else if (incomeCount > 0) {
+									summary += ` รายรับ ${incomeCount} รายการ รวม ${formatCurrency(incomeSum)}`;
+								} else if (expenseCount > 0) {
+									summary += ` รายจ่าย ${expenseCount} รายการ รวม ${formatCurrency(expenseSum)}`;
+								}
+
+								if (transferCount > 0) {
+									summary += ` (โอนย้าย ${transferCount} รายการ รวม ${formatCurrency(transferSum)})`;
+								}
+
+								speak(summary);
+							}, 800);
 						}, 300);
 						break;
 
 					case 'filterByType':
-						filterByType(cmd.filterType);
+						showPage('page-list');
+						setTimeout(() => {
+							const typeSelect = document.getElementById('adv-filter-type');
+							if (typeSelect) {
+								typeSelect.value = cmd.filterType;
+								typeSelect.dispatchEvent(new Event('change'));
+							}
+							let timeLabel = '';
+							if (remainingText) {
+								const timeInfo = parseVoiceTimeframe(remainingText);
+								if (timeInfo.mode === 'custom' && timeInfo.startDt && timeInfo.endDt) {
+									document.getElementById('adv-filter-start').value = timeInfo.startDt;
+									document.getElementById('adv-filter-end').value = timeInfo.endDt;
+									timeLabel = timeInfo.label;
+								} else if (timeInfo.mode === 'year') {
+									document.getElementById('adv-filter-start').value = `${timeInfo.year}-01-01`;
+									document.getElementById('adv-filter-end').value = `${timeInfo.year}-12-31`;
+									timeLabel = `ปี ${timeInfo.year + 543}`;
+								} else if (timeInfo.mode === 'month') {
+									const start = new Date(timeInfo.year, timeInfo.month, 1);
+									const end = new Date(timeInfo.year, timeInfo.month + 1, 0);
+									const formatDate = (d) => {
+										let m = '' + (d.getMonth() + 1), day = '' + d.getDate(), y = d.getFullYear();
+										if (m.length < 2) m = '0' + m;
+										if (day.length < 2) day = '0' + day;
+										return `${y}-${m}-${day}`;
+									};
+									document.getElementById('adv-filter-start').value = formatDate(start);
+									document.getElementById('adv-filter-end').value = formatDate(end);
+									const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+														'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+									timeLabel = `เดือน${monthNames[timeInfo.month]} พ.ศ. ${timeInfo.year + 543}`;
+								} else {
+									applyCustomPeriod(remainingText);
+									timeLabel = remainingText;
+								}
+							}
+
+							renderListPage();
+
+							setTimeout(() => {
+								const filtered = getCurrentFilteredTransactions();
+								const typeName = cmd.filterType === 'income' ? 'รายรับ' : 'รายจ่าย';
+								if (filtered.length === 0) {
+									let msg = `ไม่พบรายการ${typeName}`;
+									if (timeLabel) msg += ` ใน${timeLabel}`;
+									speak(msg);
+									return;
+								}
+
+								const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
+								let msg = `พบ ${filtered.length} รายการ${typeName}`;
+								if (timeLabel) msg += ` ใน${timeLabel}`;
+								msg += ` รวม ${formatCurrency(total)}`;
+								speak(msg);
+							}, 800);
+						}, 300);
 						break;
 
 					case 'applyTimeFilter':
-						applyTimeFilter(cmd.period);
+						if (cmd.period) {
+							applyCustomPeriod(cmd.period);
+							speak(`รับทราบ แสดงข้อมูล${cmd.period}`);
+						}
 						break;
 
 					default:
@@ -18251,14 +18448,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				console.log("🧠 SMART BRAIN V.8 Analyzing:", text);
 
-				// ===== 0. ตรวจสอบคำสั่งที่เรียนรู้ก่อน =====
-				if (typeof findLearnedCommand === 'function') {
-					const learned = await findLearnedCommand(text);
-					if (learned) {
-						console.log('🎓 Found learned command:', learned);
-						if (typeof executeLearnedCommand === 'function') await executeLearnedCommand(learned);
-						return;
+				// 0. ตรวจสอบคำสั่งที่เรียนรู้ก่อน
+				const learnedResult = await findLearnedCommand(text);
+				if (learnedResult) {
+					const { command, remainingText } = learnedResult;
+					console.log('🎓 Found learned command:', command, 'Remaining:', remainingText);
+					if (typeof executeLearnedCommand === 'function') {
+						await executeLearnedCommand(command, remainingText);
 					}
+					return;
 				}
 
 				// ===== 1. PRIORITY: คำสั่งระบบด่วน =====
@@ -18288,14 +18486,14 @@ document.addEventListener('DOMContentLoaded', () => {
 					else if (typeof speakText === 'function') speakText("เปิดหน้าคู่มือการใช้งานแล้ว");
 					return;
 				}
-				
+
 				// ===== 1.1 STATEFUL CONVERSATION (Chatbot โต้ตอบอัจฉริยะ) =====
 				const chatbotHandled = await handleStatefulChatbot(text, lowerText);
 				if (chatbotHandled) return;
 
 				// ===== 1.2 คำสั่งที่ซับซ้อน (ช่วงวันที่, ช่วงเงิน, หมวดหมู่+เงื่อนไข) =====
 				if (typeof handleComplexCommand === 'function' && handleComplexCommand(text, lowerText)) return;
-				
+
 				// ===== 1.5 คำสั่งกรองตามประเภท + ช่วงเวลา =====
 				if (typeof handlePeriodFilterCommand === 'function' && handlePeriodFilterCommand(text, lowerText)) return;
 
@@ -18306,7 +18504,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				let activeContext = 'home';
 				if (typeof detectCurrentContext === 'function') activeContext = detectCurrentContext();
 				else if (typeof currentPage !== 'undefined') activeContext = currentPage;
-				
+
 				if (activeContext !== 'home') {
 					if (typeof handleContextualCommand === 'function' && handleContextualCommand(text, activeContext)) return;
 				}
@@ -18692,12 +18890,12 @@ document.addEventListener('DOMContentLoaded', () => {
 						if(t.type === 'expense') expense += Number(t.amount);
 					});
 					let balance = income - expense;
-					return `สำหรับ${timeInfo.label} มีรายจ่ายรวม ${expense.toLocaleString()} บาท รายรับ ${income.toLocaleString()} บาท คงเหลือสุทธิ ${balance.toLocaleString()} บาทครับ`;
+					return `สำหรับ${timeInfo.label} มีรายจ่ายรวม ${expense.toLocaleString()} บาท รายรับ ${income.toLocaleString()} บาท คงเหลือสุทธิ ${balance.toLocaleString()} บาท`;
 				}
 
 				if (intent === 'extreme_expense') {
 					let expenses = filteredTxs.filter(t => t.type === 'expense');
-					if(expenses.length === 0) return `${timeInfo.label} ยังไม่มีข้อมูลรายจ่ายที่บันทึกไว้ครับ`;
+					if(expenses.length === 0) return `${timeInfo.label} ยังไม่มีข้อมูลรายจ่ายที่บันทึกไว้`;
 					
 					let categorySums = {};
 					expenses.forEach(t => { categorySums[t.category] = (categorySums[t.category] || 0) + Number(t.amount); });
@@ -18709,10 +18907,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					window.voiceConversationState.lastCategory = extremeCat; 
 
 					let word = isMin ? "น้อยที่สุด" : "เยอะที่สุด";
-					let responseText = `${timeInfo.label} จ่ายหมวด${extremeCat}${word} เป็นเงิน ${extremeAmount.toLocaleString()} บาทครับ`;
+					let responseText = `${timeInfo.label} จ่ายหมวด${extremeCat}${word} เป็นเงิน ${extremeAmount.toLocaleString()} บาท`;
 					if (sortedCats.length > 1) {
 						let nextWord = isMin ? "เยอะกว่านั้นมานิดนึง" : "รองลงมา";
-						responseText += ` ${nextWord}คือหมวด${sortedCats[1]} ${categorySums[sortedCats[1]].toLocaleString()} บาทครับ`;
+						responseText += ` ${nextWord}คือหมวด${sortedCats[1]} ${categorySums[sortedCats[1]].toLocaleString()} บาท`;
 					}
 					return responseText;
 				}
@@ -18730,13 +18928,13 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (budgetAmount > 0) {
 						let left = budgetAmount - spent;
 						if (left < 0) {
-							return `สำหรับค่า${specificCategory} ${timeInfo.label} ตั้งงบไว้ ${budgetAmount.toLocaleString()} ใช้ไปแล้ว ${spent.toLocaleString()} เกินงบไป ${Math.abs(left).toLocaleString()} บาทแล้วครับ`;
+							return `สำหรับค่า${specificCategory} ${timeInfo.label} ตั้งงบไว้ ${budgetAmount.toLocaleString()} ใช้ไปแล้ว ${spent.toLocaleString()} เกินงบไป ${Math.abs(left).toLocaleString()} บาทแล้ว`;
 						} else {
-							return `${timeInfo.label} งบค่า${specificCategory} ใช้ไปแล้ว ${spent.toLocaleString()} คงเหลืองบอีก ${left.toLocaleString()} บาทครับ`;
+							return `${timeInfo.label} งบค่า${specificCategory} ใช้ไปแล้ว ${spent.toLocaleString()} คงเหลืองบอีก ${left.toLocaleString()} บาท`;
 						}
 					} else {
-						if (spent === 0) return `${timeInfo.label} คุณยังไม่มีรายจ่ายในหมวด${specificCategory}ครับ`;
-						return `สำหรับค่า${specificCategory} ${timeInfo.label} คุณใช้ไปแล้ว ${spent.toLocaleString()} บาทครับ`;
+						if (spent === 0) return `${timeInfo.label} คุณยังไม่มีรายจ่ายในหมวด${specificCategory}`;
+						return `สำหรับค่า${specificCategory} ${timeInfo.label} คุณใช้ไปแล้ว ${spent.toLocaleString()} บาท`;
 					}
 				}
 				
