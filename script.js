@@ -18007,42 +18007,66 @@ document.addEventListener('DOMContentLoaded', () => {
 			async function executeLearnedCommand(cmd, remainingText = '') {
 				console.log('Executing learned command:', cmd, 'Remaining:', remainingText);
 
-				// ===== EXTRACT TOTAL AMOUNT FROM REMAINING TEXT (รองรับ "สตางค์") =====
+				// ===== EXTRACT TOTAL AMOUNT FROM REMAINING TEXT (รองรับ "สตางค์", "คำอธิบาย" และ "กันเลขชื่อรุ่น") =====
 				let amountOverride = null;
+				let descOverride = ''; 
+
 				if (remainingText) {
 					let total = 0;
 					
-					// 🛠 FIX: จัดการช่องว่างที่เกิดจากระบบสั่งงานด้วยเสียง (STT) แยกตัวเลข
 					// 1. เชื่อมตัวเลขที่โดนเว้นวรรค เช่น "520 220" เป็น "520220"
 					remainingText = remainingText.replace(/(\d)\s+(?=\d)/g, '$1');
 					// 2. เชื่อมจุดทศนิยมที่อาจโดนเว้นวรรค เช่น "520 . 50" เป็น "520.50"
 					remainingText = remainingText.replace(/(\d)\s*\.\s*(?=\d)/g, '$1.');
 					
-					// 1. หาตัวเลขที่ตามด้วย "สตางค์"
+					// 3. หาตัวเลขที่ตามด้วย "สตางค์"
 					const satangMatches = remainingText.match(/(\d[\d,]*\.?\d*)\s*สตางค์/gi);
 					if (satangMatches) {
 						for (let match of satangMatches) {
-							// ดึงเฉพาะตัวเลข
 							const numMatch = match.match(/(\d[\d,]*\.?\d*)/);
 							if (numMatch) {
 								let satangVal = parseFloat(numMatch[1].replace(/,/g, ''));
 								if (!isNaN(satangVal)) {
-									total += satangVal / 100; // แปลงสตางค์เป็นบาท
+									total += satangVal / 100;
 								}
-								// ลบข้อความที่ใช้แล้วออก เพื่อไม่ให้นับซ้ำ
 								remainingText = remainingText.replace(match, '');
 							}
 						}
 					}
 					
-					// 2. หาตัวเลขที่เหลือ (ที่เป็นบาท)
-					const bahtMatches = remainingText.match(/(\d[\d,]*\.?\d*)/g);
-					if (bahtMatches) {
-						for (let match of bahtMatches) {
-							const cleaned = match.replace(/,/g, '');
-							const num = parseFloat(cleaned);
-							if (!isNaN(num) && num > 0) {
-								total += num;
+					// 4. หาตัวเลขที่เหลือ (ที่เป็นบาท)
+					// 📌 ปรับปรุง 1: ดึงเฉพาะเลขที่มีคำว่า "บาท" ต่อท้ายก่อน เพื่อความแม่นยำ (ไม่เอาจำนวนชิ้นมาบวก)
+					// 📌 ปรับปรุง 2: ใช้ Lookaround (?<![a-zA-Z]) ข้ามตัวเลขที่ติดตัวอักษร เช่น A5, M2
+					const exactBahtMatches = remainingText.match(/(?<![a-zA-Z])(\d[\d,]*\.?\d*)\s*(?:บาทถ้วน|บาท)/gi);
+					let foundBahtKeyword = false;
+
+					if (exactBahtMatches) {
+						foundBahtKeyword = true;
+						for (let match of exactBahtMatches) {
+							const numMatch = match.match(/(\d[\d,]*\.?\d*)/);
+							if (numMatch) {
+								const cleaned = numMatch[1].replace(/,/g, '');
+								const num = parseFloat(cleaned);
+								if (!isNaN(num) && num > 0) {
+									total += num;
+									remainingText = remainingText.replace(match, '');
+								}
+							}
+						}
+					}
+					
+					// 5. ถ้าไม่มีคำว่า "บาท" ระบุมาเลย ค่อยดึงตัวเลขเดี่ยวๆ มาบวก (Fallback)
+					if (!foundBahtKeyword) {
+						// 📌 (?![a-zA-Z]) ป้องกันด้านหลังตัวเลขติดภาษาอังกฤษ เช่น 5G
+						const standaloneMatches = remainingText.match(/(?<![a-zA-Z])(\d[\d,]*\.?\d*)(?![a-zA-Z])/g);
+						if (standaloneMatches) {
+							for (let match of standaloneMatches) {
+								const cleaned = match.replace(/,/g, '');
+								const num = parseFloat(cleaned);
+								if (!isNaN(num) && num > 0) {
+									total += num;
+									remainingText = remainingText.replace(match, '');
+								}
 							}
 						}
 					}
@@ -18050,6 +18074,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (total > 0) {
 						amountOverride = total;
 						console.log('✅ Detected total amount:', amountOverride);
+					}
+
+					// 6. ดึงคำอธิบายที่เหลืออยู่
+					descOverride = remainingText.replace(/\s+/g, ' ').trim();
+					if (descOverride) {
+						console.log('📝 Detected description:', descOverride);
 					}
 				}
 				// ========================================================
@@ -18179,7 +18209,14 @@ document.addEventListener('DOMContentLoaded', () => {
 								document.getElementById('tx-amount').dispatchEvent(new Event('keyup'));
 							}
 
-							if (cmd.defaultDesc) document.getElementById('tx-desc').value = cmd.defaultDesc;
+							// กำหนดคำอธิบาย: ถ้ามีจากเสียงให้ใช้เป็นหลัก หรือถ้าไม่มีก็ใช้ defaultDesc
+							let finalDesc = descOverride;
+							if (!finalDesc && cmd.defaultDesc) finalDesc = cmd.defaultDesc;
+							// ถ้ามีทั้งสองอย่างให้ต่อกัน
+							if (descOverride && cmd.defaultDesc) {
+								finalDesc = `${cmd.defaultDesc} ${descOverride}`;
+							}
+							if (finalDesc) document.getElementById('tx-desc').value = finalDesc;
 
 							let typeText = '';
 							if (cmd.defaultType === 'income') typeText = 'รายรับ';
@@ -18188,7 +18225,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							else typeText = 'รายการ';
 
 							let nameText = cmd.defaultName ? cmd.defaultName : '';
-							let descText = cmd.defaultDesc ? ` ${cmd.defaultDesc}` : '';
+							let descText = finalDesc ? ` ${finalDesc}` : '';
 							let amountText = finalAmount > 0 ? ` ${formatCurrency(finalAmount)}` : '';
 							let message = `รับทราบ เปิดฟอร์มเพิ่ม ${typeText} ${nameText}${descText}${amountText}แล้ว`;
 							speak(message);
@@ -18200,9 +18237,12 @@ document.addEventListener('DOMContentLoaded', () => {
 						setTimeout(() => {
 							const draftAmount = amountOverride !== null ? amountOverride : (cmd.defaultAmount || 0);
 							if (draftAmount) document.getElementById('draft-amount').value = draftAmount;
-							document.getElementById('draft-note').value = cmd.defaultDesc || cmd.command;
+							let finalDraftNote = descOverride;
+							if (!finalDraftNote && cmd.defaultDesc) finalDraftNote = cmd.defaultDesc;
+							if (descOverride && cmd.defaultDesc) finalDraftNote = `${cmd.defaultDesc} ${descOverride}`;
+							if (finalDraftNote) document.getElementById('draft-note').value = finalDraftNote;
 							const commandText = cmd.command || 'ด่วน';
-							speak(`รับทราบ จดบันทึกด่วน "${commandText}"${draftAmount ? ` จำนวน ${formatCurrency(draftAmount)}` : ''}`);
+							speak(`รับทราบ จดบันทึกด่วน "${commandText}"${draftAmount ? ` จำนวน ${formatCurrency(draftAmount)}` : ''}${finalDraftNote ? ` บันทึก ${finalDraftNote}` : ''}`);
 						}, 300);
 						break;
 
